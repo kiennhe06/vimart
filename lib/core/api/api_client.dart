@@ -1,0 +1,77 @@
+import 'package:dio/dio.dart';
+
+import '../constants.dart';
+import 'api_exception.dart';
+
+/// Lớp gọi API dùng chung (bọc Dio).
+///
+/// Nhiệm vụ:
+/// - Tự gắn token đăng nhập vào mỗi request (nếu đã đăng nhập).
+/// - Bóc lớp vỏ { success, data } của backend, chỉ trả về phần `data`.
+/// - Dịch mọi lỗi sang [ApiException] với thông báo tiếng Việt.
+///
+/// Widget KHÔNG gọi trực tiếp lớp này — luôn đi qua provider/repository.
+class ApiClient {
+  ApiClient() : _dio = Dio(BaseOptions(
+          baseUrl: kApiBaseUrl,
+          connectTimeout: const Duration(seconds: 15),
+          receiveTimeout: const Duration(seconds: 15),
+        ));
+
+  final Dio _dio;
+  String? _token;
+
+  /// Gắn / gỡ token (gọi khi đăng nhập hoặc đăng xuất).
+  set token(String? value) => _token = value;
+
+  Options get _options => Options(
+        headers: _token != null ? {'Authorization': 'Bearer $_token'} : null,
+      );
+
+  Future<dynamic> get(String path, {Map<String, dynamic>? query}) =>
+      _request(() => _dio.get(path, queryParameters: query, options: _options));
+
+  Future<dynamic> post(String path, {Object? body}) =>
+      _request(() => _dio.post(path, data: body, options: _options));
+
+  Future<dynamic> put(String path, {Object? body}) =>
+      _request(() => _dio.put(path, data: body, options: _options));
+
+  Future<dynamic> delete(String path, {Object? body}) =>
+      _request(() => _dio.delete(path, data: body, options: _options));
+
+  /// Thực hiện request và bóc tách kết quả / lỗi.
+  Future<dynamic> _request(Future<Response> Function() run) async {
+    try {
+      final res = await run();
+      final data = res.data;
+      if (data is Map && data['success'] == true) {
+        return data['data'];
+      }
+      // Trường hợp hiếm: 2xx nhưng không đúng định dạng
+      return data;
+    } on DioException catch (e) {
+      throw _mapError(e);
+    }
+  }
+
+  /// Dịch lỗi Dio sang thông báo dễ hiểu.
+  ApiException _mapError(DioException e) {
+    // Server trả body { success:false, message:'...' }
+    final data = e.response?.data;
+    if (data is Map && data['message'] is String) {
+      return ApiException(data['message'] as String, statusCode: e.response?.statusCode);
+    }
+    switch (e.type) {
+      case DioExceptionType.connectionTimeout:
+      case DioExceptionType.receiveTimeout:
+      case DioExceptionType.sendTimeout:
+        return ApiException('Máy chủ phản hồi chậm, vui lòng thử lại.');
+      case DioExceptionType.connectionError:
+        return ApiException('Không kết nối được máy chủ. Kiểm tra mạng hoặc server đã bật chưa.');
+      default:
+        return ApiException('Đã xảy ra lỗi, vui lòng thử lại.',
+            statusCode: e.response?.statusCode);
+    }
+  }
+}
