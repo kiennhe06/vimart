@@ -1,0 +1,24 @@
+# Postgres cho phát triển local — đồng bộ phiên bản (16) với Postgres service trên CI.
+# Tùy chọn: nếu máy đã cài Postgres (Homebrew) thì không cần Docker.
+#
+# Dùng: make db-up   (rồi đặt DATABASE_URL=postgres://vimart:vimart@localhost:5432/vimart)
+services:
+  db:
+    image: postgres:16
+    container_name: vimart-postgres
+    environment:
+      POSTGRES_USER: vimart
+      POSTGRES_PASSWORD: vimart
+      POSTGRES_DB: vimart
+    ports:
+      - '5432:5432'
+    volumes:
+      - vimart_pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U vimart']
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+volumes:
+  vimart_pgdata:
