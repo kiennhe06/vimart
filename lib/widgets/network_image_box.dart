@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 
+import '../app/motion.dart';
+
 /// Hiển thị ảnh từ URL, có xử lý sẵn: đang tải, lỗi, và không có ảnh.
-/// Dùng Image.network của Flutter (không cần thư viện ngoài).
+/// Ảnh mờ dần khi tải xong (không "nhảy bụp"). Dùng Image.network (không thư viện ngoài).
 class NetworkImageBox extends StatelessWidget {
   const NetworkImageBox({super.key, required this.url, this.fit = BoxFit.cover});
 
@@ -19,6 +21,16 @@ class NetworkImageBox extends StatelessWidget {
       loadingBuilder: (context, child, progress) {
         if (progress == null) return child;
         return Container(color: Colors.grey.shade100);
+      },
+      // Mờ dần ảnh khi frame đầu tiên sẵn sàng (bỏ hiệu ứng "pop" cứng).
+      frameBuilder: (context, child, frame, wasSynchronouslyLoaded) {
+        if (wasSynchronouslyLoaded) return child;
+        return AnimatedOpacity(
+          opacity: frame == null ? 0 : 1,
+          duration: AppMotion.dur(context, const Duration(milliseconds: 320)),
+          curve: AppMotion.enter,
+          child: child,
+        );
       },
       // Ảnh lỗi (link hỏng) -> hiện icon thay thế.
       errorBuilder: (context, error, stack) => _placeholder(Icons.broken_image_outlined),

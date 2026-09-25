@@ -7,9 +7,12 @@ import '../../app/theme.dart';
 import '../../core/format.dart';
 import '../../core/i18n/app_strings.dart';
 import '../../models/order.dart';
+import '../../widgets/app_skeleton.dart';
 import '../../widgets/async_view.dart';
+import '../../widgets/entrance.dart';
 import '../../widgets/login_required_view.dart';
 import '../../widgets/pill_tab_bar.dart';
+import '../../widgets/pressable.dart';
 import '../auth/auth_provider.dart';
 import 'order_providers.dart';
 
@@ -55,13 +58,14 @@ class _OrderList extends ConsumerWidget {
       onRefresh: () => ref.refresh(myOrdersProvider(status).future),
       child: AsyncView(
         value: async,
+        loading: const SkeletonList(count: 4),
         onRetry: () => ref.invalidate(myOrdersProvider(status)),
         data: (orders) {
           if (orders.isEmpty) return const _EmptyOrders();
           return ListView.builder(
             padding: const EdgeInsets.all(16),
             itemCount: orders.length,
-            itemBuilder: (_, i) => OrderCard(order: orders[i]),
+            itemBuilder: (_, i) => FadeSlideIn(index: i, child: OrderCard(order: orders[i])),
           );
         },
       ),
@@ -118,8 +122,9 @@ class OrderCard extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final s = ref.watch(stringsProvider);
-    return GestureDetector(
+    return Pressable(
       onTap: () => context.push('/order/${order.id}'),
+      scale: 0.98,
       child: Container(
         margin: const EdgeInsets.only(bottom: 12),
         padding: const EdgeInsets.all(14),

@@ -2,13 +2,18 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../app/motion.dart';
 import '../../app/theme.dart';
 import '../../core/format.dart';
 import '../../core/i18n/app_strings.dart';
 import '../../models/cart.dart';
+import '../../widgets/app_feedback.dart';
+import '../../widgets/app_skeleton.dart';
 import '../../widgets/async_view.dart';
+import '../../widgets/entrance.dart';
 import '../../widgets/login_required_view.dart';
 import '../../widgets/network_image_box.dart';
+import '../../widgets/pressable.dart';
 import '../auth/auth_provider.dart';
 import 'cart_provider.dart';
 
@@ -29,6 +34,7 @@ class CartScreen extends ConsumerWidget {
           ? LoginRequiredView(message: s.loginToViewCart)
           : AsyncView(
               value: cartAsync,
+              loading: const SkeletonList(count: 4),
               onRetry: () => ref.invalidate(cartProvider),
               data: (cart) => _buildCart(context, cart, s),
             ),
@@ -47,7 +53,10 @@ class CartScreen extends ConsumerWidget {
         Expanded(
           child: ListView(
             padding: const EdgeInsets.fromLTRB(16, 8, 16, 16),
-            children: [for (final shop in cart.shops) _ShopGroup(shop: shop)],
+            children: [
+              for (final (i, shop) in cart.shops.indexed)
+                FadeSlideIn(index: i, child: _ShopGroup(shop: shop)),
+            ],
           ),
         ),
         _Footer(subtotal: cart.subtotal, shipping: shippingTotal, total: total, count: cart.itemCount),
@@ -112,17 +121,33 @@ class _CartItemRow extends ConsumerWidget {
         await ref.read(cartProvider.notifier).updateQuantity(item.cartItemId, qty);
       }
     } catch (e) {
-      if (context.mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(e.toString())));
-      }
+      if (context.mounted) showAppSnack(context, e.toString(), type: AppSnackType.error);
     }
   }
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 8),
-      child: Row(
+    // Vuốt sang trái để xóa nhanh.
+    return Dismissible(
+      key: ValueKey(item.cartItemId),
+      direction: DismissDirection.endToStart,
+      onDismissed: (_) {
+        AppHaptics.warning();
+        ref.read(cartProvider.notifier).remove(item.cartItemId);
+      },
+      background: Container(
+        alignment: Alignment.centerRight,
+        margin: const EdgeInsets.symmetric(vertical: 6),
+        padding: const EdgeInsets.only(right: 20),
+        decoration: BoxDecoration(
+          color: AppColors.danger.withValues(alpha: 0.12),
+          borderRadius: BorderRadius.circular(14),
+        ),
+        child: const Icon(Icons.delete_rounded, color: AppColors.danger),
+      ),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(vertical: 8),
+        child: Row(
         children: [
           ClipRRect(
             borderRadius: BorderRadius.circular(14),
@@ -152,6 +177,7 @@ class _CartItemRow extends ConsumerWidget {
             onIncrease: () => _change(context, ref, item.quantity + 1),
           ),
         ],
+        ),
       ),
     );
   }
@@ -175,17 +201,27 @@ class _QtyStepper extends StatelessWidget {
     return Row(
       mainAxisSize: MainAxisSize.min,
       children: [
-        _circle(Icons.remove_rounded, onDecrease, filled: false),
-        SizedBox(width: 30, child: Text('$qty', textAlign: TextAlign.center,
-            style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 15))),
-        _circle(Icons.add_rounded, canIncrease ? onIncrease : null, filled: true),
+        _circle(context, Icons.remove_rounded, onDecrease, filled: false),
+        SizedBox(
+          width: 30,
+          child: AnimatedSwitcher(
+            duration: AppMotion.dur(context, AppMotion.fast),
+            transitionBuilder: (c, a) => ScaleTransition(scale: a, child: c),
+            child: Text('$qty',
+                key: ValueKey(qty),
+                textAlign: TextAlign.center,
+                style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 15)),
+          ),
+        ),
+        _circle(context, Icons.add_rounded, canIncrease ? onIncrease : null, filled: true),
       ],
     );
   }
 
-  Widget _circle(IconData icon, VoidCallback? onTap, {required bool filled}) {
-    return GestureDetector(
+  Widget _circle(BuildContext context, IconData icon, VoidCallback? onTap, {required bool filled}) {
+    return Pressable(
       onTap: onTap,
+      scale: 0.82,
       child: Container(
         width: 32, height: 32,
         decoration: BoxDecoration(
@@ -223,7 +259,21 @@ class _Footer extends ConsumerWidget {
             const SizedBox(height: 6),
             _row(s.shippingFee, formatVnd(shipping)),
             const Padding(padding: EdgeInsets.symmetric(vertical: 10), child: Divider(height: 1)),
-            _row(s.total, formatVnd(total), highlight: true),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Text(s.total, style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 16)),
+                TweenAnimationBuilder<int>(
+                  tween: IntTween(begin: 0, end: total),
+                  duration: AppMotion.dur(context, AppMotion.slow),
+                  curve: AppMotion.enter,
+                  builder: (context, value, _) => Text(
+                    formatVnd(value),
+                    style: const TextStyle(color: AppColors.brand, fontWeight: FontWeight.w800, fontSize: 18),
+                  ),
+                ),
+              ],
+            ),
             const SizedBox(height: 14),
             ElevatedButton(
               onPressed: () => context.push('/checkout'),

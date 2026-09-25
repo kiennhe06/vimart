@@ -3,7 +3,9 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../app/theme.dart';
 import '../../core/i18n/app_strings.dart';
+import '../../widgets/app_skeleton.dart';
 import '../../widgets/async_view.dart';
+import '../../widgets/entrance.dart';
 import '../../widgets/pill_tab_bar.dart';
 import '../order/order_providers.dart';
 import '../order/orders_screen.dart' show OrderCard;
@@ -44,6 +46,7 @@ class _ShopOrderList extends ConsumerWidget {
       onRefresh: () => ref.refresh(shopOrdersProvider(status).future),
       child: AsyncView(
         value: async,
+        loading: const SkeletonList(count: 4),
         onRetry: () => ref.invalidate(shopOrdersProvider(status)),
         data: (orders) {
           if (orders.isEmpty) {
@@ -55,7 +58,8 @@ class _ShopOrderList extends ConsumerWidget {
           return ListView.builder(
             padding: const EdgeInsets.all(16),
             itemCount: orders.length,
-            itemBuilder: (_, i) => OrderCard(order: orders[i], showBuyer: true),
+            itemBuilder: (_, i) =>
+                FadeSlideIn(index: i, child: OrderCard(order: orders[i], showBuyer: true)),
           );
         },
       ),

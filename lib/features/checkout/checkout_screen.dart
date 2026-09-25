@@ -3,11 +3,16 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:url_launcher/url_launcher.dart';
 
+import '../../app/motion.dart';
 import '../../app/nav_provider.dart';
 import '../../app/theme.dart';
 import '../../core/format.dart';
 import '../../core/i18n/app_strings.dart';
 import '../../models/address.dart';
+import '../../widgets/animated_checkmark.dart';
+import '../../widgets/app_dialog.dart';
+import '../../widgets/app_feedback.dart';
+import '../../widgets/app_skeleton.dart';
 import '../../widgets/async_view.dart';
 import '../address/address_provider.dart';
 import '../cart/cart_provider.dart';
@@ -31,8 +36,7 @@ class _CheckoutScreenState extends ConsumerState<CheckoutScreen> {
 
   Future<void> _placeOrder() async {
     if (_addressId == null) {
-      ScaffoldMessenger.of(context)
-          .showSnackBar(SnackBar(content: Text(ref.read(stringsProvider).selectAddress)));
+      showAppSnack(context, ref.read(stringsProvider).selectAddress, type: AppSnackType.warning);
       return;
     }
     setState(() => _placing = true);
@@ -48,7 +52,7 @@ class _CheckoutScreenState extends ConsumerState<CheckoutScreen> {
         if (mounted) _showSuccess(ref.read(stringsProvider).codSuccess);
       }
     } catch (e) {
-      if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(e.toString())));
+      if (mounted) showAppSnack(context, e.toString(), type: AppSnackType.error);
     } finally {
       if (mounted) setState(() => _placing = false);
     }
@@ -75,12 +79,14 @@ class _CheckoutScreenState extends ConsumerState<CheckoutScreen> {
 
   void _showSuccess(String message) {
     final s = ref.read(stringsProvider);
-    showDialog(
-      context: context,
+    AppHaptics.success();
+    showAppDialog(
+      context,
+      barrierDismissible: false,
       builder: (ctx) => AlertDialog(
-        icon: const Icon(Icons.check_circle, color: AppColors.success, size: 48),
+        icon: const AnimatedCheck(size: 64),
         title: Text(s.done),
-        content: Text(message),
+        content: Text(message, textAlign: TextAlign.center),
         actions: [
           TextButton(
             onPressed: () {
@@ -113,6 +119,7 @@ class _CheckoutScreenState extends ConsumerState<CheckoutScreen> {
       appBar: AppBar(title: Text(s.checkout)),
       body: AsyncView(
         value: cartAsync,
+        loading: const SkeletonList(count: 4),
         data: (cart) {
           final shippingTotal = cart.shops.length * _shippingPerShop;
           final total = cart.subtotal + shippingTotal;
@@ -222,9 +229,8 @@ class _CheckoutScreenState extends ConsumerState<CheckoutScreen> {
   }
 
   Future<void> _openAddAddress() async {
-    final added = await showModalBottomSheet<bool>(
-      context: context,
-      isScrollControlled: true,
+    final added = await showAppSheet<bool>(
+      context,
       builder: (_) => const _AddAddressSheet(),
     );
     if (added == true) ref.invalidate(addressesProvider);
@@ -338,7 +344,7 @@ class _AddAddressSheetState extends ConsumerState<_AddAddressSheet> {
           );
       if (mounted) Navigator.pop(context, true);
     } catch (e) {
-      if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(e.toString())));
+      if (mounted) showAppSnack(context, e.toString(), type: AppSnackType.error);
     } finally {
       if (mounted) setState(() => _saving = false);
     }

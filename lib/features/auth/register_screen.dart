@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 
 import '../../app/theme.dart';
 import '../../core/i18n/app_strings.dart';
+import '../../widgets/app_feedback.dart';
 import 'auth_provider.dart';
 
 /// Màn đăng ký tài khoản mới — đồng bộ phong cách grocery.
@@ -43,7 +44,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
           );
       if (mounted) context.go('/');
     } catch (e) {
-      if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(e.toString())));
+      if (mounted) showAppSnack(context, e.toString(), type: AppSnackType.error);
     } finally {
       if (mounted) setState(() => _submitting = false);
     }
