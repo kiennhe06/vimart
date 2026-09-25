@@ -43,7 +43,7 @@ class _ProductTileState extends ConsumerState<ProductTile> {
             ? detail.variants.first
             : Variant(id: 0, name: '-', price: 0, stock: 0),
       );
-      if (variant.id == 0) throw Exception('Sản phẩm tạm hết hàng');
+      if (variant.id == 0) throw Exception(ref.read(stringsProvider).tempOutOfStock);
       await ref.read(cartProvider.notifier).add(variant.id, 1);
       if (mounted) {
         ScaffoldMessenger.of(context)

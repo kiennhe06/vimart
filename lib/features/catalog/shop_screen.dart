@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../app/theme.dart';
+import '../../core/i18n/app_strings.dart';
 import '../../widgets/async_view.dart';
 import '../home/home_ui.dart';
 import '../home/widgets/product_tile.dart';
@@ -15,14 +16,15 @@ class ShopScreen extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final async = ref.watch(shopProductsProvider(shopId));
+    final s = ref.watch(stringsProvider);
     return Scaffold(
-      appBar: AppBar(title: const Text('Sản phẩm của shop')),
+      appBar: AppBar(title: Text(s.shopProducts)),
       body: AsyncView(
         value: async,
         onRetry: () => ref.invalidate(shopProductsProvider(shopId)),
         data: (products) {
           if (products.isEmpty) {
-            return const EmptyView(message: 'Shop chưa có sản phẩm nào', icon: Icons.storefront_outlined);
+            return EmptyView(message: s.shopNoProducts, icon: Icons.storefront_outlined);
           }
           return Column(
             children: [
@@ -42,7 +44,7 @@ class ShopScreen extends ConsumerWidget {
                         children: [
                           Text(products.first.shopName ?? 'Shop',
                               style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w800)),
-                          Text('${products.length} sản phẩm', style: const TextStyle(color: Colors.grey, fontSize: 13)),
+                          Text(s.productsCount(products.length), style: const TextStyle(color: Colors.grey, fontSize: 13)),
                         ],
                       ),
                     ),

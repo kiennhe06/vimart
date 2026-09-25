@@ -6,6 +6,7 @@ import 'package:url_launcher/url_launcher.dart';
 import '../../app/nav_provider.dart';
 import '../../app/theme.dart';
 import '../../core/format.dart';
+import '../../core/i18n/app_strings.dart';
 import '../../models/address.dart';
 import '../../widgets/async_view.dart';
 import '../address/address_provider.dart';
@@ -31,7 +32,7 @@ class _CheckoutScreenState extends ConsumerState<CheckoutScreen> {
   Future<void> _placeOrder() async {
     if (_addressId == null) {
       ScaffoldMessenger.of(context)
-          .showSnackBar(const SnackBar(content: Text('Vui lòng chọn địa chỉ nhận hàng')));
+          .showSnackBar(SnackBar(content: Text(ref.read(stringsProvider).selectAddress)));
       return;
     }
     setState(() => _placing = true);
@@ -44,7 +45,7 @@ class _CheckoutScreenState extends ConsumerState<CheckoutScreen> {
       if (_paymentMethod == 'vnpay') {
         await _handleVnpay(repo, result);
       } else {
-        if (mounted) _showSuccess('Đặt hàng thành công! Bạn sẽ trả tiền khi nhận hàng (COD).');
+        if (mounted) _showSuccess(ref.read(stringsProvider).codSuccess);
       }
     } catch (e) {
       if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(e.toString())));
@@ -60,24 +61,25 @@ class _CheckoutScreenState extends ConsumerState<CheckoutScreen> {
       final url = await repo.createVnpayUrl(result.groupCode);
       await launchUrl(Uri.parse(url), mode: LaunchMode.externalApplication);
       if (mounted) {
-        _showSuccess('Đã mở cổng VNPay. Sau khi thanh toán xong, kéo để làm mới đơn hàng.');
+        _showSuccess(ref.read(stringsProvider).vnpayOpened);
       }
     } catch (_) {
       // Chưa cấu hình VNPay thật -> giả lập thanh toán để chạy được luồng demo.
       await repo.mockPay(result.groupCode);
       ref.invalidate(myOrdersProvider);
       if (mounted) {
-        _showSuccess('Thanh toán (giả lập) thành công! (Chưa cấu hình VNPay sandbox thật.)');
+        _showSuccess(ref.read(stringsProvider).mockPaySuccess);
       }
     }
   }
 
   void _showSuccess(String message) {
+    final s = ref.read(stringsProvider);
     showDialog(
       context: context,
       builder: (ctx) => AlertDialog(
         icon: const Icon(Icons.check_circle, color: AppColors.success, size: 48),
-        title: const Text('Hoàn tất'),
+        title: Text(s.done),
         content: Text(message),
         actions: [
           TextButton(
@@ -86,7 +88,7 @@ class _CheckoutScreenState extends ConsumerState<CheckoutScreen> {
               ref.read(bottomNavIndexProvider.notifier).go(0); // về tab Trang chủ
               context.go('/');
             },
-            child: const Text('Về trang chủ'),
+            child: Text(s.backHome),
           ),
           FilledButton(
             onPressed: () {
@@ -94,7 +96,7 @@ class _CheckoutScreenState extends ConsumerState<CheckoutScreen> {
               ref.read(bottomNavIndexProvider.notifier).go(2); // sang tab Đơn hàng
               context.go('/');
             },
-            child: const Text('Xem đơn hàng'),
+            child: Text(s.viewOrders),
           ),
         ],
       ),
@@ -105,9 +107,10 @@ class _CheckoutScreenState extends ConsumerState<CheckoutScreen> {
   Widget build(BuildContext context) {
     final cartAsync = ref.watch(cartProvider);
     final addressesAsync = ref.watch(addressesProvider);
+    final s = ref.watch(stringsProvider);
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Thanh toán')),
+      appBar: AppBar(title: Text(s.checkout)),
       body: AsyncView(
         value: cartAsync,
         data: (cart) {
@@ -121,7 +124,7 @@ class _CheckoutScreenState extends ConsumerState<CheckoutScreen> {
                   padding: const EdgeInsets.all(12),
                   children: [
                     // Địa chỉ
-                    _section('Địa chỉ nhận hàng'),
+                    _section(s.shippingAddress),
                     AsyncView(
                       value: addressesAsync,
                       onRetry: () => ref.invalidate(addressesProvider),
@@ -134,7 +137,7 @@ class _CheckoutScreenState extends ConsumerState<CheckoutScreen> {
                     ),
                     const SizedBox(height: 8),
                     // Sản phẩm
-                    _section('Sản phẩm (${cart.itemCount})'),
+                    _section(s.productsSection(cart.itemCount)),
                     for (final shop in cart.shops)
                       Card(
                         child: Padding(
@@ -160,22 +163,22 @@ class _CheckoutScreenState extends ConsumerState<CheckoutScreen> {
                       ),
                     const SizedBox(height: 8),
                     // Phương thức thanh toán
-                    _section('Phương thức thanh toán'),
+                    _section(s.paymentMethod),
                     Card(
                       child: RadioGroup<String>(
                         groupValue: _paymentMethod,
                         onChanged: (v) => setState(() => _paymentMethod = v!),
-                        child: const Column(
+                        child: Column(
                           children: [
                             RadioListTile<String>(
                               value: 'cod',
-                              title: Text('Thanh toán khi nhận hàng (COD)'),
-                              secondary: Icon(Icons.local_shipping_outlined),
+                              title: Text(s.codOption),
+                              secondary: const Icon(Icons.local_shipping_outlined),
                             ),
                             RadioListTile<String>(
                               value: 'vnpay',
-                              title: Text('Ví VNPay'),
-                              secondary: Icon(Icons.account_balance_wallet_outlined),
+                              title: Text(s.vnpayOption),
+                              secondary: const Icon(Icons.account_balance_wallet_outlined),
                             ),
                           ],
                         ),
@@ -188,10 +191,10 @@ class _CheckoutScreenState extends ConsumerState<CheckoutScreen> {
                         padding: const EdgeInsets.all(12),
                         child: Column(
                           children: [
-                            _summaryRow('Tạm tính', cart.subtotal),
-                            _summaryRow('Phí vận chuyển', shippingTotal),
+                            _summaryRow(s.subtotal, cart.subtotal),
+                            _summaryRow(s.shippingFee, shippingTotal),
                             const Divider(),
-                            _summaryRow('Tổng cộng', total, highlight: true),
+                            _summaryRow(s.total, total, highlight: true),
                           ],
                         ),
                       ),
@@ -207,7 +210,7 @@ class _CheckoutScreenState extends ConsumerState<CheckoutScreen> {
                     onPressed: (_placing || cart.isEmpty) ? null : _placeOrder,
                     child: _placing
                         ? const SizedBox(height: 22, width: 22, child: CircularProgressIndicator(strokeWidth: 2))
-                        : Text('Đặt hàng • ${formatVnd(total)}'),
+                        : Text(s.placeOrder(formatVnd(total))),
                   ),
                 ),
               ),
@@ -249,7 +252,7 @@ class _CheckoutScreenState extends ConsumerState<CheckoutScreen> {
 }
 
 /// Danh sách chọn địa chỉ + nút thêm mới.
-class _AddressPicker extends StatelessWidget {
+class _AddressPicker extends ConsumerWidget {
   const _AddressPicker({
     required this.addresses,
     required this.selectedId,
@@ -262,7 +265,8 @@ class _AddressPicker extends StatelessWidget {
   final VoidCallback onAdd;
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
+    final s = ref.watch(stringsProvider);
     // Tự chọn địa chỉ mặc định lần đầu.
     if (selectedId == null && addresses.isNotEmpty) {
       final def = addresses.firstWhere((a) => a.isDefault, orElse: () => addresses.first);
@@ -275,7 +279,7 @@ class _AddressPicker extends StatelessWidget {
         child: Column(
           children: [
           if (addresses.isEmpty)
-            const Padding(padding: EdgeInsets.all(16), child: Text('Chưa có địa chỉ nào.')),
+            Padding(padding: const EdgeInsets.all(16), child: Text(s.noAddressYet)),
           for (final a in addresses)
             RadioListTile<int>(
               value: a.id,
@@ -285,7 +289,7 @@ class _AddressPicker extends StatelessWidget {
           TextButton.icon(
             onPressed: onAdd,
             icon: const Icon(Icons.add_location_alt_outlined),
-            label: const Text('Thêm địa chỉ mới'),
+            label: Text(s.addNewAddress),
           ),
           ],
         ),
@@ -342,6 +346,7 @@ class _AddAddressSheetState extends ConsumerState<_AddAddressSheet> {
 
   @override
   Widget build(BuildContext context) {
+    final s = ref.watch(stringsProvider);
     return Padding(
       padding: EdgeInsets.only(
         left: 16, right: 16, top: 16,
@@ -352,20 +357,20 @@ class _AddAddressSheetState extends ConsumerState<_AddAddressSheet> {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            const Text('Thêm địa chỉ', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+            Text(s.addAddress, style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
             const SizedBox(height: 12),
-            _field(_name, 'Tên người nhận', required: true),
-            _field(_phone, 'Số điện thoại', required: true, keyboard: TextInputType.phone),
-            _field(_line, 'Số nhà, tên đường', required: true),
-            _field(_ward, 'Phường/Xã'),
-            _field(_district, 'Quận/Huyện'),
-            _field(_province, 'Tỉnh/Thành phố'),
+            _field(_name, s.recipientName, required: true),
+            _field(_phone, s.phone, required: true, keyboard: TextInputType.phone),
+            _field(_line, s.streetLineFull, required: true),
+            _field(_ward, s.ward),
+            _field(_district, s.district),
+            _field(_province, s.province),
             const SizedBox(height: 12),
             ElevatedButton(
               onPressed: _saving ? null : _save,
               child: _saving
                   ? const SizedBox(height: 22, width: 22, child: CircularProgressIndicator(strokeWidth: 2))
-                  : const Text('Lưu địa chỉ'),
+                  : Text(s.saveAddress),
             ),
           ],
         ),
@@ -381,7 +386,9 @@ class _AddAddressSheetState extends ConsumerState<_AddAddressSheet> {
         controller: c,
         keyboardType: keyboard,
         decoration: InputDecoration(labelText: label),
-        validator: required ? (v) => (v == null || v.trim().isEmpty) ? 'Bắt buộc' : null : null,
+        validator: required
+            ? (v) => (v == null || v.trim().isEmpty) ? ref.read(stringsProvider).required : null
+            : null,
       ),
     );
   }

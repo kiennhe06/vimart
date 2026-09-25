@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../core/i18n/app_strings.dart';
 import '../../widgets/async_view.dart';
 import '../home/home_ui.dart';
 import '../home/widgets/product_tile.dart';
@@ -13,14 +14,15 @@ class FavoritesScreen extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final async = ref.watch(favoritesProvider);
+    final s = ref.watch(stringsProvider);
     return Scaffold(
-      appBar: AppBar(title: const Text('Sản phẩm yêu thích')),
+      appBar: AppBar(title: Text(s.favoriteProducts)),
       body: AsyncView(
         value: async,
         onRetry: () => ref.invalidate(favoritesProvider),
         data: (products) {
           if (products.isEmpty) {
-            return const EmptyView(message: 'Bạn chưa thích sản phẩm nào', icon: Icons.favorite_border);
+            return EmptyView(message: s.noFavorites, icon: Icons.favorite_border);
           }
           return GridView.builder(
             padding: const EdgeInsets.all(16),

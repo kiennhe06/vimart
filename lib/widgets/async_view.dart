@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../core/i18n/app_strings.dart';
+
 /// Các widget dùng chung để hiển thị 4 trạng thái: loading / error / empty / data.
 /// Giúp mọi màn hình xử lý bất đồng bộ nhất quán, không lặp code.
 
@@ -13,13 +15,13 @@ class LoadingView extends StatelessWidget {
 }
 
 /// Lỗi kèm nút thử lại.
-class ErrorView extends StatelessWidget {
+class ErrorView extends ConsumerWidget {
   const ErrorView({super.key, required this.message, this.onRetry});
   final String message;
   final VoidCallback? onRetry;
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     return Center(
       child: Padding(
         padding: const EdgeInsets.all(32),
@@ -34,7 +36,7 @@ class ErrorView extends StatelessWidget {
               OutlinedButton.icon(
                 onPressed: onRetry,
                 icon: const Icon(Icons.refresh),
-                label: const Text('Thử lại'),
+                label: Text(ref.watch(stringsProvider).retry),
               ),
             ],
           ],

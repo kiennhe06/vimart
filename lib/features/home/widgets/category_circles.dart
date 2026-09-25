@@ -12,7 +12,7 @@ class CategoryCircles extends StatelessWidget {
     required this.categories,
     required this.selectedId,
     required this.onSelect,
-    this.allLabel = 'Tất cả',
+    required this.allLabel,
   });
 
   final List<Category> categories;

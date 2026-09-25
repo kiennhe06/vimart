@@ -1,7 +1,11 @@
 import 'package:dio/dio.dart';
 
 import '../constants.dart';
+import '../i18n/locale_provider.dart';
 import 'api_exception.dart';
+
+/// Chọn thông báo lỗi theo ngôn ngữ hiện tại (dựa vào [appLocale]).
+String _err(String vi, String en) => appLocale == 'en' ? en : vi;
 
 /// Lớp gọi API dùng chung (bọc Dio).
 ///
@@ -76,11 +80,14 @@ class ApiClient {
       case DioExceptionType.connectionTimeout:
       case DioExceptionType.receiveTimeout:
       case DioExceptionType.sendTimeout:
-        return ApiException('Máy chủ phản hồi chậm, vui lòng thử lại.');
+        return ApiException(_err('Máy chủ phản hồi chậm, vui lòng thử lại.',
+            'The server is slow to respond, please try again.'));
       case DioExceptionType.connectionError:
-        return ApiException('Không kết nối được máy chủ. Kiểm tra mạng hoặc server đã bật chưa.');
+        return ApiException(_err('Không kết nối được máy chủ. Kiểm tra mạng hoặc server đã bật chưa.',
+            'Cannot reach the server. Check your network or if the server is running.'));
       default:
-        return ApiException('Đã xảy ra lỗi, vui lòng thử lại.',
+        return ApiException(_err('Đã xảy ra lỗi, vui lòng thử lại.',
+            'Something went wrong, please try again.'),
             statusCode: e.response?.statusCode);
     }
   }

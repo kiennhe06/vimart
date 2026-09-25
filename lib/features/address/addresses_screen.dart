@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../app/theme.dart';
+import '../../core/i18n/app_strings.dart';
 import '../../widgets/async_view.dart';
 import 'address_provider.dart';
 
@@ -12,21 +13,22 @@ class AddressesScreen extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final async = ref.watch(addressesProvider);
+    final s = ref.watch(stringsProvider);
     return Scaffold(
-      appBar: AppBar(title: const Text('Sổ địa chỉ')),
+      appBar: AppBar(title: Text(s.addressBook)),
       floatingActionButton: FloatingActionButton.extended(
         onPressed: () => _openAdd(context, ref),
         backgroundColor: AppColors.brand,
         foregroundColor: Colors.white,
         icon: const Icon(Icons.add_rounded),
-        label: const Text('Thêm', style: TextStyle(fontWeight: FontWeight.w700)),
+        label: Text(s.addShort, style: const TextStyle(fontWeight: FontWeight.w700)),
       ),
       body: AsyncView(
         value: async,
         onRetry: () => ref.invalidate(addressesProvider),
         data: (addresses) {
           if (addresses.isEmpty) {
-            return const EmptyView(message: 'Chưa có địa chỉ nào', icon: Icons.location_off_outlined);
+            return EmptyView(message: s.noAddresses, icon: Icons.location_off_outlined);
           }
           return ListView.builder(
             padding: const EdgeInsets.fromLTRB(16, 12, 16, 90),
@@ -62,8 +64,8 @@ class AddressesScreen extends ConsumerWidget {
                                 Container(
                                   padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
                                   decoration: BoxDecoration(color: AppColors.brandSoft, borderRadius: BorderRadius.circular(20)),
-                                  child: const Text('Mặc định',
-                                      style: TextStyle(fontSize: 11, color: AppColors.brand, fontWeight: FontWeight.w700)),
+                                  child: Text(s.defaultLabel,
+                                      style: const TextStyle(fontSize: 11, color: AppColors.brand, fontWeight: FontWeight.w700)),
                                 ),
                             ],
                           ),
@@ -102,6 +104,7 @@ class AddressesScreen extends ConsumerWidget {
   }
 
   Future<void> _openAdd(BuildContext context, WidgetRef ref) async {
+    final s = ref.read(stringsProvider);
     final name = TextEditingController();
     final phone = TextEditingController();
     final line = TextEditingController();
@@ -111,21 +114,21 @@ class AddressesScreen extends ConsumerWidget {
     final ok = await showDialog<bool>(
       context: context,
       builder: (ctx) => AlertDialog(
-        title: const Text('Thêm địa chỉ'),
+        title: Text(s.addAddress),
         content: Form(
           key: formKey,
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              _f(name, 'Tên người nhận'),
-              _f(phone, 'Số điện thoại', keyboard: TextInputType.phone),
-              _f(line, 'Số nhà, đường'),
-              _f(province, 'Tỉnh/Thành phố'),
+              _f(name, s.recipientName, s.required),
+              _f(phone, s.phone, s.required, keyboard: TextInputType.phone),
+              _f(line, s.streetLine, s.required),
+              _f(province, s.province, s.required),
             ],
           ),
         ),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('Hủy')),
+          TextButton(onPressed: () => Navigator.pop(ctx, false), child: Text(s.cancel)),
           FilledButton(
             onPressed: () async {
               if (!formKey.currentState!.validate()) return;
@@ -144,7 +147,7 @@ class AddressesScreen extends ConsumerWidget {
                 }
               }
             },
-            child: const Text('Lưu'),
+            child: Text(s.save),
           ),
         ],
       ),
@@ -152,13 +155,13 @@ class AddressesScreen extends ConsumerWidget {
     if (ok == true) ref.invalidate(addressesProvider);
   }
 
-  Widget _f(TextEditingController c, String label, {TextInputType? keyboard}) => Padding(
+  Widget _f(TextEditingController c, String label, String requiredMsg, {TextInputType? keyboard}) => Padding(
         padding: const EdgeInsets.symmetric(vertical: 4),
         child: TextFormField(
           controller: c,
           keyboardType: keyboard,
           decoration: InputDecoration(labelText: label),
-          validator: (v) => (v == null || v.trim().isEmpty) ? 'Bắt buộc' : null,
+          validator: (v) => (v == null || v.trim().isEmpty) ? requiredMsg : null,
         ),
       );
 }

@@ -129,6 +129,123 @@ class AppStrings {
   String get createAccount => _('Tạo tài khoản', 'Create account');
   String get registerTitle => _('Tạo tài khoản ViMart', 'Create your ViMart account');
   String get registerSub => _('Chỉ mất một phút để bắt đầu mua sắm', 'It only takes a minute to start shopping');
+
+  // ---- Chung (bổ sung) ----
+  String get delete => _('Xóa', 'Delete');
+  String get addShort => _('Thêm', 'Add');
+  String get required => _('Bắt buộc', 'Required');
+  String get send => _('Gửi', 'Send');
+  String get confirm => _('Xác nhận', 'Confirm');
+  String get agree => _('Đồng ý', 'Agree');
+  String get done => _('Hoàn tất', 'Done');
+
+  // ---- Điều hướng (bottom nav) ----
+  String get navHome => _('Trang chủ', 'Home');
+
+  // ---- Trang chủ / thẻ sản phẩm ----
+  String get tempOutOfStock => _('Sản phẩm tạm hết hàng', 'Product is temporarily out of stock');
+  String get outSuffix => _(' (hết)', ' (out)');
+
+  // ---- Shop / yêu thích ----
+  String get shopProducts => _('Sản phẩm của shop', 'Shop products');
+  String get shopNoProducts => _('Shop chưa có sản phẩm nào', 'This shop has no products yet');
+  String productsCount(int n) => _('$n sản phẩm', '$n products');
+  String get noFavorites => _('Bạn chưa thích sản phẩm nào', "You haven't liked any products yet");
+
+  // ---- Sổ địa chỉ ----
+  String get noAddresses => _('Chưa có địa chỉ nào', 'No addresses yet');
+  String get defaultLabel => _('Mặc định', 'Default');
+  String get addAddress => _('Thêm địa chỉ', 'Add address');
+  String get addNewAddress => _('Thêm địa chỉ mới', 'Add a new address');
+  String get noAddressYet => _('Chưa có địa chỉ nào.', 'No addresses yet.');
+  String get recipientName => _('Tên người nhận', 'Recipient name');
+  String get phone => _('Số điện thoại', 'Phone number');
+  String get streetLine => _('Số nhà, đường', 'House number, street');
+  String get streetLineFull => _('Số nhà, tên đường', 'House number, street name');
+  String get ward => _('Phường/Xã', 'Ward');
+  String get district => _('Quận/Huyện', 'District');
+  String get province => _('Tỉnh/Thành phố', 'Province/City');
+  String get saveAddress => _('Lưu địa chỉ', 'Save address');
+
+  // ---- Thanh toán (checkout) ----
+  String get checkout => _('Thanh toán', 'Checkout');
+  String get selectAddress => _('Vui lòng chọn địa chỉ nhận hàng', 'Please select a delivery address');
+  String get codSuccess => _('Đặt hàng thành công! Bạn sẽ trả tiền khi nhận hàng (COD).',
+      'Order placed! You will pay on delivery (COD).');
+  String get vnpayOpened => _('Đã mở cổng VNPay. Sau khi thanh toán xong, kéo để làm mới đơn hàng.',
+      'VNPay opened. After paying, pull to refresh your orders.');
+  String get mockPaySuccess => _('Thanh toán (giả lập) thành công! (Chưa cấu hình VNPay sandbox thật.)',
+      'Payment (simulated) successful! (Real VNPay sandbox not configured.)');
+  String get backHome => _('Về trang chủ', 'Back home');
+  String get viewOrders => _('Xem đơn hàng', 'View orders');
+  String get shippingAddress => _('Địa chỉ nhận hàng', 'Delivery address');
+  String productsSection(int n) => _('Sản phẩm ($n)', 'Products ($n)');
+  String get paymentMethod => _('Phương thức thanh toán', 'Payment method');
+  String get codOption => _('Thanh toán khi nhận hàng (COD)', 'Cash on delivery (COD)');
+  String get vnpayOption => _('Ví VNPay', 'VNPay wallet');
+  String placeOrder(String price) => _('Đặt hàng • $price', 'Place order • $price');
+
+  // ---- Mở shop (từ Tài khoản) ----
+  String get shopNameLabel => _('Tên shop', 'Shop name');
+  String get shopDescOptional => _('Giới thiệu (không bắt buộc)', 'Description (optional)');
+  String get createShop => _('Tạo shop', 'Create shop');
+  String get shopCreated => _('Mở shop thành công!', 'Shop opened successfully!');
+
+  // ---- Người bán: sản phẩm ----
+  String get addProduct => _('Thêm sản phẩm', 'Add product');
+  String get editProduct => _('Sửa sản phẩm', 'Edit product');
+  String get sellerNoProducts =>
+      _('Shop chưa có sản phẩm nào.\nBấm "Thêm sản phẩm" để đăng bán.',
+          'Your shop has no products yet.\nTap "Add product" to start selling.');
+  String get deleteProduct => _('Xóa sản phẩm', 'Delete product');
+  String deleteProductConfirm(String name) =>
+      _('Xóa "$name"? Hành động này không thể hoàn tác.',
+          'Delete "$name"? This action cannot be undone.');
+
+  // ---- Người bán: đơn hàng ----
+  String get noOrdersShort => _('Không có đơn nào', 'No orders');
+
+  // ---- Người bán: form sản phẩm ----
+  String get imageUploaded => _('Đã tải ảnh lên', 'Image uploaded');
+  String get productSaved => _('Đã lưu sản phẩm', 'Product saved');
+  String get productName => _('Tên sản phẩm', 'Product name');
+  String get enterProductName => _('Nhập tên sản phẩm', 'Enter product name');
+  String get category => _('Danh mục', 'Category');
+  String get productImage => _('Ảnh sản phẩm', 'Product image');
+  String get uploadingImage => _('Đang tải ảnh...', 'Uploading image...');
+  String get pickImage => _('Chọn ảnh từ máy', 'Pick image from device');
+  String get orPasteImageLink => _('hoặc dán link ảnh', 'or paste an image link');
+  String get variantsSection => _('Phân loại (giá + tồn kho)', 'Variants (price + stock)');
+  String get saveProduct => _('Lưu sản phẩm', 'Save product');
+  String get variantNameHint => _('Tên (vd: Đỏ/L)', 'Name (e.g. Red/L)');
+  String get price => _('Giá', 'Price');
+  String get stock => _('Kho', 'Stock');
+  String get mustBeNumber => _('Số', 'Number');
+
+  // ---- Chi tiết đơn hàng ----
+  String get orderDetail => _('Chi tiết đơn hàng', 'Order details');
+  String get recipient => _('Người nhận', 'Recipient');
+  String get productsLabel => _('Sản phẩm', 'Products');
+  String get paymentLabel => _('Thanh toán', 'Payment');
+  String get discount => _('Giảm giá', 'Discount');
+  String get method => _('Phương thức', 'Method');
+  String get statusLabel => _('Tình trạng', 'Status');
+  String get paidFull => _('Đã thanh toán', 'Paid');
+  String get unpaid => _('Chưa thanh toán', 'Unpaid');
+  String get confirmOrder => _('Xác nhận đơn', 'Confirm order');
+  String get reject => _('Từ chối', 'Reject');
+  String get rejectConfirm =>
+      _('Từ chối đơn này? Hàng sẽ được hoàn về kho.', 'Reject this order? Stock will be returned.');
+  String get ship => _('Giao hàng', 'Ship');
+  String get cancelOrder => _('Hủy đơn', 'Cancel order');
+  String get cancelOrderConfirm =>
+      _('Bạn chắc chắn muốn hủy đơn này?', 'Are you sure you want to cancel this order?');
+  String get received => _('Đã nhận hàng', 'Received');
+  String get receivedConfirm =>
+      _('Xác nhận bạn đã nhận được hàng?', 'Confirm you have received the order?');
+  String reviewProductLabel(String name) => _('Đánh giá: $name', 'Review: $name');
+  String get reviewProductTitle => _('Đánh giá sản phẩm', 'Review product');
+  String get reviewHint => _('Nhận xét của bạn (không bắt buộc)', 'Your comment (optional)');
 }
 
 /// Provider trả về bộ chuỗi theo ngôn ngữ hiện tại.

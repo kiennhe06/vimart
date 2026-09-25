@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 
 import '../../app/theme.dart';
 import '../../core/format.dart';
+import '../../core/i18n/app_strings.dart';
 import '../../models/product.dart';
 import '../../widgets/async_view.dart';
 import '../../widgets/network_image_box.dart';
@@ -16,14 +17,15 @@ class SellerProductsScreen extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final async = ref.watch(myProductsProvider);
+    final s = ref.watch(stringsProvider);
     return Scaffold(
-      appBar: AppBar(title: const Text('Sản phẩm của shop')),
+      appBar: AppBar(title: Text(s.myShopProducts)),
       floatingActionButton: FloatingActionButton.extended(
         onPressed: () => context.push('/seller/products/new'),
         backgroundColor: AppColors.brand,
         foregroundColor: Colors.white,
         icon: const Icon(Icons.add_rounded),
-        label: const Text('Thêm sản phẩm', style: TextStyle(fontWeight: FontWeight.w700)),
+        label: Text(s.addProduct, style: const TextStyle(fontWeight: FontWeight.w700)),
       ),
       body: RefreshIndicator(
         color: AppColors.brand,
@@ -33,10 +35,9 @@ class SellerProductsScreen extends ConsumerWidget {
           onRetry: () => ref.invalidate(myProductsProvider),
           data: (products) {
             if (products.isEmpty) {
-              return ListView(children: const [
-                SizedBox(height: 120),
-                EmptyView(message: 'Shop chưa có sản phẩm nào.\nBấm "Thêm sản phẩm" để đăng bán.',
-                    icon: Icons.inventory_2_outlined),
+              return ListView(children: [
+                const SizedBox(height: 120),
+                EmptyView(message: s.sellerNoProducts, icon: Icons.inventory_2_outlined),
               ]);
             }
             return ListView.builder(
@@ -57,6 +58,7 @@ class _ProductRow extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final s = ref.watch(stringsProvider);
     return Container(
       margin: const EdgeInsets.only(bottom: 12),
       padding: const EdgeInsets.all(12),
@@ -82,7 +84,7 @@ class _ProductRow extends ConsumerWidget {
                 Text(product.name, maxLines: 2, overflow: TextOverflow.ellipsis,
                     style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 14)),
                 const SizedBox(height: 4),
-                Text('${formatVnd(product.minPrice)} • Đã bán ${product.soldCount}',
+                Text('${formatVnd(product.minPrice)} • ${s.sold(product.soldCount)}',
                     style: const TextStyle(color: Colors.grey, fontSize: 12)),
               ],
             ),
@@ -109,17 +111,18 @@ class _ProductRow extends ConsumerWidget {
   }
 
   Future<void> _confirmDelete(BuildContext context, WidgetRef ref) async {
+    final s = ref.read(stringsProvider);
     final ok = await showDialog<bool>(
       context: context,
       builder: (ctx) => AlertDialog(
-        title: const Text('Xóa sản phẩm'),
-        content: Text('Xóa "${product.name}"? Hành động này không thể hoàn tác.'),
+        title: Text(s.deleteProduct),
+        content: Text(s.deleteProductConfirm(product.name)),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('Hủy')),
+          TextButton(onPressed: () => Navigator.pop(ctx, false), child: Text(s.cancel)),
           FilledButton(
             style: FilledButton.styleFrom(backgroundColor: AppColors.danger),
             onPressed: () => Navigator.pop(ctx, true),
-            child: const Text('Xóa'),
+            child: Text(s.delete),
           ),
         ],
       ),

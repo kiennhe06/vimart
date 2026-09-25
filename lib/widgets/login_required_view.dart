@@ -1,13 +1,16 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import '../core/i18n/app_strings.dart';
+
 /// Hiển thị khi khách vãng lai mở một tab cần đăng nhập (Giỏ hàng, Đơn hàng...).
-class LoginRequiredView extends StatelessWidget {
+class LoginRequiredView extends ConsumerWidget {
   const LoginRequiredView({super.key, required this.message});
   final String message;
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     return Center(
       child: Padding(
         padding: const EdgeInsets.all(32),
@@ -20,7 +23,7 @@ class LoginRequiredView extends StatelessWidget {
             const SizedBox(height: 16),
             ElevatedButton(
               onPressed: () => context.push('/login'),
-              child: const Text('Đăng nhập'),
+              child: Text(ref.watch(stringsProvider).login),
             ),
           ],
         ),

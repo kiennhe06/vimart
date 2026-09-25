@@ -9,7 +9,7 @@ import '../home_ui.dart';
 /// - Nhập liệu: EditableText (widget nền tảng — KHÔNG dùng TextField/SearchBar ăn sẵn).
 /// - Bấm vào bất kỳ đâu trong ô sẽ focus để gõ (GestureDetector).
 class VimartSearchBox extends StatefulWidget {
-  const VimartSearchBox({super.key, required this.onSubmitted, this.hint = 'Tìm sản phẩm...'});
+  const VimartSearchBox({super.key, required this.onSubmitted, required this.hint});
 
   /// Gọi khi người dùng nhấn Enter/Search trên bàn phím.
   final ValueChanged<String> onSubmitted;

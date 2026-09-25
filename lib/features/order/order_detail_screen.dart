@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../app/theme.dart';
 import '../../core/format.dart';
+import '../../core/i18n/app_strings.dart';
 import '../../models/order.dart';
 import '../../widgets/async_view.dart';
 import '../auth/auth_provider.dart';
@@ -22,7 +23,7 @@ class OrderDetailScreen extends ConsumerWidget {
     final user = ref.watch(authProvider).user;
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Chi tiết đơn hàng')),
+      appBar: AppBar(title: Text(ref.watch(stringsProvider).orderDetail)),
       body: AsyncView(
         value: async,
         onRetry: () => ref.invalidate(orderDetailProvider(orderId)),
@@ -52,14 +53,15 @@ class _OrderDetailBodyState extends ConsumerState<_OrderDetailBody> {
 
   Future<void> _doAction(String action, {String? confirmText}) async {
     if (confirmText != null) {
+      final str = ref.read(stringsProvider);
       final ok = await showDialog<bool>(
         context: context,
         builder: (ctx) => AlertDialog(
-          title: const Text('Xác nhận'),
+          title: Text(str.confirm),
           content: Text(confirmText),
           actions: [
-            TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('Không')),
-            FilledButton(onPressed: () => Navigator.pop(ctx, true), child: const Text('Đồng ý')),
+            TextButton(onPressed: () => Navigator.pop(ctx, false), child: Text(str.no)),
+            FilledButton(onPressed: () => Navigator.pop(ctx, true), child: Text(str.agree)),
           ],
         ),
       );
@@ -85,6 +87,7 @@ class _OrderDetailBodyState extends ConsumerState<_OrderDetailBody> {
   @override
   Widget build(BuildContext context) {
     final s = order.summary;
+    final str = ref.watch(stringsProvider);
     return Column(
       children: [
         Expanded(
@@ -93,32 +96,32 @@ class _OrderDetailBodyState extends ConsumerState<_OrderDetailBody> {
             children: [
               Row(
                 children: [
-                  Text('Đơn ${s.code}', style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+                  Text(str.orderCode(s.code), style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
                   const Spacer(),
                   OrderStatusChip(status: s.status),
                 ],
               ),
               const SizedBox(height: 12),
               // Địa chỉ
-              _card('Người nhận', [
+              _card(str.recipient, [
                 Text('${order.recipientName} • ${order.recipientPhone}'),
                 const SizedBox(height: 4),
                 Text(order.addressText, style: const TextStyle(color: Colors.grey)),
               ]),
               // Sản phẩm
-              _card(s.shopName ?? 'Sản phẩm', [
+              _card(s.shopName ?? str.productsLabel, [
                 for (final item in order.items) _itemRow(item),
               ]),
               // Tổng tiền
-              _card('Thanh toán', [
-                _row('Tạm tính', formatVnd(order.subtotal)),
-                _row('Phí vận chuyển', formatVnd(order.shippingFee)),
-                if (order.discount > 0) _row('Giảm giá', '-${formatVnd(order.discount)}'),
+              _card(str.paymentLabel, [
+                _row(str.subtotal, formatVnd(order.subtotal)),
+                _row(str.shippingFee, formatVnd(order.shippingFee)),
+                if (order.discount > 0) _row(str.discount, '-${formatVnd(order.discount)}'),
                 const Divider(),
-                _row('Tổng cộng', formatVnd(s.total), highlight: true),
+                _row(str.total, formatVnd(s.total), highlight: true),
                 const SizedBox(height: 4),
-                _row('Phương thức', s.paymentMethod == 'cod' ? 'COD' : 'VNPay'),
-                _row('Tình trạng', s.isPaid ? 'Đã thanh toán' : 'Chưa thanh toán'),
+                _row(str.method, s.paymentMethod == 'cod' ? 'COD' : 'VNPay'),
+                _row(str.statusLabel, s.isPaid ? str.paidFull : str.unpaid),
               ]),
             ],
           ),
@@ -132,23 +135,24 @@ class _OrderDetailBodyState extends ConsumerState<_OrderDetailBody> {
   /// Nút hành động thay đổi theo vai trò + trạng thái.
   Widget _actions() {
     final status = order.summary.status;
+    final str = ref.watch(stringsProvider);
     final buttons = <Widget>[];
 
     if (widget.isSeller) {
       if (status == 'pending') {
-        buttons.add(_btn('Xác nhận đơn', () => _doAction('confirm')));
-        buttons.add(_btnOutline('Từ chối', () => _doAction('reject', confirmText: 'Từ chối đơn này? Hàng sẽ được hoàn về kho.')));
+        buttons.add(_btn(str.confirmOrder, () => _doAction('confirm')));
+        buttons.add(_btnOutline(str.reject, () => _doAction('reject', confirmText: str.rejectConfirm)));
       } else if (status == 'confirmed') {
-        buttons.add(_btn('Giao hàng', () => _doAction('ship')));
+        buttons.add(_btn(str.ship, () => _doAction('ship')));
       }
     } else {
       if (status == 'pending') {
-        buttons.add(_btnOutline('Hủy đơn', () => _doAction('cancel', confirmText: 'Bạn chắc chắn muốn hủy đơn này?')));
+        buttons.add(_btnOutline(str.cancelOrder, () => _doAction('cancel', confirmText: str.cancelOrderConfirm)));
       } else if (status == 'shipping') {
-        buttons.add(_btn('Đã nhận hàng', () => _doAction('received', confirmText: 'Xác nhận bạn đã nhận được hàng?')));
+        buttons.add(_btn(str.received, () => _doAction('received', confirmText: str.receivedConfirm)));
       } else if (status == 'completed') {
         for (final item in order.items.where((i) => !i.reviewed && i.productId != null)) {
-          buttons.add(_btnOutline('Đánh giá: ${item.productName}', () => _openReview(item)));
+          buttons.add(_btnOutline(str.reviewProductLabel(item.productName), () => _openReview(item)));
         }
       }
     }
@@ -255,8 +259,9 @@ class _ReviewDialogState extends ConsumerState<_ReviewDialog> {
 
   @override
   Widget build(BuildContext context) {
+    final str = ref.watch(stringsProvider);
     return AlertDialog(
-      title: const Text('Đánh giá sản phẩm'),
+      title: Text(str.reviewProductTitle),
       content: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
@@ -273,17 +278,17 @@ class _ReviewDialogState extends ConsumerState<_ReviewDialog> {
           TextField(
             controller: _comment,
             maxLines: 3,
-            decoration: const InputDecoration(hintText: 'Nhận xét của bạn (không bắt buộc)'),
+            decoration: InputDecoration(hintText: str.reviewHint),
           ),
         ],
       ),
       actions: [
-        TextButton(onPressed: () => Navigator.pop(context, false), child: const Text('Hủy')),
+        TextButton(onPressed: () => Navigator.pop(context, false), child: Text(str.cancel)),
         FilledButton(
           onPressed: _saving ? null : _submit,
           child: _saving
               ? const SizedBox(height: 20, width: 20, child: CircularProgressIndicator(strokeWidth: 2))
-              : const Text('Gửi'),
+              : Text(str.send),
         ),
       ],
     );

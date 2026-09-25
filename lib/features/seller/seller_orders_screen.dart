@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../app/theme.dart';
+import '../../core/i18n/app_strings.dart';
 import '../../widgets/async_view.dart';
 import '../../widgets/pill_tab_bar.dart';
 import '../order/order_providers.dart';
@@ -11,24 +12,20 @@ import '../order/orders_screen.dart' show OrderCard;
 class SellerOrdersScreen extends ConsumerWidget {
   const SellerOrdersScreen({super.key});
 
-  static const _tabs = <(String, String?)>[
-    ('Chờ xác nhận', 'pending'),
-    ('Đã xác nhận', 'confirmed'),
-    ('Đang giao', 'shipping'),
-    ('Hoàn thành', 'completed'),
-    ('Tất cả', null),
-  ];
+  static const _statuses = <String?>['pending', 'confirmed', 'shipping', 'completed', null];
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final s = ref.watch(stringsProvider);
+    final labels = [s.tabPending, s.tabConfirmed, s.tabShipping, s.tabCompleted, s.all];
     return DefaultTabController(
-      length: _tabs.length,
+      length: _statuses.length,
       child: Scaffold(
         appBar: AppBar(
-          title: const Text('Đơn hàng của shop'),
-          bottom: pillTabBar(_tabs.map((t) => t.$1).toList()),
+          title: Text(s.myShopOrders),
+          bottom: pillTabBar(labels),
         ),
-        body: TabBarView(children: _tabs.map((t) => _ShopOrderList(status: t.$2)).toList()),
+        body: TabBarView(children: _statuses.map((st) => _ShopOrderList(status: st)).toList()),
       ),
     );
   }
@@ -41,6 +38,7 @@ class _ShopOrderList extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final async = ref.watch(shopOrdersProvider(status));
+    final s = ref.watch(stringsProvider);
     return RefreshIndicator(
       color: AppColors.brand,
       onRefresh: () => ref.refresh(shopOrdersProvider(status).future),
@@ -49,9 +47,9 @@ class _ShopOrderList extends ConsumerWidget {
         onRetry: () => ref.invalidate(shopOrdersProvider(status)),
         data: (orders) {
           if (orders.isEmpty) {
-            return ListView(children: const [
-              SizedBox(height: 120),
-              EmptyView(message: 'Không có đơn nào', icon: Icons.receipt_long_outlined),
+            return ListView(children: [
+              const SizedBox(height: 120),
+              EmptyView(message: s.noOrdersShort, icon: Icons.receipt_long_outlined),
             ]);
           }
           return ListView.builder(

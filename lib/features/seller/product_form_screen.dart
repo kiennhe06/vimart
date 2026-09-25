@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:image_picker/image_picker.dart';
 
 import '../../app/theme.dart';
+import '../../core/i18n/app_strings.dart';
 import '../../core/providers.dart';
 import '../../models/category.dart';
 import '../../models/product.dart';
@@ -46,7 +47,7 @@ class _ProductFormScreenState extends ConsumerState<ProductFormScreen> {
       final url = await ref.read(apiClientProvider).uploadImage(picked.path);
       setState(() => _imageUrl.text = url);
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Đã tải ảnh lên')));
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(ref.read(stringsProvider).imageUploaded)));
       }
     } catch (e) {
       if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(e.toString())));
@@ -119,7 +120,7 @@ class _ProductFormScreenState extends ConsumerState<ProductFormScreen> {
       ref.invalidate(myProductsProvider);
       if (widget.productId != null) ref.invalidate(productDetailProvider(widget.productId!));
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Đã lưu sản phẩm')));
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(ref.read(stringsProvider).productSaved)));
         Navigator.pop(context);
       }
     } catch (e) {
@@ -132,12 +133,13 @@ class _ProductFormScreenState extends ConsumerState<ProductFormScreen> {
   @override
   Widget build(BuildContext context) {
     final categoriesAsync = ref.watch(categoriesProvider);
+    final s = ref.watch(stringsProvider);
 
     // Khi chỉnh sửa: chờ tải chi tiết để prefill.
     if (_isEdit && !_prefilled) {
       final detailAsync = ref.watch(productDetailProvider(widget.productId!));
       return Scaffold(
-        appBar: AppBar(title: const Text('Sửa sản phẩm')),
+        appBar: AppBar(title: Text(s.editProduct)),
         body: AsyncView(
           value: detailAsync,
           onRetry: () => ref.invalidate(productDetailProvider(widget.productId!)),
@@ -150,12 +152,13 @@ class _ProductFormScreenState extends ConsumerState<ProductFormScreen> {
     }
 
     return Scaffold(
-      appBar: AppBar(title: Text(_isEdit ? 'Sửa sản phẩm' : 'Thêm sản phẩm')),
+      appBar: AppBar(title: Text(_isEdit ? s.editProduct : s.addProduct)),
       body: _buildForm(categoriesAsync),
     );
   }
 
   Widget _buildForm(AsyncValue<List<Category>> categoriesAsync) {
+    final s = ref.watch(stringsProvider);
     return Column(
       children: [
         Expanded(
@@ -166,14 +169,14 @@ class _ProductFormScreenState extends ConsumerState<ProductFormScreen> {
               children: [
                 TextFormField(
                   controller: _name,
-                  decoration: const InputDecoration(labelText: 'Tên sản phẩm'),
-                  validator: (v) => (v == null || v.trim().length < 2) ? 'Nhập tên sản phẩm' : null,
+                  decoration: InputDecoration(labelText: s.productName),
+                  validator: (v) => (v == null || v.trim().length < 2) ? s.enterProductName : null,
                 ),
                 const SizedBox(height: 12),
                 categoriesAsync.maybeWhen(
                   data: (cats) => DropdownButtonFormField<int>(
                     initialValue: _categoryId,
-                    decoration: const InputDecoration(labelText: 'Danh mục'),
+                    decoration: InputDecoration(labelText: s.category),
                     items: cats
                         .map((c) => DropdownMenuItem(value: c.id, child: Text(c.name)))
                         .toList(),
@@ -182,7 +185,7 @@ class _ProductFormScreenState extends ConsumerState<ProductFormScreen> {
                   orElse: () => const SizedBox.shrink(),
                 ),
                 const SizedBox(height: 12),
-                const Text('Ảnh sản phẩm', style: TextStyle(fontSize: 13, color: Colors.grey)),
+                Text(s.productImage, style: const TextStyle(fontSize: 13, color: Colors.grey)),
                 const SizedBox(height: 6),
                 Row(
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -209,13 +212,13 @@ class _ProductFormScreenState extends ConsumerState<ProductFormScreen> {
                             icon: _uploadingImage
                                 ? const SizedBox(height: 16, width: 16, child: CircularProgressIndicator(strokeWidth: 2))
                                 : const Icon(Icons.image_outlined, color: AppColors.brand),
-                            label: Text(_uploadingImage ? 'Đang tải ảnh...' : 'Chọn ảnh từ máy'),
+                            label: Text(_uploadingImage ? s.uploadingImage : s.pickImage),
                           ),
                           const SizedBox(height: 8),
                           TextFormField(
                             controller: _imageUrl,
-                            decoration: const InputDecoration(
-                              labelText: 'hoặc dán link ảnh',
+                            decoration: InputDecoration(
+                              labelText: s.orPasteImageLink,
                               hintText: 'https://...',
                               isDense: true,
                             ),
@@ -229,18 +232,18 @@ class _ProductFormScreenState extends ConsumerState<ProductFormScreen> {
                 TextFormField(
                   controller: _description,
                   maxLines: 4,
-                  decoration: const InputDecoration(labelText: 'Mô tả'),
+                  decoration: InputDecoration(labelText: s.description),
                 ),
                 const Divider(height: 32),
                 Row(
                   children: [
-                    const Text('Phân loại (giá + tồn kho)',
-                        style: TextStyle(fontWeight: FontWeight.bold)),
+                    Text(s.variantsSection,
+                        style: const TextStyle(fontWeight: FontWeight.bold)),
                     const Spacer(),
                     TextButton.icon(
                       onPressed: () => setState(() => _variants.add(_VariantControllers())),
                       icon: const Icon(Icons.add),
-                      label: const Text('Thêm'),
+                      label: Text(s.addShort),
                     ),
                   ],
                 ),
@@ -256,7 +259,7 @@ class _ProductFormScreenState extends ConsumerState<ProductFormScreen> {
               onPressed: _saving ? null : _save,
               child: _saving
                   ? const SizedBox(height: 22, width: 22, child: CircularProgressIndicator(strokeWidth: 2))
-                  : const Text('Lưu sản phẩm'),
+                  : Text(s.saveProduct),
             ),
           ),
         ),
@@ -266,6 +269,7 @@ class _ProductFormScreenState extends ConsumerState<ProductFormScreen> {
 
   Widget _variantRow(int index) {
     final v = _variants[index];
+    final s = ref.watch(stringsProvider);
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 6),
       child: Row(
@@ -274,7 +278,7 @@ class _ProductFormScreenState extends ConsumerState<ProductFormScreen> {
             flex: 3,
             child: TextFormField(
               controller: v.name,
-              decoration: const InputDecoration(labelText: 'Tên (vd: Đỏ/L)'),
+              decoration: InputDecoration(labelText: s.variantNameHint),
             ),
           ),
           const SizedBox(width: 8),
@@ -283,8 +287,8 @@ class _ProductFormScreenState extends ConsumerState<ProductFormScreen> {
             child: TextFormField(
               controller: v.price,
               keyboardType: TextInputType.number,
-              decoration: const InputDecoration(labelText: 'Giá'),
-              validator: (val) => (int.tryParse(val ?? '') == null) ? 'Số' : null,
+              decoration: InputDecoration(labelText: s.price),
+              validator: (val) => (int.tryParse(val ?? '') == null) ? s.mustBeNumber : null,
             ),
           ),
           const SizedBox(width: 8),
@@ -293,8 +297,8 @@ class _ProductFormScreenState extends ConsumerState<ProductFormScreen> {
             child: TextFormField(
               controller: v.stock,
               keyboardType: TextInputType.number,
-              decoration: const InputDecoration(labelText: 'Kho'),
-              validator: (val) => (int.tryParse(val ?? '') == null) ? 'Số' : null,
+              decoration: InputDecoration(labelText: s.stock),
+              validator: (val) => (int.tryParse(val ?? '') == null) ? s.mustBeNumber : null,
             ),
           ),
           if (_variants.length > 1)

@@ -3,13 +3,6 @@ import 'package:flutter/widgets.dart';
 
 import '../home_ui.dart';
 
-/// Một mục trong thanh điều hướng.
-class NavItemData {
-  const NavItemData({required this.icon, required this.label});
-  final IconData icon;
-  final String label;
-}
-
 /// Thanh điều hướng dưới cùng dạng "viên thuốc" nổi — mỗi mục là 1 vòng tròn.
 /// Mục đang chọn: vòng tròn tô màu xanh nhạt + viền xanh + icon xanh.
 /// (Tự dựng bằng Container + Row + GestureDetector — không dùng NavigationBar.)
@@ -18,6 +11,7 @@ class VimartBottomNav extends StatelessWidget {
     super.key,
     required this.currentIndex,
     required this.onTap,
+    required this.labels,
     this.cartCount = 0,
   });
 
@@ -25,11 +19,14 @@ class VimartBottomNav extends StatelessWidget {
   final ValueChanged<int> onTap;
   final int cartCount;
 
-  static const List<NavItemData> _items = [
-    NavItemData(icon: Icons.home_rounded, label: 'Trang chủ'),
-    NavItemData(icon: Icons.shopping_cart_rounded, label: 'Giỏ hàng'),
-    NavItemData(icon: Icons.receipt_long_rounded, label: 'Đơn hàng'),
-    NavItemData(icon: Icons.person_rounded, label: 'Tài khoản'),
+  /// Nhãn (đã dịch) cho từng mục — dùng làm Semantics label cho icon.
+  final List<String> labels;
+
+  static const List<IconData> _icons = [
+    Icons.home_rounded,
+    Icons.shopping_cart_rounded,
+    Icons.receipt_long_rounded,
+    Icons.person_rounded,
   ];
 
   @override
@@ -48,9 +45,10 @@ class VimartBottomNav extends StatelessWidget {
         child: Row(
           mainAxisAlignment: MainAxisAlignment.spaceAround,
           children: [
-            for (int i = 0; i < _items.length; i++)
+            for (int i = 0; i < _icons.length; i++)
               _NavCircle(
-                data: _items[i],
+                icon: _icons[i],
+                label: i < labels.length ? labels[i] : '',
                 selected: i == currentIndex,
                 badgeCount: i == 1 ? cartCount : 0,
                 onTap: () => onTap(i),
@@ -64,23 +62,29 @@ class VimartBottomNav extends StatelessWidget {
 
 class _NavCircle extends StatelessWidget {
   const _NavCircle({
-    required this.data,
+    required this.icon,
+    required this.label,
     required this.selected,
     required this.onTap,
     this.badgeCount = 0,
   });
 
-  final NavItemData data;
+  final IconData icon;
+  final String label;
   final bool selected;
   final VoidCallback onTap;
   final int badgeCount;
 
   @override
   Widget build(BuildContext context) {
-    return GestureDetector(
-      behavior: HitTestBehavior.opaque,
-      onTap: onTap,
-      child: Stack(
+    return Semantics(
+      button: true,
+      selected: selected,
+      label: label,
+      child: GestureDetector(
+        behavior: HitTestBehavior.opaque,
+        onTap: onTap,
+        child: Stack(
         clipBehavior: Clip.none,
         children: [
           AnimatedContainer(
@@ -95,7 +99,7 @@ class _NavCircle extends StatelessWidget {
                 width: selected ? 2 : 1.2,
               ),
             ),
-            child: Icon(data.icon, size: 24, color: selected ? HomeColors.brand : HomeColors.textSecondary),
+            child: Icon(icon, size: 24, color: selected ? HomeColors.brand : HomeColors.textSecondary),
           ),
           if (badgeCount > 0)
             Positioned(
@@ -117,6 +121,7 @@ class _NavCircle extends StatelessWidget {
               ),
             ),
         ],
+        ),
       ),
     );
   }

@@ -156,22 +156,23 @@ class ProfileScreen extends ConsumerWidget {
   }
 
   Future<void> _openShopDialog(BuildContext context, WidgetRef ref) async {
+    final s = ref.read(stringsProvider);
     final nameCtrl = TextEditingController();
     final descCtrl = TextEditingController();
     final created = await showDialog<bool>(
       context: context,
       builder: (ctx) => AlertDialog(
-        title: const Text('Mở shop bán hàng'),
+        title: Text(s.openShop),
         content: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            TextField(controller: nameCtrl, decoration: const InputDecoration(labelText: 'Tên shop')),
+            TextField(controller: nameCtrl, decoration: InputDecoration(labelText: s.shopNameLabel)),
             const SizedBox(height: 12),
-            TextField(controller: descCtrl, decoration: const InputDecoration(labelText: 'Giới thiệu (không bắt buộc)')),
+            TextField(controller: descCtrl, decoration: InputDecoration(labelText: s.shopDescOptional)),
           ],
         ),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('Hủy')),
+          TextButton(onPressed: () => Navigator.pop(ctx, false), child: Text(s.cancel)),
           FilledButton(
             onPressed: () async {
               if (nameCtrl.text.trim().length < 2) return;
@@ -186,13 +187,13 @@ class ProfileScreen extends ConsumerWidget {
                 }
               }
             },
-            child: const Text('Tạo shop'),
+            child: Text(s.createShop),
           ),
         ],
       ),
     );
     if (created == true && context.mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Mở shop thành công!')));
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(s.shopCreated)));
     }
   }
 }

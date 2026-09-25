@@ -236,7 +236,7 @@ class _ProductDetailScreenState extends ConsumerState<ProductDetailScreen> {
           border: Border.all(color: isSel ? AppColors.brand : const Color(0xFFECEFF1)),
         ),
         child: Text(
-          '${v.name}${v.inStock ? '' : ' (hết)'}',
+          '${v.name}${v.inStock ? '' : ref.read(stringsProvider).outSuffix}',
           style: TextStyle(
             color: isSel ? Colors.white : Colors.black87,
             fontWeight: FontWeight.w600,
