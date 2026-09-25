@@ -166,6 +166,8 @@ class AppStrings {
   String get district => _('Quận/Huyện', 'District');
   String get province => _('Tỉnh/Thành phố', 'Province/City');
   String get saveAddress => _('Lưu địa chỉ', 'Save address');
+  String get addressSaved => _('Đã lưu địa chỉ', 'Address saved');
+  String get newAddress => _('Địa chỉ mới', 'New address');
 
   // ---- Thanh toán (checkout) ----
   String get checkout => _('Thanh toán', 'Checkout');
