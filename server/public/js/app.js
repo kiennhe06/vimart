@@ -9,21 +9,51 @@ const modalRoot = document.getElementById('modalRoot');
 
 const state = { user: null };
 
-const NAV = [
-  { key: 'dashboard', icon: '📊', label: 'Tổng quan' },
-  { key: 'products', icon: '🛍️', label: 'Sản phẩm' },
-  { key: 'users', icon: '👥', label: 'Người dùng' },
-  { key: 'orders', icon: '📦', label: 'Đơn hàng' },
-  { key: 'categories', icon: '🏷️', label: 'Danh mục' },
-];
+// ---------- Song ngữ (i18n) — Việt / Anh ----------
+// Helper inline: L('tiếng Việt', 'English') trả về theo ngôn ngữ đang chọn.
+let lang = localStorage.getItem('vimart_admin_lang') || 'vi';
+function L(vi, en) { return lang === 'en' ? en : vi; }
+function setLang(code) {
+  lang = code;
+  localStorage.setItem('vimart_admin_lang', code);
+  route();
+}
 
-const STATUS = {
-  pending: ['Chờ xác nhận', '#f59e0b'],
-  confirmed: ['Đã xác nhận', '#2563eb'],
-  shipping: ['Đang giao', '#7c3aed'],
-  completed: ['Hoàn thành', '#2e7d32'],
-  cancelled: ['Đã hủy', '#d32f2f'],
+const NAV = [
+  { key: 'dashboard', icon: '📊' },
+  { key: 'products', icon: '🛍️' },
+  { key: 'users', icon: '👥' },
+  { key: 'orders', icon: '📦' },
+  { key: 'categories', icon: '🏷️' },
+];
+// Nhãn menu theo ngôn ngữ.
+function navLabel(key) {
+  return {
+    dashboard: L('Tổng quan', 'Overview'),
+    products: L('Sản phẩm', 'Products'),
+    users: L('Người dùng', 'Users'),
+    orders: L('Đơn hàng', 'Orders'),
+    categories: L('Danh mục', 'Categories'),
+  }[key] || key;
+}
+
+// Chỉ giữ màu theo trạng thái; nhãn lấy động qua statusLabel().
+const STATUS_COLOR = {
+  pending: '#f59e0b',
+  confirmed: '#2563eb',
+  shipping: '#7c3aed',
+  completed: '#2e7d32',
+  cancelled: '#d32f2f',
 };
+function statusLabel(s) {
+  return {
+    pending: L('Chờ xác nhận', 'Pending'),
+    confirmed: L('Đã xác nhận', 'Confirmed'),
+    shipping: L('Đang giao', 'Shipping'),
+    completed: L('Hoàn thành', 'Completed'),
+    cancelled: L('Đã hủy', 'Cancelled'),
+  }[s] || s;
+}
 
 // ---------- Bộ icon SVG (nét mảnh, đồng bộ kiểu Lucide) ----------
 const ICONS = {
@@ -53,8 +83,8 @@ function toast(msg) {
   el._t = setTimeout(() => (el.hidden = true), 2600);
 }
 function statusChip(s) {
-  const [label, color] = STATUS[s] || [s, '#888'];
-  return `<span class="status" style="color:${color};background:${color}22">${label}</span>`;
+  const color = STATUS_COLOR[s] || '#888';
+  return `<span class="status" style="color:${color};background:${color}22">${statusLabel(s)}</span>`;
 }
 function openModal(html) {
   modalRoot.innerHTML = `<div class="overlay" data-action="close-bg"><div class="modal">${html}</div></div>`;
@@ -76,15 +106,19 @@ function renderLogin(message) {
   app.innerHTML = `
     <div class="login-wrap">
       <div class="login-card">
+        <div class="login-lang">
+          <button class="lang-pill ${lang === 'vi' ? 'lang-pill--on' : ''}" data-action="lang-vi">VI</button>
+          <button class="lang-pill ${lang === 'en' ? 'lang-pill--on' : ''}" data-action="lang-en">EN</button>
+        </div>
         <h1>ViMart Admin</h1>
-        <p>Trang quản trị sàn — chỉ dành cho admin</p>
+        <p>${L('Trang quản trị sàn — chỉ dành cho admin', 'Marketplace admin panel — admins only')}</p>
         ${message ? `<p style="color:var(--danger)">${escapeHtml(message)}</p>` : ''}
         <form id="loginForm">
-          <div class="field"><label>Email</label><input name="email" type="email" required value="admin@vimart.vn"/></div>
-          <div class="field"><label>Mật khẩu</label><input name="password" type="password" required/></div>
-          <button class="btn btn--primary btn--block" type="submit">Đăng nhập</button>
+          <div class="field"><label>${L('Email', 'Email')}</label><input name="email" type="email" required value="admin@vimart.vn"/></div>
+          <div class="field"><label>${L('Mật khẩu', 'Password')}</label><input name="password" type="password" required/></div>
+          <button class="btn btn--primary btn--block" type="submit">${L('Đăng nhập', 'Sign in')}</button>
         </form>
-        <p style="margin-top:16px">Tài khoản admin thử: admin@vimart.vn / 123456</p>
+        <p style="margin-top:16px">${L('Tài khoản admin thử', 'Demo admin account')}: admin@vimart.vn / 123456</p>
       </div>
     </div>`;
 
@@ -95,7 +129,8 @@ function renderLogin(message) {
       const res = await Api.post('/auth/login', { email: f.email.value.trim(), password: f.password.value });
       if (res.user.role !== 'admin') {
         Api.setToken(null);
-        return renderLogin('Tài khoản này không phải admin. Vui lòng dùng tài khoản quản trị.');
+        return renderLogin(L('Tài khoản này không phải admin. Vui lòng dùng tài khoản quản trị.',
+          'This account is not an admin. Please use an administrator account.'));
       }
       Api.setToken(res.token);
       state.user = res.user;
@@ -110,7 +145,7 @@ function renderLogin(message) {
 // ---------- Khung dashboard ----------
 function renderShell(activeKey) {
   const tabs = NAV.map((n) => `
-    <div class="tab ${n.key === activeKey ? 'tab--active' : ''}" data-nav="${n.key}">${n.label}</div>`).join('');
+    <div class="tab ${n.key === activeKey ? 'tab--active' : ''}" data-nav="${n.key}">${navLabel(n.key)}</div>`).join('');
   const initial = (state.user.fullName || '?').charAt(0).toUpperCase();
 
   app.innerHTML = `
@@ -119,12 +154,16 @@ function renderShell(activeKey) {
         <div class="topnav__brand">Vi<span>Mart</span></div>
         <nav class="tabs">${tabs}</nav>
         <div class="topnav__actions">
-          <div class="circle-btn" title="Tìm kiếm">${ic('search', 'i20')}</div>
-          <div class="circle-btn" title="Thông báo">${ic('bell', 'i20')}</div>
-          <div class="avatar" data-action="logout" title="Đăng xuất (${escapeHtml(state.user.fullName)})">${initial}</div>
+          <div class="lang-switch" title="${L('Ngôn ngữ', 'Language')}">
+            <button class="lang-pill ${lang === 'vi' ? 'lang-pill--on' : ''}" data-action="lang-vi">VI</button>
+            <button class="lang-pill ${lang === 'en' ? 'lang-pill--on' : ''}" data-action="lang-en">EN</button>
+          </div>
+          <div class="circle-btn" title="${L('Tìm kiếm', 'Search')}">${ic('search', 'i20')}</div>
+          <div class="circle-btn" title="${L('Thông báo', 'Notifications')}">${ic('bell', 'i20')}</div>
+          <div class="avatar" data-action="logout" title="${L('Đăng xuất', 'Sign out')} (${escapeHtml(state.user.fullName)})">${initial}</div>
         </div>
       </header>
-      <main class="content" id="content"><div class="center-msg">Đang tải...</div></main>
+      <main class="content" id="content"><div class="center-msg">${L('Đang tải...', 'Loading...')}</div></main>
     </div>`;
 }
 
@@ -136,7 +175,7 @@ function currentKey() {
 
 async function route() {
   if (!state.user) return renderLogin();
-  if (state.user.role !== 'admin') return renderLogin('Tài khoản không có quyền admin.');
+  if (state.user.role !== 'admin') return renderLogin(L('Tài khoản không có quyền admin.', 'This account has no admin permission.'));
 
   const key = currentKey();
   renderShell(key);
@@ -165,8 +204,8 @@ async function viewDashboard(el) {
 
   el.innerHTML = `<div class="dash">
     <div class="dash__col">${heroCard(s)}${revenueFlowCard(orders)}${recentOrdersCard(orders)}</div>
-    <div class="dash__col">${miniCard(ic('box', 'i20'), 'rgba(55,214,122,.16)', '#37d67a', 'Tổng đơn hàng', s.totalOrders, 'up')}
-      ${miniCard(ic('bag', 'i20'), 'rgba(244,81,30,.16)', '#ff9a3d', 'Sản phẩm đang bán', s.totalProducts, null)}
+    <div class="dash__col">${miniCard(ic('box', 'i20'), 'rgba(55,214,122,.16)', '#37d67a', L('Tổng đơn hàng', 'Total orders'), s.totalOrders, 'up')}
+      ${miniCard(ic('bag', 'i20'), 'rgba(244,81,30,.16)', '#ff9a3d', L('Sản phẩm đang bán', 'Active products'), s.totalProducts, null)}
       ${categoryDonutCard(products, cats)}</div>
     <div class="dash__col">${vmartCard(s)}${categoryListCard(products, cats)}</div>
   </div>`;
@@ -176,19 +215,19 @@ async function viewDashboard(el) {
 function heroCard(s) {
   return `<div class="hero">
     <div class="hero__tools"><span class="hero__tool">${ic('grid', 'i16')}</span><span class="hero__tool">${ic('file', 'i16')}</span></div>
-    <div class="hero__label">Doanh thu (đơn hoàn thành)</div>
+    <div class="hero__label">${L('Doanh thu (đơn hoàn thành)', 'Revenue (completed orders)')}</div>
     <div class="hero__value">${fmtVnd(s.totalRevenue)}</div>
-    <div class="hero__sub">+${s.totalOrders} đơn · ${s.totalUsers} người dùng trên sàn</div>
+    <div class="hero__sub">${L(`+${s.totalOrders} đơn · ${s.totalUsers} người dùng trên sàn`, `+${s.totalOrders} orders · ${s.totalUsers} users on the platform`)}</div>
     <div class="hero__actions">
-      <button class="hero__btn hero__btn--dark" data-nav="orders">Xem đơn hàng</button>
-      <button class="hero__btn hero__btn--light" data-nav="products">Sản phẩm</button>
+      <button class="hero__btn hero__btn--dark" data-nav="orders">${L('Xem đơn hàng', 'View orders')}</button>
+      <button class="hero__btn hero__btn--light" data-nav="products">${L('Sản phẩm', 'Products')}</button>
     </div>
   </div>`;
 }
 
 function miniCard(icon, iconBg, iconColor, label, value, trend) {
   const badge = trend === 'up'
-    ? '<span class="pill pill--up">● Hoạt động</span>'
+    ? `<span class="pill pill--up">● ${L('Hoạt động', 'Active')}</span>`
     : (trend === 'down' ? '<span class="pill pill--down">▼</span>' : '');
   return `<div class="mini">
     <div class="mini__row">
@@ -222,15 +261,15 @@ function revenueFlowCard(orders) {
     const tag = hot ? `<div class="bar__tag">+${Math.round((d.count / totalWeek) * 100)}%</div>` : '';
     return `<div class="bar-col">
       <div class="bar-wrap">${tag}
-        <div class="bar ${hot ? 'bar--hot' : ''}" style="height:${Math.max(8, Math.round((d.count / max) * 100))}%" title="${d.count} đơn"></div>
+        <div class="bar ${hot ? 'bar--hot' : ''}" style="height:${Math.max(8, Math.round((d.count / max) * 100))}%" title="${L(`${d.count} đơn`, `${d.count} orders`)}"></div>
       </div>
       <div class="bar-lbl">${d.label}</div>
     </div>`;
   }).join('');
 
   return `<div class="dcard">
-    <div class="dcard__head"><h4>Đơn hàng theo ngày</h4><div class="spacer"></div>
-      <span class="pill pill--soft">7 ngày</span></div>
+    <div class="dcard__head"><h4>${L('Đơn hàng theo ngày', 'Orders by day')}</h4><div class="spacer"></div>
+      <span class="pill pill--soft">${L('7 ngày', '7 days')}</span></div>
     <div class="bars">${bars}</div>
   </div>`;
 }
@@ -240,7 +279,7 @@ function categoryDonutCard(products, cats) {
   const name = Object.fromEntries(cats.map((c) => [c.id, c.name]));
   const counts = {};
   products.forEach((p) => {
-    const n = name[p.categoryId] || 'Khác';
+    const n = name[p.categoryId] || L('Khác', 'Other');
     counts[n] = (counts[n] || 0) + 1;
   });
   const entries = Object.entries(counts).sort((a, b) => b[1] - a[1]);
@@ -264,10 +303,10 @@ function categoryDonutCard(products, cats) {
   </div>`).join('');
 
   return `<div class="dcard">
-    <div class="dcard__head"><h4>Sản phẩm theo danh mục</h4></div>
+    <div class="dcard__head"><h4>${L('Sản phẩm theo danh mục', 'Products by category')}</h4></div>
     <div class="donut-wrap">
       <div class="donut" style="background:${gradient}">
-        <div class="donut__center"><div class="donut__total">${products.length}</div><div class="donut__cap">Sản phẩm</div></div>
+        <div class="donut__center"><div class="donut__total">${products.length}</div><div class="donut__cap">${L('Sản phẩm', 'Products')}</div></div>
       </div>
       <div class="legend">${legend}</div>
     </div>
@@ -277,20 +316,20 @@ function categoryDonutCard(products, cats) {
 /** Danh sách đơn hàng gần đây. */
 function recentOrdersCard(orders) {
   const rows = orders.slice(0, 6).map((o) => {
-    const [label, color] = STATUS[o.status] || [o.status, '#888'];
+    const color = STATUS_COLOR[o.status] || '#888';
     return `<div class="litem">
       <div class="litem__icon" style="background:${color}22;color:${color}">${ic('box', 'i18')}</div>
       <div><div class="litem__name">${escapeHtml(o.code)}</div>
         <div class="litem__sub">${escapeHtml(o.buyer_name || '')} · ${fmtDate(o.created_at).split(' ')[1] || ''}</div></div>
       <div class="spacer"></div>
-      <span class="status" style="color:${color};background:${color}22">${label}</span>
+      <span class="status" style="color:${color};background:${color}22">${statusLabel(o.status)}</span>
       <div class="litem__val" style="color:var(--orange)">${fmtVnd(o.total)}</div>
     </div>`;
-  }).join('') || '<div class="muted" style="padding:12px 0">Chưa có đơn hàng nào.</div>';
+  }).join('') || `<div class="muted" style="padding:12px 0">${L('Chưa có đơn hàng nào.', 'No orders yet.')}</div>`;
 
   return `<div class="dcard">
-    <div class="dcard__head"><h4>Đơn hàng gần đây</h4><div class="spacer"></div>
-      <span class="pill pill--soft" data-nav="orders" style="cursor:pointer">Xem tất cả</span></div>
+    <div class="dcard__head"><h4>${L('Đơn hàng gần đây', 'Recent orders')}</h4><div class="spacer"></div>
+      <span class="pill pill--soft" data-nav="orders" style="cursor:pointer">${L('Xem tất cả', 'View all')}</span></div>
     <div class="rowlist">${rows}</div>
   </div>`;
 }
@@ -298,12 +337,12 @@ function recentOrdersCard(orders) {
 /** Thẻ ViMart (mô phỏng thẻ) + số liệu người dùng/shop. */
 function vmartCard(s) {
   return `<div class="vcard">
-    <div class="vcard__brand">Vi<span>Mart</span> · Sàn TMĐT</div>
+    <div class="vcard__brand">Vi<span>Mart</span> · ${L('Sàn TMĐT', 'Marketplace')}</div>
     <div class="vcard__num">•••• ${String(s.totalOrders).padStart(4, '0')} ••••</div>
     <div class="vcard__foot">
-      <div><div style="opacity:.7;font-size:11px">Người dùng</div><b>${s.totalUsers}</b></div>
-      <div><div style="opacity:.7;font-size:11px">Shop</div><b>${s.totalShops}</b></div>
-      <div><div style="opacity:.7;font-size:11px">Sản phẩm</div><b>${s.totalProducts}</b></div>
+      <div><div style="opacity:.7;font-size:11px">${L('Người dùng', 'Users')}</div><b>${s.totalUsers}</b></div>
+      <div><div style="opacity:.7;font-size:11px">${L('Shop', 'Shops')}</div><b>${s.totalShops}</b></div>
+      <div><div style="opacity:.7;font-size:11px">${L('Sản phẩm', 'Products')}</div><b>${s.totalProducts}</b></div>
     </div>
   </div>`;
 }
@@ -318,13 +357,13 @@ function categoryListCard(products, cats) {
       <div class="litem__icon" style="background:${color}22;color:${color}">${escapeHtml(c.name.charAt(0))}</div>
       <div><div class="litem__name">${escapeHtml(c.name)}</div>
         <div class="litem__sub">${escapeHtml(c.slug)}</div></div>
-      <div class="litem__val">${counts[c.id] || 0} SP</div>
+      <div class="litem__val">${L(`${counts[c.id] || 0} SP`, `${counts[c.id] || 0} items`)}</div>
     </div>`;
   }).join('');
 
   return `<div class="dcard">
-    <div class="dcard__head"><h4>Danh mục</h4><div class="spacer"></div>
-      <span class="pill pill--soft" data-nav="categories" style="cursor:pointer">Quản lý</span></div>
+    <div class="dcard__head"><h4>${L('Danh mục', 'Categories')}</h4><div class="spacer"></div>
+      <span class="pill pill--soft" data-nav="categories" style="cursor:pointer">${L('Quản lý', 'Manage')}</span></div>
     <div class="rowlist">${rows}</div>
   </div>`;
 }
@@ -340,28 +379,28 @@ async function viewProducts(el) {
       <td><b style="color:var(--orange)">${fmtVnd(p.minPrice)}</b></td>
       <td>${p.totalStock}</td>
       <td>${p.status === 'active'
-        ? '<span class="tag tag--on">Đang bán</span>'
-        : '<span class="tag tag--off">Đang ẩn</span>'}</td>
+        ? `<span class="tag tag--on">${L('Đang bán', 'Active')}</span>`
+        : `<span class="tag tag--off">${L('Đang ẩn', 'Hidden')}</span>`}</td>
       <td style="white-space:nowrap">
-        <button class="btn btn--sm" data-action="edit-product" data-id="${p.id}">Sửa</button>
-        <button class="btn btn--sm btn--danger" data-action="del-product" data-id="${p.id}" data-name="${escapeHtml(p.name)}">Xóa</button>
+        <button class="btn btn--sm" data-action="edit-product" data-id="${p.id}">${L('Sửa', 'Edit')}</button>
+        <button class="btn btn--sm btn--danger" data-action="del-product" data-id="${p.id}" data-name="${escapeHtml(p.name)}">${L('Xóa', 'Delete')}</button>
       </td>
     </tr>`).join('');
 
   el.innerHTML = `
-    <div class="section-head"><h3>Sản phẩm (${products.length})</h3><div class="spacer"></div>
-      <button class="btn btn--primary btn--sm" data-action="add-product">+ Thêm sản phẩm</button></div>
+    <div class="section-head"><h3>${L('Sản phẩm', 'Products')} (${products.length})</h3><div class="spacer"></div>
+      <button class="btn btn--primary btn--sm" data-action="add-product">+ ${L('Thêm sản phẩm', 'Add product')}</button></div>
     <div class="panel"><table class="table">
-      <thead><tr><th>Ảnh</th><th>Tên</th><th>Shop</th><th>Giá</th><th>Kho</th><th>Trạng thái</th><th></th></tr></thead>
+      <thead><tr><th>${L('Ảnh', 'Image')}</th><th>${L('Tên', 'Name')}</th><th>Shop</th><th>${L('Giá', 'Price')}</th><th>${L('Kho', 'Stock')}</th><th>${L('Trạng thái', 'Status')}</th><th></th></tr></thead>
       <tbody>${rows}</tbody></table></div>`;
 }
 
 /** 1 dòng nhập phân loại trong form sản phẩm. */
 function variantRowHtml(v = {}) {
   return `<div class="var-row">
-    <input class="var-name" placeholder="Tên (vd: Đỏ/L)" value="${escapeHtml(v.name || '')}"/>
-    <input class="var-price" type="number" placeholder="Giá" value="${v.price ?? ''}"/>
-    <input class="var-stock" type="number" placeholder="Kho" value="${v.stock ?? ''}"/>
+    <input class="var-name" placeholder="${L('Tên (vd: Đỏ/L)', 'Name (e.g. Red/L)')}" value="${escapeHtml(v.name || '')}"/>
+    <input class="var-price" type="number" placeholder="${L('Giá', 'Price')}" value="${v.price ?? ''}"/>
+    <input class="var-stock" type="number" placeholder="${L('Kho', 'Stock')}" value="${v.stock ?? ''}"/>
     <button type="button" class="btn btn--sm btn--danger" data-action="var-remove">×</button>
   </div>`;
 }
@@ -382,36 +421,36 @@ async function productFormModal(prodId) {
 
   openModal(`
     <button class="modal__close" data-action="close">×</button>
-    <h2>${isEdit ? 'Sửa' : 'Thêm'} sản phẩm</h2>
-    <p class="modal__sub">Điền thông tin, ảnh và phân loại (giá + tồn kho)</p>
+    <h2>${isEdit ? L('Sửa sản phẩm', 'Edit product') : L('Thêm sản phẩm', 'Add product')}</h2>
+    <p class="modal__sub">${L('Điền thông tin, ảnh và phân loại (giá + tồn kho)', 'Fill in details, image and variants (price + stock)')}</p>
     <form id="prodForm">
-      <div class="field"><label>Ảnh sản phẩm</label>
+      <div class="field"><label>${L('Ảnh sản phẩm', 'Product image')}</label>
         <div class="row" style="align-items:flex-start;gap:14px">
           <img id="imgPreview" class="thumb-lg" src="${escapeHtml(imageUrl)}" ${imageUrl ? '' : 'style="visibility:hidden"'}/>
           <div style="flex:1">
             <input type="file" id="imgFile" accept="image/*"/>
             <div id="imgStatus" class="muted" style="font-size:12px;margin:6px 0"></div>
-            <input id="imgUrl" placeholder="hoặc dán link ảnh https://..." value="${escapeHtml(imageUrl)}"/>
+            <input id="imgUrl" placeholder="${L('hoặc dán link ảnh https://...', 'or paste image link https://...')}" value="${escapeHtml(imageUrl)}"/>
           </div>
         </div>
       </div>
-      <div class="field"><label>Tên sản phẩm</label><input name="name" required value="${escapeHtml(detail?.name || '')}"/></div>
+      <div class="field"><label>${L('Tên sản phẩm', 'Product name')}</label><input name="name" required value="${escapeHtml(detail?.name || '')}"/></div>
       <div class="field"><label>Shop</label><select name="shopId">
         ${shops.map((s) => `<option value="${s.id}" ${s.id === shopId ? 'selected' : ''}>${escapeHtml(s.name)}</option>`).join('')}
       </select></div>
-      <div class="field"><label>Danh mục</label><select name="categoryId">
-        <option value="">— Không —</option>
+      <div class="field"><label>${L('Danh mục', 'Category')}</label><select name="categoryId">
+        <option value="">${L('— Không —', '— None —')}</option>
         ${cats.map((c) => `<option value="${c.id}" ${c.id === catId ? 'selected' : ''}>${escapeHtml(c.name)}</option>`).join('')}
       </select></div>
-      <div class="field"><label>Trạng thái</label><select name="status">
-        <option value="active" ${detail?.status !== 'hidden' ? 'selected' : ''}>Đang bán</option>
-        <option value="hidden" ${detail?.status === 'hidden' ? 'selected' : ''}>Đang ẩn</option>
+      <div class="field"><label>${L('Trạng thái', 'Status')}</label><select name="status">
+        <option value="active" ${detail?.status !== 'hidden' ? 'selected' : ''}>${L('Đang bán', 'Active')}</option>
+        <option value="hidden" ${detail?.status === 'hidden' ? 'selected' : ''}>${L('Đang ẩn', 'Hidden')}</option>
       </select></div>
-      <div class="field"><label>Mô tả</label><textarea name="description" rows="2">${escapeHtml(detail?.description || '')}</textarea></div>
-      <label style="font-size:13px;color:var(--text-2)">Phân loại (giá + tồn kho)</label>
+      <div class="field"><label>${L('Mô tả', 'Description')}</label><textarea name="description" rows="2">${escapeHtml(detail?.description || '')}</textarea></div>
+      <label style="font-size:13px;color:var(--text-2)">${L('Phân loại (giá + tồn kho)', 'Variants (price + stock)')}</label>
       <div id="variants">${variants.map(variantRowHtml).join('')}</div>
-      <button type="button" class="btn btn--sm" data-action="var-add" style="margin:6px 0 14px">+ Thêm phân loại</button>
-      <button class="btn btn--primary btn--block" type="submit">Lưu sản phẩm</button>
+      <button type="button" class="btn btn--sm" data-action="var-add" style="margin:6px 0 14px">+ ${L('Thêm phân loại', 'Add variant')}</button>
+      <button class="btn btn--primary btn--block" type="submit">${L('Lưu sản phẩm', 'Save product')}</button>
     </form>`);
 
   // Upload ảnh khi chọn file
@@ -421,13 +460,13 @@ async function productFormModal(prodId) {
     const file = e.target.files[0];
     if (!file) return;
     const status = document.getElementById('imgStatus');
-    status.textContent = 'Đang tải ảnh...';
+    status.textContent = L('Đang tải ảnh...', 'Uploading image...');
     try {
       const url = await Api.uploadImage(file);
       urlInput.value = url;
       preview.src = url;
       preview.style.visibility = 'visible';
-      status.textContent = '✅ Đã tải ảnh';
+      status.textContent = L('✅ Đã tải ảnh', '✅ Image uploaded');
     } catch (err) {
       status.textContent = '❌ ' + err.message;
     }
@@ -460,7 +499,7 @@ async function productFormModal(prodId) {
       if (isEdit) await Api.put('/admin/products/' + prodId, body);
       else await Api.post('/admin/products', body);
       closeModal();
-      toast('Đã lưu sản phẩm');
+      toast(L('Đã lưu sản phẩm', 'Product saved'));
       route();
     } catch (err) {
       toast(err.message);
@@ -478,21 +517,21 @@ async function viewUsers(el) {
       <td>${escapeHtml(u.email)}</td>
       <td><span class="tag ${u.role === 'admin' ? 'tag--admin' : 'tag--user'}">${u.role}</span></td>
       <td>${u.shop ? escapeHtml(u.shop.name) : '<span class="muted">—</span>'}</td>
-      <td><span class="tag ${u.isActive ? 'tag--on' : 'tag--off'}">${u.isActive ? 'Hoạt động' : 'Đã khóa'}</span></td>
+      <td><span class="tag ${u.isActive ? 'tag--on' : 'tag--off'}">${u.isActive ? L('Hoạt động', 'Active') : L('Đã khóa', 'Locked')}</span></td>
       <td>${u.role === 'admin' ? '' : `<button class="btn btn--sm ${u.isActive ? 'btn--danger' : 'btn--ok'}"
         data-action="toggle-user" data-id="${u.id}" data-active="${u.isActive ? 0 : 1}">
-        ${u.isActive ? 'Khóa' : 'Mở khóa'}</button>`}</td>
+        ${u.isActive ? L('Khóa', 'Lock') : L('Mở khóa', 'Unlock')}</button>`}</td>
     </tr>`).join('');
 
   el.innerHTML = `<div class="panel"><table class="table">
-    <thead><tr><th>ID</th><th>Họ tên</th><th>Email</th><th>Vai trò</th><th>Shop</th><th>Trạng thái</th><th></th></tr></thead>
+    <thead><tr><th>ID</th><th>${L('Họ tên', 'Full name')}</th><th>Email</th><th>${L('Vai trò', 'Role')}</th><th>Shop</th><th>${L('Trạng thái', 'Status')}</th><th></th></tr></thead>
     <tbody>${rows}</tbody></table></div>`;
 }
 
 // ---------- View: Đơn hàng ----------
 async function viewOrders(el) {
   const orders = await Api.get('/admin/orders'); // trả snake_case từ DB
-  if (!orders.length) return (el.innerHTML = '<div class="center-msg">Chưa có đơn hàng nào</div>');
+  if (!orders.length) return (el.innerHTML = `<div class="center-msg">${L('Chưa có đơn hàng nào', 'No orders yet')}</div>`);
   const rows = orders.map((o) => `
     <tr>
       <td><b>${escapeHtml(o.code)}</b></td>
@@ -500,13 +539,13 @@ async function viewOrders(el) {
       <td>${escapeHtml(o.shop_name)}</td>
       <td>${statusChip(o.status)}</td>
       <td>${o.payment_method === 'cod' ? 'COD' : 'VNPay'}
-        ${o.payment_status === 'paid' ? '<span class="tag tag--on">Đã trả</span>' : '<span class="muted">Chưa trả</span>'}</td>
+        ${o.payment_status === 'paid' ? `<span class="tag tag--on">${L('Đã trả', 'Paid')}</span>` : `<span class="muted">${L('Chưa trả', 'Unpaid')}</span>`}</td>
       <td><b style="color:var(--orange)">${fmtVnd(o.total)}</b></td>
       <td class="muted">${fmtDate(o.created_at)}</td>
     </tr>`).join('');
 
   el.innerHTML = `<div class="panel"><table class="table">
-    <thead><tr><th>Mã đơn</th><th>Khách</th><th>Shop</th><th>Trạng thái</th><th>Thanh toán</th><th>Tổng</th><th>Ngày</th></tr></thead>
+    <thead><tr><th>${L('Mã đơn', 'Order')}</th><th>${L('Khách', 'Customer')}</th><th>Shop</th><th>${L('Trạng thái', 'Status')}</th><th>${L('Thanh toán', 'Payment')}</th><th>${L('Tổng', 'Total')}</th><th>${L('Ngày', 'Date')}</th></tr></thead>
     <tbody>${rows}</tbody></table></div>`;
 }
 
@@ -518,11 +557,11 @@ async function viewCategories(el) {
 
   el.innerHTML = `
     <div class="section-head">
-      <h3>Danh mục sản phẩm</h3><div class="spacer"></div>
-      <button class="btn btn--primary btn--sm" data-action="add-cat">+ Thêm danh mục</button>
+      <h3>${L('Danh mục sản phẩm', 'Product categories')}</h3><div class="spacer"></div>
+      <button class="btn btn--primary btn--sm" data-action="add-cat">+ ${L('Thêm danh mục', 'Add category')}</button>
     </div>
     <div class="panel"><table class="table">
-      <thead><tr><th>ID</th><th>Tên</th><th>Slug</th><th>Icon</th></tr></thead>
+      <thead><tr><th>ID</th><th>${L('Tên', 'Name')}</th><th>Slug</th><th>Icon</th></tr></thead>
       <tbody>${rows}</tbody></table></div>`;
 }
 
@@ -537,13 +576,13 @@ function slugify(str) {
 function addCategoryModal() {
   openModal(`
     <button class="modal__close" data-action="close">×</button>
-    <h2>Thêm danh mục</h2>
-    <p class="modal__sub">Tạo nhóm sản phẩm mới cho sàn</p>
+    <h2>${L('Thêm danh mục', 'Add category')}</h2>
+    <p class="modal__sub">${L('Tạo nhóm sản phẩm mới cho sàn', 'Create a new product group for the marketplace')}</p>
     <form id="catForm">
-      <div class="field"><label>Tên danh mục</label><input name="name" placeholder="vd: Đồ chơi" required autofocus/></div>
-      <div class="field"><label>Slug (tự tạo từ tên, có thể sửa)</label><input name="slug" placeholder="vd: do-choi" required/></div>
-      <div class="field"><label>Icon (tên material — không bắt buộc)</label><input name="icon" placeholder="vd: toys"/></div>
-      <button class="btn btn--primary btn--block" type="submit">Lưu danh mục</button>
+      <div class="field"><label>${L('Tên danh mục', 'Category name')}</label><input name="name" placeholder="${L('vd: Đồ chơi', 'e.g. Toys')}" required autofocus/></div>
+      <div class="field"><label>${L('Slug (tự tạo từ tên, có thể sửa)', 'Slug (auto from name, editable)')}</label><input name="slug" placeholder="${L('vd: do-choi', 'e.g. toys')}" required/></div>
+      <div class="field"><label>${L('Icon (tên material — không bắt buộc)', 'Icon (material name — optional)')}</label><input name="icon" placeholder="${L('vd: toys', 'e.g. toys')}"/></div>
+      <button class="btn btn--primary btn--block" type="submit">${L('Lưu danh mục', 'Save category')}</button>
     </form>`);
 
   const form = document.getElementById('catForm');
@@ -563,7 +602,7 @@ function addCategoryModal() {
         icon: f.icon.value.trim() || null,
       });
       closeModal();
-      toast('Đã thêm danh mục');
+      toast(L('Đã thêm danh mục', 'Category added'));
       route();
     } catch (err) {
       toast(err.message);
@@ -580,9 +619,13 @@ document.addEventListener('click', async (e) => {
   if (!el) return;
   const action = el.getAttribute('data-action');
 
-  if (action === 'logout') {
+  if (action === 'lang-vi') {
+    if (lang !== 'vi') setLang('vi');
+  } else if (action === 'lang-en') {
+    if (lang !== 'en') setLang('en');
+  } else if (action === 'logout') {
     e.preventDefault();
-    if (!confirm('Đăng xuất khỏi trang quản trị?')) return;
+    if (!confirm(L('Đăng xuất khỏi trang quản trị?', 'Sign out of the admin panel?'))) return;
     Api.setToken(null);
     state.user = null;
     location.hash = '';
@@ -595,7 +638,7 @@ document.addEventListener('click', async (e) => {
     try {
       await Api.put(`/admin/users/${el.getAttribute('data-id')}/status`,
         { isActive: el.getAttribute('data-active') === '1' });
-      toast('Đã cập nhật tài khoản');
+      toast(L('Đã cập nhật tài khoản', 'Account updated'));
       route();
     } catch (err) {
       toast(err.message);
@@ -607,10 +650,10 @@ document.addEventListener('click', async (e) => {
   } else if (action === 'edit-product') {
     productFormModal(el.getAttribute('data-id'));
   } else if (action === 'del-product') {
-    if (confirm(`Xóa sản phẩm "${el.getAttribute('data-name')}"?`)) {
+    if (confirm(L(`Xóa sản phẩm "${el.getAttribute('data-name')}"?`, `Delete product "${el.getAttribute('data-name')}"?`))) {
       try {
         await Api.del('/admin/products/' + el.getAttribute('data-id'));
-        toast('Đã xóa sản phẩm');
+        toast(L('Đã xóa sản phẩm', 'Product deleted'));
         route();
       } catch (err) {
         toast(err.message);

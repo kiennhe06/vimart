@@ -137,6 +137,16 @@ svg.ic { display: block; stroke: currentColor; stroke-width: 2; fill: none; stro
   cursor: pointer; font-size: 16px;
 }
 .circle-btn:hover { background: rgba(255, 255, 255, 0.12); }
+/* Language switch (VI / EN) */
+.lang-switch { display: flex; gap: 2px; padding: 3px; border-radius: 999px; background: rgba(255, 255, 255, 0.06); border: 1px solid var(--border); }
+.lang-pill {
+  border: none; background: transparent; color: var(--text-2); cursor: pointer;
+  font-weight: 700; font-size: 12px; letter-spacing: .02em; padding: 6px 12px; border-radius: 999px;
+  transition: color .15s, background .15s;
+}
+.lang-pill:hover { color: #fff; }
+.lang-pill--on { color: #fff; background: linear-gradient(135deg, var(--amber), var(--orange)); box-shadow: 0 4px 12px rgba(244, 81, 30, 0.4); }
+.login-lang { display: flex; justify-content: center; gap: 4px; margin-bottom: 14px; }
 .avatar {
   width: 44px; height: 44px; border-radius: 50%; cursor: pointer; color: #fff; font-weight: 800;
   display: flex; align-items: center; justify-content: center;
