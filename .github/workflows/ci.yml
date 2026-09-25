@@ -6,10 +6,48 @@ on:
   pull_request:
     branches: [main]
 
+# Hủy các lần chạy cũ của cùng nhánh/PR khi có push mới (tiết kiệm runner).
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+# Quyền tối thiểu theo mặc định (nguyên tắc least-privilege).
+permissions:
+  contents: read
+
 jobs:
-  backend:
-    name: Backend (lint + format + test)
+  # Phát hiện phạm vi thay đổi để chỉ chạy job liên quan (monorepo).
+  changes:
     runs-on: ubuntu-latest
+    timeout-minutes: 5
+    outputs:
+      backend: ${{ steps.filter.outputs.backend }}
+      flutter: ${{ steps.filter.outputs.flutter }}
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+      - uses: dorny/paths-filter@0e4a8c6effa4802afeda77dc8d303f8176d7dfad # v3
+        id: filter
+        with:
+          filters: |
+            backend:
+              - 'server/**'
+              - '.github/workflows/ci.yml'
+              - 'Makefile'
+            flutter:
+              - 'lib/**'
+              - 'test/**'
+              - 'pubspec.yaml'
+              - 'pubspec.lock'
+              - 'analysis_options.yaml'
+              - '.github/workflows/ci.yml'
+              - 'Makefile'
+
+  backend:
+    name: Backend (lint + format + test + coverage)
+    needs: changes
+    if: ${{ needs.changes.outputs.backend == 'true' }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
     services:
       postgres:
         image: postgres:16
@@ -25,32 +63,88 @@ jobs:
           --health-timeout 5s
           --health-retries 5
     env:
-      # Cùng bộ lệnh với local (Makefile), chỉ khác DATABASE_URL trỏ tới Postgres service.
       DATABASE_URL: postgres://postgres:postgres@localhost:5432/vimart_test
       JWT_SECRET: test-secret
       NODE_ENV: test
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
         with:
           node-version: '22'
           cache: npm
           cache-dependency-path: server/package-lock.json
       - name: Install deps
         run: cd server && npm ci
-      - name: Lint + format + test (make)
-        run: make be-lint be-format-check be-test
+      - name: Lint + format
+        run: make be-lint be-format-check
+      - name: Test + coverage
+        run: make be-coverage
+      - name: Coverage summary
+        if: always()
+        run: |
+          f=server/coverage/lcov.info
+          if [ -f "$f" ]; then
+            found=$(grep -c '^DA:' "$f" || echo 0)
+            hit=$(grep '^DA:' "$f" | awk -F, '$2>0' | wc -l | tr -d ' ')
+            pct=$(awk "BEGIN { if ($found>0) printf \"%.1f\", ($hit/$found)*100; else print \"0\" }")
+            echo "### Backend coverage: ${pct}% (${hit}/${found} lines)" >> "$GITHUB_STEP_SUMMARY"
+          fi
+      - name: Upload coverage
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: backend-coverage
+          path: server/coverage
+          retention-days: 7
+          if-no-files-found: ignore
 
   flutter:
-    name: Flutter (analyze + test)
+    name: Flutter (analyze + test + coverage)
+    needs: changes
+    if: ${{ needs.changes.outputs.flutter == 'true' }}
     runs-on: ubuntu-latest
+    timeout-minutes: 20
     steps:
-      - uses: actions/checkout@v4
-      - uses: subosito/flutter-action@v2
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+      - uses: subosito/flutter-action@1a449444c387b1966244ae4d4f8c696479add0b2 # v2
         with:
           flutter-version: '3.44.3'
           channel: stable
+          cache: true
       - name: Install deps
         run: flutter pub get
-      - name: Analyze + format(test) + test (make)
-        run: make app-analyze app-format-check app-test
+      - name: Analyze + format(test) + test + coverage
+        run: make app-analyze app-format-check app-coverage
+      - name: Coverage summary
+        if: always()
+        run: |
+          if [ -f coverage/lcov.info ]; then
+            found=$(grep -c '^DA:' coverage/lcov.info || echo 0)
+            hit=$(grep '^DA:' coverage/lcov.info | awk -F, '$2>0' | wc -l | tr -d ' ')
+            pct=$(awk "BEGIN { if ($found>0) printf \"%.1f\", ($hit/$found)*100; else print \"0\" }")
+            echo "### Flutter coverage: ${pct}% (${hit}/${found} lines)" >> "$GITHUB_STEP_SUMMARY"
+          fi
+      - name: Upload coverage
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: flutter-coverage
+          path: coverage/lcov.info
+          retention-days: 7
+          if-no-files-found: ignore
+
+  # Cổng tổng hợp: 1 status check duy nhất, xanh nếu không job nào FAIL
+  # (job bị bỏ qua do path-filter không tính là fail).
+  ci-ok:
+    name: CI passed
+    needs: [backend, flutter]
+    if: always()
+    runs-on: ubuntu-latest
+    timeout-minutes: 2
+    steps:
+      - name: Verify no job failed
+        run: |
+          if [ "${{ needs.backend.result }}" = "failure" ] || [ "${{ needs.flutter.result }}" = "failure" ]; then
+            echo "A required job failed."; exit 1;
+          fi
+          echo "All required jobs passed or were skipped."
