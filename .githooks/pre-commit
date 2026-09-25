@@ -1,0 +1,8 @@
+#!/usr/bin/env bash
+# Chạy nhanh trước mỗi commit: kiểm tra format + lint cả 2 phía (không chạy test).
+# Bỏ qua khi cần: git commit --no-verify
+set -e
+
+echo "▶ pre-commit: format-check + lint (backend + Flutter)"
+make format-check lint
+echo "✅ pre-commit OK"

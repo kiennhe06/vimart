@@ -183,13 +183,23 @@ export async function createProduct(ownerId, data) {
 export async function updateProduct(ownerId, productId, data) {
   const shopId = await requireShop(ownerId);
   return withTransaction(async (client) => {
-    const owned = await client.query('SELECT id FROM products WHERE id = $1 AND shop_id = $2', [productId, shopId]);
+    const owned = await client.query('SELECT id FROM products WHERE id = $1 AND shop_id = $2', [
+      productId,
+      shopId,
+    ]);
     if (owned.rows.length === 0) throw new AppError(404, 'Không tìm thấy sản phẩm của shop bạn');
 
     await client.query(
       `UPDATE products SET name=$1, description=$2, category_id=$3, image_url=$4, status=COALESCE($5, status)
        WHERE id=$6`,
-      [data.name, data.description ?? null, data.categoryId ?? null, data.imageUrl ?? null, data.status ?? null, productId]
+      [
+        data.name,
+        data.description ?? null,
+        data.categoryId ?? null,
+        data.imageUrl ?? null,
+        data.status ?? null,
+        productId,
+      ]
     );
 
     // Thay toàn bộ phân loại (xóa cũ, thêm mới)
@@ -207,7 +217,10 @@ export async function updateProduct(ownerId, productId, data) {
 /** Người bán xóa sản phẩm. */
 export async function deleteProduct(ownerId, productId) {
   const shopId = await requireShop(ownerId);
-  const result = await query('DELETE FROM products WHERE id = $1 AND shop_id = $2 RETURNING id', [productId, shopId]);
+  const result = await query('DELETE FROM products WHERE id = $1 AND shop_id = $2 RETURNING id', [
+    productId,
+    shopId,
+  ]);
   if (result.rows.length === 0) throw new AppError(404, 'Không tìm thấy sản phẩm của shop bạn');
 }
 

@@ -9,7 +9,13 @@
     "start": "node src/server.js",
     "db:migrate": "node src/db/migrate.js",
     "db:seed": "node src/db/seed.js",
-    "db:reset": "node src/db/migrate.js && node src/db/seed.js"
+    "db:reset": "node src/db/migrate.js && node src/db/seed.js",
+    "test": "node --test --test-concurrency=1 --import=./test/setup.mjs \"test/*.test.mjs\"",
+    "test:watch": "node --test --watch --import=./test/setup.mjs \"test/*.test.mjs\"",
+    "lint": "eslint .",
+    "lint:fix": "eslint . --fix",
+    "format": "prettier --write .",
+    "format:check": "prettier --check ."
   },
   "engines": {
     "node": ">=20"
@@ -26,5 +32,13 @@
     "multer": "^2.4.0",
     "pg": "^8.23.0",
     "zod": "^4.6.5"
+  },
+  "devDependencies": {
+    "@eslint/js": "^9.15.0",
+    "eslint": "^9.15.0",
+    "eslint-config-prettier": "^9.1.0",
+    "globals": "^15.12.0",
+    "prettier": "^3.3.3",
+    "supertest": "^7.0.0"
   }
 }

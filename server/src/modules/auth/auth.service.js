@@ -63,7 +63,9 @@ export async function getMe(userId) {
   const user = result.rows[0];
   if (!user) throw new AppError(404, 'Không tìm thấy người dùng');
 
-  const shopResult = await query('SELECT id, name, status FROM shops WHERE owner_id = $1', [userId]);
+  const shopResult = await query('SELECT id, name, status FROM shops WHERE owner_id = $1', [
+    userId,
+  ]);
   return {
     ...toPublicUser(user),
     shop: shopResult.rows[0] ?? null, // null nghĩa là chưa mở shop

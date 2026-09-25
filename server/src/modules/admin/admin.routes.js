@@ -175,7 +175,14 @@ router.post(
       const p = await client.query(
         `INSERT INTO products (shop_id, category_id, name, description, image_url, status)
          VALUES ($1,$2,$3,$4,$5,$6) RETURNING id`,
-        [d.shopId, d.categoryId ?? null, d.name, d.description ?? null, d.imageUrl ?? null, d.status ?? 'active']
+        [
+          d.shopId,
+          d.categoryId ?? null,
+          d.name,
+          d.description ?? null,
+          d.imageUrl ?? null,
+          d.status ?? 'active',
+        ]
       );
       await writeVariants(client, p.rows[0].id, d.variants);
       return { id: p.rows[0].id };
@@ -196,7 +203,15 @@ router.put(
       if (exists.rows.length === 0) throw new AppError(404, 'Không tìm thấy sản phẩm');
       await client.query(
         `UPDATE products SET shop_id=$1, category_id=$2, name=$3, description=$4, image_url=$5, status=$6 WHERE id=$7`,
-        [d.shopId, d.categoryId ?? null, d.name, d.description ?? null, d.imageUrl ?? null, d.status ?? 'active', id]
+        [
+          d.shopId,
+          d.categoryId ?? null,
+          d.name,
+          d.description ?? null,
+          d.imageUrl ?? null,
+          d.status ?? 'active',
+          id,
+        ]
       );
       await writeVariants(client, id, d.variants);
     });
@@ -208,7 +223,9 @@ router.put(
 router.delete(
   '/products/:id',
   asyncHandler(async (req, res) => {
-    const result = await query('DELETE FROM products WHERE id = $1 RETURNING id', [Number(req.params.id)]);
+    const result = await query('DELETE FROM products WHERE id = $1 RETURNING id', [
+      Number(req.params.id),
+    ]);
     if (result.rows.length === 0) throw new AppError(404, 'Không tìm thấy sản phẩm');
     return ok(res, { message: 'Đã xóa sản phẩm' });
   })

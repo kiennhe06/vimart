@@ -1,0 +1,9 @@
+#!/usr/bin/env bash
+# Chạy trước khi push: bộ test đầy đủ (backend cần Postgres 'vimart_test' đang chạy).
+# Nếu Postgres chưa bật, dùng: make db-up  (hoặc bật Homebrew Postgres) rồi push lại.
+# Bỏ qua khi cần: git push --no-verify
+set -e
+
+echo "▶ pre-push: chạy test (backend + Flutter)"
+make test
+echo "✅ pre-push OK"

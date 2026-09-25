@@ -31,7 +31,7 @@ const Api = {
         headers,
         body: body ? JSON.stringify(body) : undefined,
       });
-    } catch (e) {
+    } catch (_e) {
       throw new Error('Không kết nối được máy chủ. Kiểm tra backend đã chạy chưa.');
     }
 
