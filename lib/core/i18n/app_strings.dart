@@ -168,6 +168,11 @@ class AppStrings {
   String get saveAddress => _('Lưu địa chỉ', 'Save address');
   String get addressSaved => _('Đã lưu địa chỉ', 'Address saved');
   String get newAddress => _('Địa chỉ mới', 'New address');
+  String get chooseProvince => _('Chọn Tỉnh/Thành phố', 'Select province/city');
+  String get chooseWard => _('Chọn Phường/Xã', 'Select ward/commune');
+  String get chooseProvinceFirst => _('Chọn tỉnh/thành trước', 'Select a province first');
+  String get search => _('Tìm kiếm', 'Search');
+  String get loadListError => _('Không tải được danh sách, thử lại.', 'Could not load the list, try again.');
 
   // ---- Thanh toán (checkout) ----
   String get checkout => _('Thanh toán', 'Checkout');
