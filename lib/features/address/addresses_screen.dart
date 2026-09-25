@@ -8,6 +8,7 @@ import '../../widgets/app_skeleton.dart';
 import '../../widgets/async_view.dart';
 import '../../widgets/entrance.dart';
 import '../../widgets/pressable.dart';
+import 'address_form_sheet.dart';
 import 'address_provider.dart';
 
 /// Màn hình quản lý sổ địa chỉ nhận hàng.
@@ -113,64 +114,7 @@ class AddressesScreen extends ConsumerWidget {
   }
 
   Future<void> _openAdd(BuildContext context, WidgetRef ref) async {
-    final s = ref.read(stringsProvider);
-    final name = TextEditingController();
-    final phone = TextEditingController();
-    final line = TextEditingController();
-    final province = TextEditingController();
-    final formKey = GlobalKey<FormState>();
-
-    final ok = await showDialog<bool>(
-      context: context,
-      builder: (ctx) => AlertDialog(
-        title: Text(s.addAddress),
-        content: Form(
-          key: formKey,
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              _f(name, s.recipientName, s.required),
-              _f(phone, s.phone, s.required, keyboard: TextInputType.phone),
-              _f(line, s.streetLine, s.required),
-              _f(province, s.province, s.required),
-            ],
-          ),
-        ),
-        actions: [
-          TextButton(onPressed: () => Navigator.pop(ctx, false), child: Text(s.cancel)),
-          FilledButton(
-            onPressed: () async {
-              if (!formKey.currentState!.validate()) return;
-              try {
-                await ref.read(addressRepositoryProvider).add(
-                      recipientName: name.text.trim(),
-                      phone: phone.text.trim(),
-                      line: line.text.trim(),
-                      province: province.text.trim(),
-                      isDefault: true,
-                    );
-                if (ctx.mounted) Navigator.pop(ctx, true);
-              } catch (e) {
-                if (ctx.mounted) {
-                  showAppSnack(ctx, e.toString(), type: AppSnackType.error);
-                }
-              }
-            },
-            child: Text(s.save),
-          ),
-        ],
-      ),
-    );
-    if (ok == true) ref.invalidate(addressesProvider);
+    final ok = await showAddAddressSheet(context);
+    if (ok) ref.invalidate(addressesProvider);
   }
-
-  Widget _f(TextEditingController c, String label, String requiredMsg, {TextInputType? keyboard}) => Padding(
-        padding: const EdgeInsets.symmetric(vertical: 4),
-        child: TextFormField(
-          controller: c,
-          keyboardType: keyboard,
-          decoration: InputDecoration(labelText: label),
-          validator: (v) => (v == null || v.trim().isEmpty) ? requiredMsg : null,
-        ),
-      );
 }

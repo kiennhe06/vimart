@@ -14,6 +14,7 @@ import '../../widgets/app_dialog.dart';
 import '../../widgets/app_feedback.dart';
 import '../../widgets/app_skeleton.dart';
 import '../../widgets/async_view.dart';
+import '../address/address_form_sheet.dart';
 import '../address/address_provider.dart';
 import '../cart/cart_provider.dart';
 import '../order/order_providers.dart';
@@ -229,11 +230,8 @@ class _CheckoutScreenState extends ConsumerState<CheckoutScreen> {
   }
 
   Future<void> _openAddAddress() async {
-    final added = await showAppSheet<bool>(
-      context,
-      builder: (_) => const _AddAddressSheet(),
-    );
-    if (added == true) ref.invalidate(addressesProvider);
+    final added = await showAddAddressSheet(context);
+    if (added) ref.invalidate(addressesProvider);
   }
 
   Widget _section(String title) => Padding(
@@ -304,98 +302,3 @@ class _AddressPicker extends ConsumerWidget {
   }
 }
 
-/// Form thêm địa chỉ nhanh.
-class _AddAddressSheet extends ConsumerStatefulWidget {
-  const _AddAddressSheet();
-  @override
-  ConsumerState<_AddAddressSheet> createState() => _AddAddressSheetState();
-}
-
-class _AddAddressSheetState extends ConsumerState<_AddAddressSheet> {
-  final _formKey = GlobalKey<FormState>();
-  final _name = TextEditingController();
-  final _phone = TextEditingController();
-  final _line = TextEditingController();
-  final _ward = TextEditingController();
-  final _district = TextEditingController();
-  final _province = TextEditingController();
-  bool _saving = false;
-
-  @override
-  void dispose() {
-    for (final c in [_name, _phone, _line, _ward, _district, _province]) {
-      c.dispose();
-    }
-    super.dispose();
-  }
-
-  Future<void> _save() async {
-    if (!_formKey.currentState!.validate()) return;
-    setState(() => _saving = true);
-    try {
-      await ref.read(addressRepositoryProvider).add(
-            recipientName: _name.text.trim(),
-            phone: _phone.text.trim(),
-            line: _line.text.trim(),
-            ward: _ward.text.trim(),
-            district: _district.text.trim(),
-            province: _province.text.trim(),
-            isDefault: true,
-          );
-      if (mounted) Navigator.pop(context, true);
-    } catch (e) {
-      if (mounted) showAppSnack(context, e.toString(), type: AppSnackType.error);
-    } finally {
-      if (mounted) setState(() => _saving = false);
-    }
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    final s = ref.watch(stringsProvider);
-    return Padding(
-      padding: EdgeInsets.only(
-        left: 16, right: 16, top: 16,
-        bottom: MediaQuery.of(context).viewInsets.bottom + 16,
-      ),
-      child: Form(
-        key: _formKey,
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Text(s.addAddress, style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
-            const SizedBox(height: 12),
-            _field(_name, s.recipientName, required: true),
-            _field(_phone, s.phone, required: true, keyboard: TextInputType.phone),
-            _field(_line, s.streetLineFull, required: true),
-            _field(_ward, s.ward),
-            _field(_district, s.district),
-            _field(_province, s.province),
-            const SizedBox(height: 12),
-            ElevatedButton(
-              onPressed: _saving ? null : _save,
-              child: _saving
-                  ? const SizedBox(height: 22, width: 22, child: CircularProgressIndicator(strokeWidth: 2))
-                  : Text(s.saveAddress),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _field(TextEditingController c, String label,
-      {bool required = false, TextInputType? keyboard}) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 6),
-      child: TextFormField(
-        controller: c,
-        keyboardType: keyboard,
-        decoration: InputDecoration(labelText: label),
-        validator: required
-            ? (v) => (v == null || v.trim().isEmpty) ? ref.read(stringsProvider).required : null
-            : null,
-      ),
-    );
-  }
-}
