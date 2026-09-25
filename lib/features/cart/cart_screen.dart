@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 
 import '../../app/theme.dart';
 import '../../core/format.dart';
+import '../../core/i18n/app_strings.dart';
 import '../../models/cart.dart';
 import '../../widgets/async_view.dart';
 import '../../widgets/login_required_view.dart';
@@ -20,22 +21,23 @@ class CartScreen extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final isLoggedIn = ref.watch(authProvider).isLoggedIn;
     final cartAsync = ref.watch(cartProvider);
+    final s = ref.watch(stringsProvider);
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Giỏ hàng')),
+      appBar: AppBar(title: Text(s.cart)),
       body: !isLoggedIn
-          ? const LoginRequiredView(message: 'Đăng nhập để xem giỏ hàng của bạn')
+          ? LoginRequiredView(message: s.loginToViewCart)
           : AsyncView(
               value: cartAsync,
               onRetry: () => ref.invalidate(cartProvider),
-              data: (cart) => _buildCart(context, cart),
+              data: (cart) => _buildCart(context, cart, s),
             ),
     );
   }
 
-  Widget _buildCart(BuildContext context, Cart cart) {
+  Widget _buildCart(BuildContext context, Cart cart, AppStrings s) {
     if (cart.isEmpty) {
-      return const EmptyView(message: 'Giỏ hàng đang trống', icon: Icons.shopping_cart_outlined);
+      return EmptyView(message: s.emptyCart, icon: Icons.shopping_cart_outlined);
     }
     final shippingTotal = cart.shops.length * 30000;
     final total = cart.subtotal + shippingTotal;
@@ -55,12 +57,13 @@ class CartScreen extends ConsumerWidget {
 }
 
 /// Khối 1 shop: header (tên shop + thời gian giao) + các món.
-class _ShopGroup extends StatelessWidget {
+class _ShopGroup extends ConsumerWidget {
   const _ShopGroup({required this.shop});
   final CartShop shop;
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
+    final s = ref.watch(stringsProvider);
     return Container(
       margin: const EdgeInsets.only(bottom: 14),
       decoration: BoxDecoration(
@@ -82,7 +85,7 @@ class _ShopGroup extends StatelessWidget {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(shop.shopName, style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 15)),
-                    const Text('Giao trong 15 phút', style: TextStyle(color: Colors.grey, fontSize: 12)),
+                    Text(s.deliveryIn15, style: const TextStyle(color: Colors.grey, fontSize: 12)),
                   ],
                 ),
               ),
@@ -197,12 +200,13 @@ class _QtyStepper extends StatelessWidget {
 }
 
 /// Thanh dưới cùng: tổng tiền + nút thanh toán lớn.
-class _Footer extends StatelessWidget {
+class _Footer extends ConsumerWidget {
   const _Footer({required this.subtotal, required this.shipping, required this.total, required this.count});
   final int subtotal, shipping, total, count;
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
+    final s = ref.watch(stringsProvider);
     return SafeArea(
       top: false,
       child: Container(
@@ -215,15 +219,15 @@ class _Footer extends StatelessWidget {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            _row('Tạm tính', formatVnd(subtotal)),
+            _row(s.subtotal, formatVnd(subtotal)),
             const SizedBox(height: 6),
-            _row('Phí vận chuyển', formatVnd(shipping)),
+            _row(s.shippingFee, formatVnd(shipping)),
             const Padding(padding: EdgeInsets.symmetric(vertical: 10), child: Divider(height: 1)),
-            _row('Tổng cộng', formatVnd(total), highlight: true),
+            _row(s.total, formatVnd(total), highlight: true),
             const SizedBox(height: 14),
             ElevatedButton(
               onPressed: () => context.push('/checkout'),
-              child: Text('Thanh toán • $count món'),
+              child: Text(s.checkoutItems(count)),
             ),
           ],
         ),

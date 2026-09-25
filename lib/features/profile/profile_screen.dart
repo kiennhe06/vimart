@@ -3,6 +3,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../app/theme.dart';
+import '../../core/i18n/app_strings.dart';
+import '../../core/i18n/locale_provider.dart';
 import '../../widgets/login_required_view.dart';
 import '../auth/auth_provider.dart';
 import '../seller/seller_repository.dart';
@@ -15,16 +17,18 @@ class ProfileScreen extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final auth = ref.watch(authProvider);
+    final s = ref.watch(stringsProvider);
     if (!auth.isLoggedIn) {
       return Scaffold(
-        appBar: AppBar(title: const Text('Tài khoản')),
-        body: const LoginRequiredView(message: 'Đăng nhập để quản lý tài khoản'),
+        appBar: AppBar(title: Text(s.account)),
+        body: LoginRequiredView(message: s.loginToManage),
       );
     }
     final user = auth.user!;
+    final localeCode = ref.watch(localeProvider);
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Tài khoản')),
+      appBar: AppBar(title: Text(s.account)),
       body: ListView(
         padding: const EdgeInsets.fromLTRB(16, 8, 16, 24),
         children: [
@@ -52,7 +56,7 @@ class ProfileScreen extends ConsumerWidget {
                       const SizedBox(height: 2),
                       Text(user.email, style: const TextStyle(color: Colors.grey, fontSize: 13)),
                       const SizedBox(height: 8),
-                      _badge(user.isAdmin ? 'Quản trị viên' : (user.hasShop ? 'Người bán' : 'Người mua')),
+                      _badge(user.isAdmin ? s.roleAdmin : (user.hasShop ? s.roleSeller : s.roleBuyer)),
                     ],
                   ),
                 ),
@@ -64,38 +68,35 @@ class ProfileScreen extends ConsumerWidget {
           // Nhóm: tiện ích cá nhân
           _menuCard([
             _MenuRow(Icons.favorite_rounded, const Color(0xFFFFEDE2), const Color(0xFFFF7A45),
-                'Sản phẩm yêu thích', () => context.push('/favorites')),
+                s.favoriteProducts, () => context.push('/favorites')),
             _MenuRow(Icons.location_on_rounded, const Color(0xFFE2F0FF), const Color(0xFF2B8AF0),
-                'Sổ địa chỉ', () => context.push('/addresses')),
+                s.addressBook, () => context.push('/addresses')),
+            // Đổi ngôn ngữ
+            _MenuRow(Icons.language_rounded, const Color(0xFFEDE9FE), const Color(0xFF7C5CFC),
+                s.language, () => ref.read(localeProvider.notifier).toggle(),
+                trailingText: localeCode == 'en' ? 'English' : 'Tiếng Việt'),
           ]),
 
           const SizedBox(height: 14),
-          _sectionLabel('Kênh người bán'),
+          _sectionLabel(s.sellerChannel),
           _menuCard(
             user.hasShop
                 ? [
                     _MenuRow(Icons.inventory_2_rounded, AppColors.brandSoft, AppColors.brand,
-                        'Sản phẩm của shop', () => context.push('/seller/products')),
+                        s.myShopProducts, () => context.push('/seller/products')),
                     _MenuRow(Icons.receipt_long_rounded, const Color(0xFFFDF3D3), const Color(0xFFE0A81E),
-                        'Đơn hàng của shop', () => context.push('/seller/orders')),
+                        s.myShopOrders, () => context.push('/seller/orders')),
                   ]
                 : [
                     _MenuRow(Icons.storefront_rounded, AppColors.brandSoft, AppColors.brand,
-                        'Mở shop bán hàng', () => _openShopDialog(context, ref)),
+                        s.openShop, () => _openShopDialog(context, ref)),
                   ],
           ),
-
-          if (user.isAdmin)
-            const Padding(
-              padding: EdgeInsets.fromLTRB(4, 12, 4, 0),
-              child: Text('Trang quản trị (thống kê, duyệt...) dùng qua web admin.',
-                  style: TextStyle(color: Colors.grey, fontSize: 12)),
-            ),
 
           const SizedBox(height: 14),
           _menuCard([
             _MenuRow(Icons.logout_rounded, const Color(0xFFFDECEC), AppColors.danger,
-                'Đăng xuất', () => _confirmLogout(context, ref), danger: true),
+                s.logout, () => _confirmLogout(context, ref), danger: true),
           ]),
         ],
       ),
@@ -136,14 +137,15 @@ class ProfileScreen extends ConsumerWidget {
   }
 
   Future<void> _confirmLogout(BuildContext context, WidgetRef ref) async {
+    final s = ref.read(stringsProvider);
     final ok = await showDialog<bool>(
       context: context,
       builder: (ctx) => AlertDialog(
-        title: const Text('Đăng xuất'),
-        content: const Text('Bạn muốn đăng xuất khỏi tài khoản?'),
+        title: Text(s.logout),
+        content: Text(s.logoutConfirm),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('Không')),
-          FilledButton(onPressed: () => Navigator.pop(ctx, true), child: const Text('Đăng xuất')),
+          TextButton(onPressed: () => Navigator.pop(ctx, false), child: Text(s.no)),
+          FilledButton(onPressed: () => Navigator.pop(ctx, true), child: Text(s.logout)),
         ],
       ),
     );
@@ -197,13 +199,15 @@ class ProfileScreen extends ConsumerWidget {
 
 /// Một dòng menu: icon chip màu + nhãn + mũi tên.
 class _MenuRow extends StatelessWidget {
-  const _MenuRow(this.icon, this.tint, this.ink, this.label, this.onTap, {this.danger = false});
+  const _MenuRow(this.icon, this.tint, this.ink, this.label, this.onTap,
+      {this.danger = false, this.trailingText});
   final IconData icon;
   final Color tint;
   final Color ink;
   final String label;
   final VoidCallback onTap;
   final bool danger;
+  final String? trailingText;
 
   @override
   Widget build(BuildContext context) {
@@ -226,6 +230,10 @@ class _MenuRow extends StatelessWidget {
                       fontWeight: FontWeight.w600,
                       color: danger ? AppColors.danger : null)),
             ),
+            if (trailingText != null)
+              Text(trailingText!,
+                  style: const TextStyle(color: AppColors.brand, fontWeight: FontWeight.w700, fontSize: 13)),
+            const SizedBox(width: 4),
             Icon(Icons.chevron_right_rounded, color: Colors.grey.shade400),
           ],
         ),

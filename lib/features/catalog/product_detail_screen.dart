@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 
 import '../../app/theme.dart';
 import '../../core/format.dart';
+import '../../core/i18n/app_strings.dart';
 import '../../models/product.dart';
 import '../../widgets/async_view.dart';
 import '../../widgets/network_image_box.dart';
@@ -37,7 +38,7 @@ class _ProductDetailScreenState extends ConsumerState<ProductDetailScreen> {
       await ref.read(cartProvider.notifier).add(variant.id, _qty);
       if (mounted) {
         ScaffoldMessenger.of(context)
-            .showSnackBar(const SnackBar(content: Text('Đã thêm vào giỏ hàng')));
+            .showSnackBar(SnackBar(content: Text(ref.read(stringsProvider).addedToCart)));
       }
     } catch (e) {
       if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(e.toString())));
@@ -47,9 +48,10 @@ class _ProductDetailScreenState extends ConsumerState<ProductDetailScreen> {
   }
 
   void _promptLogin() {
+    final s = ref.read(stringsProvider);
     ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-      content: const Text('Vui lòng đăng nhập để mua hàng'),
-      action: SnackBarAction(label: 'Đăng nhập', onPressed: () => context.push('/login')),
+      content: Text(s.loginToBuy),
+      action: SnackBarAction(label: s.login, onPressed: () => context.push('/login')),
     ));
   }
 
@@ -59,7 +61,7 @@ class _ProductDetailScreenState extends ConsumerState<ProductDetailScreen> {
       await ref.read(favoriteRepositoryProvider).add(widget.productId);
       ref.invalidate(favoritesProvider);
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Đã thêm vào yêu thích')));
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(ref.read(stringsProvider).addedFavorite)));
       }
     } catch (_) {}
   }
@@ -77,6 +79,7 @@ class _ProductDetailScreenState extends ConsumerState<ProductDetailScreen> {
   }
 
   Widget _buildContent(ProductDetail product) {
+    final s = ref.watch(stringsProvider);
     final selected = product.variants.firstWhere(
       (v) => v.id == _selectedVariantId,
       orElse: () => product.variants.isNotEmpty
@@ -142,11 +145,11 @@ class _ProductDetailScreenState extends ConsumerState<ProductDetailScreen> {
                             Text(
                               product.ratingCount > 0
                                   ? '${product.ratingAvg.toStringAsFixed(1)} (${product.ratingCount})'
-                                  : 'Chưa có đánh giá',
+                                  : s.noReviews,
                               style: const TextStyle(fontWeight: FontWeight.w600),
                             ),
                             const SizedBox(width: 12),
-                            Text('Đã bán ${product.soldCount}', style: const TextStyle(color: Colors.grey)),
+                            Text(s.sold(product.soldCount), style: const TextStyle(color: Colors.grey)),
                           ],
                         ),
                         const SizedBox(height: 14),
@@ -156,7 +159,7 @@ class _ProductDetailScreenState extends ConsumerState<ProductDetailScreen> {
                         // Shop
                         _shopChip(context, product),
                         const SizedBox(height: 18),
-                        const Text('Phân loại', style: TextStyle(fontWeight: FontWeight.w800, fontSize: 16)),
+                        Text(s.options, style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 16)),
                         const SizedBox(height: 10),
                         Wrap(
                           spacing: 10,
@@ -164,18 +167,18 @@ class _ProductDetailScreenState extends ConsumerState<ProductDetailScreen> {
                           children: product.variants.map((v) => _variantChip(v, selected)).toList(),
                         ),
                         const SizedBox(height: 6),
-                        Text('Còn lại: ${selected.stock}', style: const TextStyle(color: Colors.grey)),
+                        Text(s.remaining(selected.stock), style: const TextStyle(color: Colors.grey)),
                         const SizedBox(height: 20),
-                        const Text('Mô tả', style: TextStyle(fontWeight: FontWeight.w800, fontSize: 16)),
+                        Text(s.description, style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 16)),
                         const SizedBox(height: 8),
-                        Text(product.description?.isNotEmpty == true ? product.description! : 'Chưa có mô tả.',
+                        Text(product.description?.isNotEmpty == true ? product.description! : s.noDescription,
                             style: const TextStyle(height: 1.5, color: Color(0xFF4B5563))),
                         const SizedBox(height: 20),
-                        Text('Đánh giá (${product.reviews.length})',
+                        Text(s.reviewsWithCount(product.reviews.length),
                             style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 16)),
                         const SizedBox(height: 8),
                         if (product.reviews.isEmpty)
-                          const Text('Chưa có đánh giá nào.', style: TextStyle(color: Colors.grey))
+                          Text(s.noReviewYet, style: const TextStyle(color: Colors.grey))
                         else
                           ...product.reviews.map(_ReviewTile.new),
                       ],
@@ -278,8 +281,8 @@ class _ProductDetailScreenState extends ConsumerState<ProductDetailScreen> {
                     ? const SizedBox(height: 22, width: 22,
                         child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
                     : Text(selected.inStock
-                        ? 'Thêm vào giỏ • ${formatVnd(selected.price * _qty)}'
-                        : 'Hết hàng'),
+                        ? ref.read(stringsProvider).addToCartWith(formatVnd(selected.price * _qty))
+                        : ref.read(stringsProvider).outOfStock),
               ),
             ),
           ],
@@ -299,12 +302,12 @@ class _ProductDetailScreenState extends ConsumerState<ProductDetailScreen> {
   }
 }
 
-class _ReviewTile extends StatelessWidget {
+class _ReviewTile extends ConsumerWidget {
   const _ReviewTile(this.review);
   final Review review;
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 8),
       child: Column(
@@ -312,7 +315,7 @@ class _ReviewTile extends StatelessWidget {
         children: [
           Row(
             children: [
-              Text(review.userName ?? 'Người dùng', style: const TextStyle(fontWeight: FontWeight.w700)),
+              Text(review.userName ?? ref.watch(stringsProvider).user, style: const TextStyle(fontWeight: FontWeight.w700)),
               const SizedBox(width: 8),
               Row(
                 children: List.generate(5, (i) => Icon(Icons.star_rounded,

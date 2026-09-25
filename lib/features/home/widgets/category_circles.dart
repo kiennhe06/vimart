@@ -12,11 +12,13 @@ class CategoryCircles extends StatelessWidget {
     required this.categories,
     required this.selectedId,
     required this.onSelect,
+    this.allLabel = 'Tất cả',
   });
 
   final List<Category> categories;
   final int? selectedId;
   final ValueChanged<int?> onSelect;
+  final String allLabel;
 
   /// Icon gợi ý theo slug danh mục (không có thì dùng mặc định).
   IconData _iconFor(String slug) {
@@ -37,7 +39,7 @@ class CategoryCircles extends StatelessWidget {
         scrollDirection: Axis.horizontal,
         padding: const EdgeInsets.symmetric(horizontal: HomeDims.pagePadding - 4),
         children: [
-          _item(index: 0, id: null, label: 'Tất cả', icon: Icons.grid_view_rounded),
+          _item(index: 0, id: null, label: allLabel, icon: Icons.grid_view_rounded),
           for (int i = 0; i < categories.length; i++)
             _item(
               index: i + 1,

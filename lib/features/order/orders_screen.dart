@@ -5,6 +5,7 @@ import 'package:go_router/go_router.dart';
 import '../../app/nav_provider.dart';
 import '../../app/theme.dart';
 import '../../core/format.dart';
+import '../../core/i18n/app_strings.dart';
 import '../../models/order.dart';
 import '../../widgets/async_view.dart';
 import '../../widgets/login_required_view.dart';
@@ -16,30 +17,27 @@ import 'order_providers.dart';
 class OrdersScreen extends ConsumerWidget {
   const OrdersScreen({super.key});
 
-  static const _tabs = <(String, String?)>[
-    ('Tất cả', null),
-    ('Chờ xác nhận', 'pending'),
-    ('Đang giao', 'shipping'),
-    ('Hoàn thành', 'completed'),
-  ];
+  static const _statuses = <String?>[null, 'pending', 'shipping', 'completed'];
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final s = ref.watch(stringsProvider);
     if (!ref.watch(authProvider).isLoggedIn) {
       return Scaffold(
-        appBar: AppBar(title: const Text('Đơn hàng')),
-        body: const LoginRequiredView(message: 'Đăng nhập để xem đơn hàng của bạn'),
+        appBar: AppBar(title: Text(s.orders)),
+        body: LoginRequiredView(message: s.loginToViewOrders),
       );
     }
+    final labels = [s.all, s.tabPending, s.tabShipping, s.tabCompleted];
 
     return DefaultTabController(
-      length: _tabs.length,
+      length: _statuses.length,
       child: Scaffold(
         appBar: AppBar(
-          title: const Text('Đơn hàng'),
-          bottom: pillTabBar(_tabs.map((t) => t.$1).toList()),
+          title: Text(s.orders),
+          bottom: pillTabBar(labels),
         ),
-        body: TabBarView(children: _tabs.map((t) => _OrderList(status: t.$2)).toList()),
+        body: TabBarView(children: _statuses.map((st) => _OrderList(status: st)).toList()),
       ),
     );
   }
@@ -75,6 +73,7 @@ class _EmptyOrders extends ConsumerWidget {
   const _EmptyOrders();
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final s = ref.watch(stringsProvider);
     return LayoutBuilder(
       builder: (context, c) => SingleChildScrollView(
         physics: const AlwaysScrollableScrollPhysics(),
@@ -90,15 +89,15 @@ class _EmptyOrders extends ConsumerWidget {
                   child: const Icon(Icons.receipt_long_rounded, size: 44, color: AppColors.brand),
                 ),
                 const SizedBox(height: 16),
-                const Text('Chưa có đơn hàng nào', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w700)),
+                Text(s.noOrders, style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w700)),
                 const SizedBox(height: 6),
-                const Text('Hãy mua sắm và quay lại đây nhé', style: TextStyle(color: Colors.grey)),
+                Text(s.shopAndReturn, style: const TextStyle(color: Colors.grey)),
                 const SizedBox(height: 18),
                 SizedBox(
                   width: 200,
                   child: ElevatedButton(
                     onPressed: () => ref.read(bottomNavIndexProvider.notifier).go(0),
-                    child: const Text('Mua sắm ngay'),
+                    child: Text(s.shopNowBtn),
                   ),
                 ),
               ],
@@ -111,13 +110,14 @@ class _EmptyOrders extends ConsumerWidget {
 }
 
 /// Thẻ tóm tắt 1 đơn hàng — bo tròn, có icon chip + trạng thái + tổng tiền.
-class OrderCard extends StatelessWidget {
+class OrderCard extends ConsumerWidget {
   const OrderCard({super.key, required this.order, this.showBuyer = false});
   final OrderSummary order;
   final bool showBuyer;
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
+    final s = ref.watch(stringsProvider);
     return GestureDetector(
       onTap: () => context.push('/order/${order.id}'),
       child: Container(
@@ -142,9 +142,9 @@ class OrderCard extends StatelessWidget {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text('Đơn ${order.code}', style: const TextStyle(fontWeight: FontWeight.w800)),
+                      Text(s.orderCode(order.code), style: const TextStyle(fontWeight: FontWeight.w800)),
                       const SizedBox(height: 2),
-                      Text(showBuyer ? 'Khách: ${order.buyerName ?? '-'}' : (order.shopName ?? ''),
+                      Text(showBuyer ? s.customer(order.buyerName ?? '-') : (order.shopName ?? ''),
                           style: const TextStyle(color: Colors.grey, fontSize: 12)),
                     ],
                   ),
@@ -160,9 +160,9 @@ class OrderCard extends StatelessWidget {
                 const SizedBox(width: 6),
                 Text(order.paymentMethod == 'cod' ? 'COD' : 'VNPay', style: const TextStyle(color: Colors.grey, fontSize: 13)),
                 if (order.isPaid)
-                  const Padding(
-                    padding: EdgeInsets.only(left: 8),
-                    child: Text('Đã trả', style: TextStyle(color: AppColors.success, fontSize: 13, fontWeight: FontWeight.w600)),
+                  Padding(
+                    padding: const EdgeInsets.only(left: 8),
+                    child: Text(s.paid, style: const TextStyle(color: AppColors.success, fontSize: 13, fontWeight: FontWeight.w600)),
                   ),
                 const Spacer(),
                 Text(formatVnd(order.total),
@@ -177,7 +177,7 @@ class OrderCard extends StatelessWidget {
 }
 
 /// Nhãn màu theo trạng thái đơn.
-class OrderStatusChip extends StatelessWidget {
+class OrderStatusChip extends ConsumerWidget {
   const OrderStatusChip({super.key, required this.status});
   final String status;
 
@@ -191,11 +191,11 @@ class OrderStatusChip extends StatelessWidget {
       };
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
       decoration: BoxDecoration(color: _color.withValues(alpha: 0.14), borderRadius: BorderRadius.circular(20)),
-      child: Text(orderStatusLabel(status),
+      child: Text(ref.watch(stringsProvider).orderStatus(status),
           style: TextStyle(color: _color, fontSize: 12, fontWeight: FontWeight.w700)),
     );
   }

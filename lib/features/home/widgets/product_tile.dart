@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../core/format.dart';
+import '../../../core/i18n/app_strings.dart';
 import '../../../models/product.dart';
 import '../../auth/auth_provider.dart';
 import '../../cart/cart_provider.dart';
@@ -25,10 +26,11 @@ class _ProductTileState extends ConsumerState<ProductTile> {
 
   /// Thêm nhanh: lấy phân loại đầu tiên còn hàng rồi bỏ vào giỏ.
   Future<void> _quickAdd() async {
+    final s = ref.read(stringsProvider);
     if (!ref.read(authProvider).isLoggedIn) {
       ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-        content: const Text('Vui lòng đăng nhập để mua hàng'),
-        action: SnackBarAction(label: 'Đăng nhập', onPressed: () => context.push('/login')),
+        content: Text(s.loginToBuy),
+        action: SnackBarAction(label: s.login, onPressed: () => context.push('/login')),
       ));
       return;
     }
@@ -45,7 +47,7 @@ class _ProductTileState extends ConsumerState<ProductTile> {
       await ref.read(cartProvider.notifier).add(variant.id, 1);
       if (mounted) {
         ScaffoldMessenger.of(context)
-            .showSnackBar(const SnackBar(content: Text('Đã thêm vào giỏ hàng')));
+            .showSnackBar(SnackBar(content: Text(ref.read(stringsProvider).addedToCart)));
       }
     } catch (e) {
       if (mounted) {
@@ -59,6 +61,7 @@ class _ProductTileState extends ConsumerState<ProductTile> {
   @override
   Widget build(BuildContext context) {
     final p = widget.product;
+    final s = ref.watch(stringsProvider);
     final tint = widget.tint ?? HomeColors.brandSoft;
     return GestureDetector(
       behavior: HitTestBehavior.opaque,
@@ -89,8 +92,8 @@ class _ProductTileState extends ConsumerState<ProductTile> {
               children: [
                 const Icon(Icons.star_rounded, size: 14, color: HomeColors.star),
                 const SizedBox(width: 2),
-                Text(p.ratingCount > 0 ? p.ratingAvg.toStringAsFixed(1) : 'Mới', style: HomeText.meta),
-                Text('  •  Đã bán ${p.soldCount}', style: HomeText.meta),
+                Text(p.ratingCount > 0 ? p.ratingAvg.toStringAsFixed(1) : s.newLabel, style: HomeText.meta),
+                Text('  •  ${s.sold(p.soldCount)}', style: HomeText.meta),
               ],
             ),
             const SizedBox(height: 6),

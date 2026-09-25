@@ -6,11 +6,13 @@ import 'package:intl/date_symbol_data_local.dart';
 import 'app/router.dart';
 import 'app/theme.dart';
 import 'core/constants.dart';
+import 'core/i18n/locale_provider.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  // Nạp dữ liệu định dạng ngày tháng tiếng Việt trước khi chạy app.
+  // Nạp dữ liệu định dạng ngày tháng cho cả tiếng Việt và Anh.
   await initializeDateFormatting('vi');
+  await initializeDateFormatting('en');
   runApp(const ProviderScope(child: ViMartApp()));
 }
 
@@ -21,6 +23,7 @@ class ViMartApp extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final router = ref.watch(routerProvider);
+    final localeCode = ref.watch(localeProvider);
     return MaterialApp.router(
       title: kAppName,
       debugShowCheckedModeBanner: false,
@@ -28,8 +31,8 @@ class ViMartApp extends ConsumerWidget {
       darkTheme: buildDarkTheme(),
       themeMode: ThemeMode.light, // mặc định sáng cho app mua sắm
       routerConfig: router,
-      // Hỗ trợ tiếng Việt cho các widget hệ thống (lịch, chọn ngày...).
-      locale: const Locale('vi'),
+      // Ngôn ngữ theo lựa chọn người dùng (vi / en).
+      locale: Locale(localeCode),
       supportedLocales: const [Locale('vi'), Locale('en')],
       localizationsDelegates: const [
         GlobalMaterialLocalizations.delegate,

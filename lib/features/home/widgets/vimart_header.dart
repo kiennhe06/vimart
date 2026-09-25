@@ -1,15 +1,18 @@
 import 'package:flutter/material.dart' show Icons;
 import 'package:flutter/widgets.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../../core/i18n/app_strings.dart';
 import '../home_ui.dart';
 
 /// Header trang chủ kiểu grocery: lời chào + tên app + nút tròn (yêu thích / thông báo).
-class VimartHeader extends StatelessWidget {
+class VimartHeader extends ConsumerWidget {
   const VimartHeader({super.key});
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
+    final s = ref.watch(stringsProvider);
     return Padding(
       padding: const EdgeInsets.fromLTRB(HomeDims.pagePadding, 6, HomeDims.pagePadding, 8),
       child: Row(
@@ -18,7 +21,7 @@ class VimartHeader extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const Text('Xin chào 👋', style: HomeText.greeting),
+                Text(s.greeting, style: HomeText.greeting),
                 const SizedBox(height: 2),
                 Row(
                   children: [
@@ -30,8 +33,8 @@ class VimartHeader extends StatelessWidget {
                         color: HomeColors.brandSoft,
                         borderRadius: BorderRadius.circular(20),
                       ),
-                      child: const Text('Tươi ngon',
-                          style: TextStyle(color: HomeColors.brand, fontSize: 11, fontWeight: FontWeight.w700)),
+                      child: Text(s.freshBadge,
+                          style: const TextStyle(color: HomeColors.brand, fontSize: 11, fontWeight: FontWeight.w700)),
                     ),
                   ],
                 ),

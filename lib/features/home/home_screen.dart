@@ -2,6 +2,7 @@ import 'package:flutter/material.dart' show Icons, RefreshIndicator, Colors;
 import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../core/i18n/app_strings.dart';
 import '../../models/product.dart';
 import '../catalog/catalog_providers.dart';
 import 'home_ui.dart';
@@ -27,6 +28,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     final query = (keyword: _keyword, categoryId: _categoryId, sort: 'best_selling');
     final productsAsync = ref.watch(productListProvider(query));
     final categoriesAsync = ref.watch(categoriesProvider);
+    final s = ref.watch(stringsProvider);
 
     return Container(
       color: HomeColors.background,
@@ -43,17 +45,21 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                   padding: const EdgeInsets.only(bottom: 24),
                   children: [
                     const _PromoBanner(),
-                    VimartSearchBox(onSubmitted: (v) => setState(() => _keyword = v.trim())),
+                    VimartSearchBox(
+                      hint: s.searchHint,
+                      onSubmitted: (v) => setState(() => _keyword = v.trim()),
+                    ),
                     categoriesAsync.maybeWhen(
                       data: (cats) => CategoryCircles(
                         categories: cats,
                         selectedId: _categoryId,
                         onSelect: (id) => setState(() => _categoryId = id),
+                        allLabel: s.all,
                       ),
                       orElse: () => const SizedBox(height: 96),
                     ),
-                    const _SectionHeader(title: 'Gợi ý cho bạn'),
-                    _buildProducts(productsAsync, query),
+                    _SectionHeader(title: s.forYou, seeAll: s.seeAll),
+                    _buildProducts(productsAsync, query, s),
                   ],
                 ),
               ),
@@ -64,11 +70,11 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     );
   }
 
-  Widget _buildProducts(AsyncValue<List<ProductCard>> async, ProductQuery query) {
+  Widget _buildProducts(AsyncValue<List<ProductCard>> async, ProductQuery query, AppStrings s) {
     return async.when(
-      loading: () => const Padding(
-        padding: EdgeInsets.all(40),
-        child: Center(child: Text('Đang tải sản phẩm...', style: HomeText.meta)),
+      loading: () => Padding(
+        padding: const EdgeInsets.all(40),
+        child: Center(child: Text(s.loadingProducts, style: HomeText.meta)),
       ),
       error: (err, _) => Padding(
         padding: const EdgeInsets.all(40),
@@ -76,9 +82,9 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
       ),
       data: (products) {
         if (products.isEmpty) {
-          return const Padding(
-            padding: EdgeInsets.all(40),
-            child: Center(child: Text('Không tìm thấy sản phẩm nào', style: HomeText.meta)),
+          return Padding(
+            padding: const EdgeInsets.all(40),
+            child: Center(child: Text(s.noProducts, style: HomeText.meta)),
           );
         }
         return GridView.builder(
@@ -103,10 +109,11 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
 }
 
 /// Banner khuyến mãi gradient xanh ở đầu trang.
-class _PromoBanner extends StatelessWidget {
+class _PromoBanner extends ConsumerWidget {
   const _PromoBanner();
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
+    final s = ref.watch(stringsProvider);
     return Padding(
       padding: const EdgeInsets.fromLTRB(HomeDims.pagePadding, 4, HomeDims.pagePadding, 6),
       child: Container(
@@ -126,17 +133,17 @@ class _PromoBanner extends StatelessWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const Text('Giảm 10% đơn đầu tiên 🎉',
-                      style: TextStyle(color: Color(0xFFFFFFFF), fontSize: 18, fontWeight: FontWeight.w800)),
+                  Text(s.promoTitle,
+                      style: const TextStyle(color: Color(0xFFFFFFFF), fontSize: 18, fontWeight: FontWeight.w800)),
                   const SizedBox(height: 6),
-                  Text('Mua sắm tươi ngon, giao tận nơi',
+                  Text(s.promoSub,
                       style: TextStyle(color: Colors.white.withValues(alpha: 0.9), fontSize: 13)),
                   const SizedBox(height: 12),
                   Container(
                     padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 7),
                     decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(14)),
-                    child: const Text('Mua ngay',
-                        style: TextStyle(color: HomeColors.brand, fontWeight: FontWeight.w700, fontSize: 13)),
+                    child: Text(s.shopNow,
+                        style: const TextStyle(color: HomeColors.brand, fontWeight: FontWeight.w700, fontSize: 13)),
                   ),
                 ],
               ),
@@ -155,8 +162,9 @@ class _PromoBanner extends StatelessWidget {
 
 /// Tiêu đề mục + "Xem tất cả".
 class _SectionHeader extends StatelessWidget {
-  const _SectionHeader({required this.title});
+  const _SectionHeader({required this.title, required this.seeAll});
   final String title;
+  final String seeAll;
   @override
   Widget build(BuildContext context) {
     return Padding(
@@ -165,7 +173,7 @@ class _SectionHeader extends StatelessWidget {
         children: [
           Text(title, style: HomeText.sectionTitle),
           const Spacer(),
-          Text('Xem tất cả', style: TextStyle(color: HomeColors.brand, fontSize: 13, fontWeight: FontWeight.w600)),
+          Text(seeAll, style: const TextStyle(color: HomeColors.brand, fontSize: 13, fontWeight: FontWeight.w600)),
         ],
       ),
     );

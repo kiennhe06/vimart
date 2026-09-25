@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../app/theme.dart';
+import '../../core/i18n/app_strings.dart';
 import 'auth_provider.dart';
 
 /// Màn đăng nhập — phong cách grocery: logo trong vòng tròn mềm, ô nhập bo tròn.
@@ -41,6 +42,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final s = ref.watch(stringsProvider);
     return Scaffold(
       body: SafeArea(
         child: Center(
@@ -64,63 +66,63 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                       textAlign: TextAlign.center,
                       style: TextStyle(color: AppColors.brand, fontSize: 30, fontWeight: FontWeight.w900)),
                   const SizedBox(height: 4),
-                  const Text('Chợ tươi ngon, giao tận nơi',
-                      textAlign: TextAlign.center, style: TextStyle(color: Colors.grey, fontSize: 14)),
+                  Text(s.tagline,
+                      textAlign: TextAlign.center, style: const TextStyle(color: Colors.grey, fontSize: 14)),
                   const SizedBox(height: 32),
                   TextFormField(
                     controller: _emailCtrl,
                     keyboardType: TextInputType.emailAddress,
-                    decoration: const InputDecoration(labelText: 'Email', prefixIcon: Icon(Icons.email_outlined)),
-                    validator: (v) => (v == null || !v.contains('@')) ? 'Email không hợp lệ' : null,
+                    decoration: InputDecoration(labelText: s.email, prefixIcon: const Icon(Icons.email_outlined)),
+                    validator: (v) => (v == null || !v.contains('@')) ? s.emailInvalid : null,
                   ),
                   const SizedBox(height: 14),
                   TextFormField(
                     controller: _passwordCtrl,
                     obscureText: _obscure,
                     decoration: InputDecoration(
-                      labelText: 'Mật khẩu',
+                      labelText: s.password,
                       prefixIcon: const Icon(Icons.lock_outline),
                       suffixIcon: IconButton(
                         icon: Icon(_obscure ? Icons.visibility_off_outlined : Icons.visibility_outlined),
                         onPressed: () => setState(() => _obscure = !_obscure),
                       ),
                     ),
-                    validator: (v) => (v == null || v.isEmpty) ? 'Vui lòng nhập mật khẩu' : null,
+                    validator: (v) => (v == null || v.isEmpty) ? s.enterPassword : null,
                   ),
                   const SizedBox(height: 24),
                   ElevatedButton(
                     onPressed: _submitting ? null : _submit,
                     child: _submitting
                         ? const SizedBox(height: 22, width: 22, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
-                        : const Text('Đăng nhập'),
+                        : Text(s.login),
                   ),
                   const SizedBox(height: 10),
                   Row(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      const Text('Chưa có tài khoản?'),
-                      TextButton(onPressed: () => context.push('/register'), child: const Text('Đăng ký ngay')),
+                      Text(s.noAccount),
+                      TextButton(onPressed: () => context.push('/register'), child: Text(s.signUpNow)),
                     ],
                   ),
                   Center(
                     child: TextButton(
                       onPressed: () => context.go('/'),
-                      child: const Text('Xem hàng trước (khách vãng lai)'),
+                      child: Text(s.browseGuest),
                     ),
                   ),
                   const SizedBox(height: 12),
                   Container(
                     padding: const EdgeInsets.all(16),
                     decoration: BoxDecoration(color: AppColors.brandSoft, borderRadius: BorderRadius.circular(18)),
-                    child: const Column(
+                    child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Text('Tài khoản dùng thử (mật khẩu: 123456)',
-                            style: TextStyle(fontWeight: FontWeight.w800, color: AppColors.brandDark)),
-                        SizedBox(height: 6),
-                        Text('• buyer@vimart.vn — người mua'),
-                        Text('• seller1@vimart.vn — người bán'),
-                        Text('• admin@vimart.vn — quản trị'),
+                        Text(s.demoAccounts,
+                            style: const TextStyle(fontWeight: FontWeight.w800, color: AppColors.brandDark)),
+                        const SizedBox(height: 6),
+                        Text(s.demoBuyer),
+                        Text(s.demoSeller),
+                        Text(s.demoAdmin),
                       ],
                     ),
                   ),
