@@ -52,18 +52,28 @@ export async function getCart(userId) {
 
 /** Thêm sản phẩm vào giỏ. Nếu đã có thì cộng dồn số lượng. */
 export async function addToCart(userId, { variantId, quantity }) {
-  const variantRes = await query('SELECT id, stock FROM product_variants WHERE id = $1', [variantId]);
+  const variantRes = await query('SELECT id, stock FROM product_variants WHERE id = $1', [
+    variantId,
+  ]);
   const variant = variantRes.rows[0];
   if (!variant) throw new AppError(404, 'Phân loại sản phẩm không tồn tại');
 
-  const existing = await query('SELECT id, quantity FROM cart_items WHERE user_id = $1 AND variant_id = $2', [userId, variantId]);
+  const existing = await query(
+    'SELECT id, quantity FROM cart_items WHERE user_id = $1 AND variant_id = $2',
+    [userId, variantId]
+  );
   const newQty = (existing.rows[0]?.quantity ?? 0) + quantity;
-  if (newQty > variant.stock) throw new AppError(400, `Chỉ còn ${variant.stock} sản phẩm trong kho`);
+  if (newQty > variant.stock)
+    throw new AppError(400, `Chỉ còn ${variant.stock} sản phẩm trong kho`);
 
   if (existing.rows[0]) {
     await query('UPDATE cart_items SET quantity = $1 WHERE id = $2', [newQty, existing.rows[0].id]);
   } else {
-    await query('INSERT INTO cart_items (user_id, variant_id, quantity) VALUES ($1, $2, $3)', [userId, variantId, quantity]);
+    await query('INSERT INTO cart_items (user_id, variant_id, quantity) VALUES ($1, $2, $3)', [
+      userId,
+      variantId,
+      quantity,
+    ]);
   }
   return getCart(userId);
 }
@@ -86,7 +96,10 @@ export async function updateQuantity(userId, cartItemId, quantity) {
 
 /** Xóa 1 dòng khỏi giỏ. */
 export async function removeItem(userId, cartItemId) {
-  const res = await query('DELETE FROM cart_items WHERE id = $1 AND user_id = $2 RETURNING id', [cartItemId, userId]);
+  const res = await query('DELETE FROM cart_items WHERE id = $1 AND user_id = $2 RETURNING id', [
+    cartItemId,
+    userId,
+  ]);
   if (res.rows.length === 0) throw new AppError(404, 'Không tìm thấy sản phẩm trong giỏ');
   return getCart(userId);
 }

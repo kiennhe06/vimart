@@ -43,15 +43,23 @@ export async function addAddress(userId, data) {
       await client.query('UPDATE addresses SET is_default = FALSE WHERE user_id = $1', [userId]);
     }
     // Nếu đây là địa chỉ đầu tiên thì tự đặt làm mặc định
-    const countRes = await client.query('SELECT COUNT(*)::int AS c FROM addresses WHERE user_id = $1', [userId]);
+    const countRes = await client.query(
+      'SELECT COUNT(*)::int AS c FROM addresses WHERE user_id = $1',
+      [userId]
+    );
     const isFirst = countRes.rows[0].c === 0;
 
     const result = await client.query(
       `INSERT INTO addresses (user_id, recipient_name, phone, line, ward, district, province, is_default)
        VALUES ($1,$2,$3,$4,$5,$6,$7,$8) RETURNING *`,
       [
-        userId, data.recipientName, data.phone, data.line,
-        data.ward ?? null, data.district ?? null, data.province ?? null,
+        userId,
+        data.recipientName,
+        data.phone,
+        data.line,
+        data.ward ?? null,
+        data.district ?? null,
+        data.province ?? null,
         data.isDefault || isFirst,
       ]
     );
@@ -62,7 +70,10 @@ export async function addAddress(userId, data) {
 /** Sửa địa chỉ (chỉ được sửa địa chỉ của chính mình). */
 export async function updateAddress(userId, addressId, data) {
   return withTransaction(async (client) => {
-    const owned = await client.query('SELECT id FROM addresses WHERE id = $1 AND user_id = $2', [addressId, userId]);
+    const owned = await client.query('SELECT id FROM addresses WHERE id = $1 AND user_id = $2', [
+      addressId,
+      userId,
+    ]);
     if (owned.rows.length === 0) throw new AppError(404, 'Không tìm thấy địa chỉ');
 
     if (data.isDefault) {
@@ -72,9 +83,14 @@ export async function updateAddress(userId, addressId, data) {
       `UPDATE addresses SET recipient_name=$1, phone=$2, line=$3, ward=$4, district=$5, province=$6, is_default=$7
        WHERE id=$8 RETURNING *`,
       [
-        data.recipientName, data.phone, data.line,
-        data.ward ?? null, data.district ?? null, data.province ?? null,
-        data.isDefault ?? false, addressId,
+        data.recipientName,
+        data.phone,
+        data.line,
+        data.ward ?? null,
+        data.district ?? null,
+        data.province ?? null,
+        data.isDefault ?? false,
+        addressId,
       ]
     );
     return toAddress(result.rows[0]);
@@ -83,6 +99,9 @@ export async function updateAddress(userId, addressId, data) {
 
 /** Xóa địa chỉ. */
 export async function deleteAddress(userId, addressId) {
-  const result = await query('DELETE FROM addresses WHERE id = $1 AND user_id = $2 RETURNING id', [addressId, userId]);
+  const result = await query('DELETE FROM addresses WHERE id = $1 AND user_id = $2 RETURNING id', [
+    addressId,
+    userId,
+  ]);
   if (result.rows.length === 0) throw new AppError(404, 'Không tìm thấy địa chỉ');
 }

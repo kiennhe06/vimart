@@ -36,7 +36,8 @@ router.post(
       const item = itemRes.rows[0];
       if (!item) throw new AppError(404, 'Không tìm thấy món hàng');
       if (item.buyer_id !== userId) throw new AppError(403, 'Đây không phải đơn của bạn');
-      if (item.status !== 'completed') throw new AppError(400, 'Chỉ đánh giá được khi đơn đã hoàn thành');
+      if (item.status !== 'completed')
+        throw new AppError(400, 'Chỉ đánh giá được khi đơn đã hoàn thành');
       if (item.reviewed) throw new AppError(409, 'Món hàng này đã được đánh giá');
 
       const insert = await client.query(

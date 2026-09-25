@@ -1,7 +1,11 @@
 import { Router } from 'express';
 import { authRequired } from '../../middlewares/auth.middleware.js';
 import { validate, validateQuery } from '../../middlewares/validate.middleware.js';
-import { createProductSchema, updateProductSchema, listProductQuerySchema } from './product.schema.js';
+import {
+  createProductSchema,
+  updateProductSchema,
+  listProductQuerySchema,
+} from './product.schema.js';
 import * as productController from './product.controller.js';
 
 const router = Router();
