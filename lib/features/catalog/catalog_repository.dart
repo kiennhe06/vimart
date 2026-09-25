@@ -16,11 +16,17 @@ class CatalogRepository {
     int? categoryId,
     int? shopId,
     String sort = 'newest',
+    int? minPrice,
+    int? maxPrice,
+    double? minRating,
   }) async {
     final data = await _api.get('/products', query: {
       if (keyword != null && keyword.isNotEmpty) 'keyword': keyword,
       'categoryId': ?categoryId,
       'shopId': ?shopId,
+      'minPrice': ?minPrice,
+      'maxPrice': ?maxPrice,
+      'minRating': ?minRating,
       'sort': sort,
       'limit': 50,
     });

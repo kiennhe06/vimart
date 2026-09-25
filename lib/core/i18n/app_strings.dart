@@ -246,6 +246,26 @@ class AppStrings {
   String reviewProductLabel(String name) => _('Đánh giá: $name', 'Review: $name');
   String get reviewProductTitle => _('Đánh giá sản phẩm', 'Review product');
   String get reviewHint => _('Nhận xét của bạn (không bắt buộc)', 'Your comment (optional)');
+
+  // ---- Tìm kiếm nâng cao ----
+  String get sortLabel => _('Sắp xếp', 'Sort');
+  String get sortBestSelling => _('Bán chạy', 'Best selling');
+  String get sortNewest => _('Mới nhất', 'Newest');
+  String get sortPriceAsc => _('Giá thấp', 'Price ↑');
+  String get sortPriceDesc => _('Giá cao', 'Price ↓');
+  String get sortRating => _('Đánh giá', 'Top rated');
+  String get filters => _('Bộ lọc', 'Filters');
+  String get priceRange => _('Khoảng giá', 'Price range');
+  String get priceFrom => _('Từ', 'From');
+  String get priceTo => _('Đến', 'To');
+  String get minRatingLabel => _('Đánh giá tối thiểu', 'Minimum rating');
+  String get anyLabel => _('Tất cả', 'Any');
+  String ratingUp(String stars) => _('$stars★ trở lên', '$stars★ & up');
+  String get apply => _('Áp dụng', 'Apply');
+  String get reset => _('Đặt lại', 'Reset');
+  String get recentSearches => _('Tìm gần đây', 'Recent searches');
+  String get clearAll => _('Xóa hết', 'Clear all');
+  String resultsCount(int n) => _('$n kết quả', '$n results');
 }
 
 /// Provider trả về bộ chuỗi theo ngôn ngữ hiện tại.

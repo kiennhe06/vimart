@@ -9,10 +9,26 @@ import '../home_ui.dart';
 /// - Nhập liệu: EditableText (widget nền tảng — KHÔNG dùng TextField/SearchBar ăn sẵn).
 /// - Bấm vào bất kỳ đâu trong ô sẽ focus để gõ (GestureDetector).
 class VimartSearchBox extends StatefulWidget {
-  const VimartSearchBox({super.key, required this.onSubmitted, required this.hint});
+  const VimartSearchBox({
+    super.key,
+    required this.onSubmitted,
+    required this.hint,
+    this.onChanged,
+    this.onFocusChange,
+    this.controller,
+  });
 
   /// Gọi khi người dùng nhấn Enter/Search trên bàn phím.
   final ValueChanged<String> onSubmitted;
+
+  /// Gọi mỗi khi nội dung đổi (dùng để tìm-khi-gõ, nên debounce ở phía gọi).
+  final ValueChanged<String>? onChanged;
+
+  /// Gọi khi ô nhận / mất focus (để hiện gợi ý lịch sử tìm kiếm).
+  final ValueChanged<bool>? onFocusChange;
+
+  /// Controller ngoài (tùy chọn) để đặt lại text từ lịch sử tìm kiếm.
+  final TextEditingController? controller;
 
   /// Gợi ý trong ô tìm kiếm (đa ngôn ngữ).
   final String hint;
@@ -25,29 +41,34 @@ class VimartSearchBox extends StatefulWidget {
 }
 
 class _VimartSearchBoxState extends State<VimartSearchBox> {
-  final TextEditingController _controller = TextEditingController();
+  late final TextEditingController _controller = widget.controller ?? TextEditingController();
   final FocusNode _focusNode = FocusNode();
   bool _hasText = false;
 
   @override
   void initState() {
     super.initState();
+    _hasText = _controller.text.isNotEmpty;
     _controller.addListener(() {
       final has = _controller.text.isNotEmpty;
       if (has != _hasText) setState(() => _hasText = has);
     });
-    _focusNode.addListener(() => setState(() {}));
+    _focusNode.addListener(() {
+      setState(() {});
+      widget.onFocusChange?.call(_focusNode.hasFocus);
+    });
   }
 
   @override
   void dispose() {
-    _controller.dispose();
+    if (widget.controller == null) _controller.dispose();
     _focusNode.dispose();
     super.dispose();
   }
 
   void _clear() {
     _controller.clear();
+    widget.onChanged?.call('');
     widget.onSubmitted('');
   }
 
@@ -89,6 +110,7 @@ class _VimartSearchBoxState extends State<VimartSearchBox> {
                       backgroundCursorColor: HomeColors.border,
                       maxLines: 1,
                       textInputAction: TextInputAction.search,
+                      onChanged: widget.onChanged,
                       onSubmitted: widget.onSubmitted,
                     ),
                   ],

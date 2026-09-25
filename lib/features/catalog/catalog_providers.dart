@@ -5,7 +5,14 @@ import '../../models/product.dart';
 import 'catalog_repository.dart';
 
 /// Bộ lọc tìm sản phẩm. Dùng record để Riverpod tự so sánh (cache đúng theo bộ lọc).
-typedef ProductQuery = ({String keyword, int? categoryId, String sort});
+typedef ProductQuery = ({
+  String keyword,
+  int? categoryId,
+  String sort,
+  int? minPrice,
+  int? maxPrice,
+  double? minRating,
+});
 
 /// Danh sách danh mục (ít thay đổi).
 final categoriesProvider = FutureProvider<List<Category>>((ref) {
@@ -19,6 +26,9 @@ final productListProvider =
         keyword: query.keyword,
         categoryId: query.categoryId,
         sort: query.sort,
+        minPrice: query.minPrice,
+        maxPrice: query.maxPrice,
+        minRating: query.minRating,
       );
 });
 
