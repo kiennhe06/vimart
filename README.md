@@ -39,7 +39,7 @@ make lint           # eslint (backend/web) + flutter analyze
 ```
 
 - **CI** (`.github/workflows/ci.yml`): concurrency (hủy run cũ), quyền tối thiểu, **path-filter** (chỉ chạy job liên quan), cache (npm + Flutter), **coverage** (c8 + lcov, tải lên artifact), action **ghim theo SHA**. Job `backend` (Postgres service) + `flutter` + cổng tổng hợp `CI passed`.
-- **Bảo mật/deps:** CodeQL (`codeql.yml`), Dependency review trên PR (`dependency-review.yml`), **Dependabot** (npm + pub + github-actions) hằng tuần.
+- **Bảo mật/deps:** CodeQL (`codeql.yml`) phân tích JS/TS, **Dependabot** (npm + pub + github-actions) hằng tuần. _(Bật "Dependency graph" trong Settings → Code security để có thêm Dependabot alerts.)_
 - **Release:** đẩy tag `v*` → tự build APK và tạo GitHub Release kèm file (`release.yml`).
 - **Đóng góp:** có sẵn PR template + issue templates (`.github/`).
 - **Git hook**: `pre-commit` chạy format-check + lint; `pre-push` chạy test. Bật bằng `make setup` (hoặc `make hooks`). Bỏ qua khi cần: `git commit/push --no-verify`.
