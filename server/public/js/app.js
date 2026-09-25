@@ -12,7 +12,9 @@ const state = { user: null };
 // ---------- Song ngữ (i18n) — Việt / Anh ----------
 // Helper inline: L('tiếng Việt', 'English') trả về theo ngôn ngữ đang chọn.
 let lang = localStorage.getItem('vimart_admin_lang') || 'vi';
-function L(vi, en) { return lang === 'en' ? en : vi; }
+function L(vi, en) {
+  return lang === 'en' ? en : vi;
+}
 function setLang(code) {
   lang = code;
   localStorage.setItem('vimart_admin_lang', code);
@@ -28,13 +30,15 @@ const NAV = [
 ];
 // Nhãn menu theo ngôn ngữ.
 function navLabel(key) {
-  return {
-    dashboard: L('Tổng quan', 'Overview'),
-    products: L('Sản phẩm', 'Products'),
-    users: L('Người dùng', 'Users'),
-    orders: L('Đơn hàng', 'Orders'),
-    categories: L('Danh mục', 'Categories'),
-  }[key] || key;
+  return (
+    {
+      dashboard: L('Tổng quan', 'Overview'),
+      products: L('Sản phẩm', 'Products'),
+      users: L('Người dùng', 'Users'),
+      orders: L('Đơn hàng', 'Orders'),
+      categories: L('Danh mục', 'Categories'),
+    }[key] || key
+  );
 }
 
 // Chỉ giữ màu theo trạng thái; nhãn lấy động qua statusLabel().
@@ -46,13 +50,15 @@ const STATUS_COLOR = {
   cancelled: '#d32f2f',
 };
 function statusLabel(s) {
-  return {
-    pending: L('Chờ xác nhận', 'Pending'),
-    confirmed: L('Đã xác nhận', 'Confirmed'),
-    shipping: L('Đang giao', 'Shipping'),
-    completed: L('Hoàn thành', 'Completed'),
-    cancelled: L('Đã hủy', 'Cancelled'),
-  }[s] || s;
+  return (
+    {
+      pending: L('Chờ xác nhận', 'Pending'),
+      confirmed: L('Đã xác nhận', 'Confirmed'),
+      shipping: L('Đang giao', 'Shipping'),
+      completed: L('Hoàn thành', 'Completed'),
+      cancelled: L('Đã hủy', 'Cancelled'),
+    }[s] || s
+  );
 }
 
 // ---------- Bộ icon SVG (nét mảnh, đồng bộ kiểu Lucide) ----------
@@ -72,8 +78,11 @@ function ic(name, cls = 'i18') {
 const fmtVnd = (n) => new Intl.NumberFormat('vi-VN').format(n || 0) + '₫';
 const fmtDate = (s) => (s ? new Date(s).toLocaleString('vi-VN') : '');
 function escapeHtml(v) {
-  return String(v ?? '').replace(/&/g, '&amp;').replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+  return String(v ?? '')
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;');
 }
 function toast(msg) {
   const el = document.getElementById('toast');
@@ -89,7 +98,9 @@ function statusChip(s) {
 function openModal(html) {
   modalRoot.innerHTML = `<div class="overlay" data-action="close-bg"><div class="modal">${html}</div></div>`;
 }
-function closeModal() { modalRoot.innerHTML = ''; }
+function closeModal() {
+  modalRoot.innerHTML = '';
+}
 
 // ---------- Đăng nhập ----------
 async function loadUser() {
@@ -126,11 +137,18 @@ function renderLogin(message) {
     e.preventDefault();
     const f = e.target;
     try {
-      const res = await Api.post('/auth/login', { email: f.email.value.trim(), password: f.password.value });
+      const res = await Api.post('/auth/login', {
+        email: f.email.value.trim(),
+        password: f.password.value,
+      });
       if (res.user.role !== 'admin') {
         Api.setToken(null);
-        return renderLogin(L('Tài khoản này không phải admin. Vui lòng dùng tài khoản quản trị.',
-          'This account is not an admin. Please use an administrator account.'));
+        return renderLogin(
+          L(
+            'Tài khoản này không phải admin. Vui lòng dùng tài khoản quản trị.',
+            'This account is not an admin. Please use an administrator account.'
+          )
+        );
       }
       Api.setToken(res.token);
       state.user = res.user;
@@ -144,8 +162,10 @@ function renderLogin(message) {
 
 // ---------- Khung dashboard ----------
 function renderShell(activeKey) {
-  const tabs = NAV.map((n) => `
-    <div class="tab ${n.key === activeKey ? 'tab--active' : ''}" data-nav="${n.key}">${navLabel(n.key)}</div>`).join('');
+  const tabs = NAV.map(
+    (n) => `
+    <div class="tab ${n.key === activeKey ? 'tab--active' : ''}" data-nav="${n.key}">${navLabel(n.key)}</div>`
+  ).join('');
   const initial = (state.user.fullName || '?').charAt(0).toUpperCase();
 
   app.innerHTML = `
@@ -169,13 +189,16 @@ function renderShell(activeKey) {
 
 // ---------- Định tuyến ----------
 function currentKey() {
-  const k = (location.hash.replace(/^#\//, '') || 'dashboard');
+  const k = location.hash.replace(/^#\//, '') || 'dashboard';
   return NAV.some((n) => n.key === k) ? k : 'dashboard';
 }
 
 async function route() {
   if (!state.user) return renderLogin();
-  if (state.user.role !== 'admin') return renderLogin(L('Tài khoản không có quyền admin.', 'This account has no admin permission.'));
+  if (state.user.role !== 'admin')
+    return renderLogin(
+      L('Tài khoản không có quyền admin.', 'This account has no admin permission.')
+    );
 
   const key = currentKey();
   renderShell(key);
@@ -226,9 +249,12 @@ function heroCard(s) {
 }
 
 function miniCard(icon, iconBg, iconColor, label, value, trend) {
-  const badge = trend === 'up'
-    ? `<span class="pill pill--up">● ${L('Hoạt động', 'Active')}</span>`
-    : (trend === 'down' ? '<span class="pill pill--down">▼</span>' : '');
+  const badge =
+    trend === 'up'
+      ? `<span class="pill pill--up">● ${L('Hoạt động', 'Active')}</span>`
+      : trend === 'down'
+        ? '<span class="pill pill--down">▼</span>'
+        : '';
   return `<div class="mini">
     <div class="mini__row">
       <div class="mini__icon" style="background:${iconBg};color:${iconColor}">${icon}</div>
@@ -245,7 +271,11 @@ function revenueFlowCard(orders) {
   for (let i = 6; i >= 0; i--) {
     const d = new Date();
     d.setDate(d.getDate() - i);
-    days.push({ key: d.toISOString().slice(0, 10), label: `${d.getDate()}/${d.getMonth() + 1}`, count: 0 });
+    days.push({
+      key: d.toISOString().slice(0, 10),
+      label: `${d.getDate()}/${d.getMonth() + 1}`,
+      count: 0,
+    });
   }
   orders.forEach((o) => {
     const k = (o.created_at || '').slice(0, 10);
@@ -256,16 +286,20 @@ function revenueFlowCard(orders) {
   const totalWeek = days.reduce((sum, d) => sum + d.count, 0) || 1;
   const hotIdx = days.reduce((best, d, i, a) => (d.count > a[best].count ? i : best), 0);
 
-  const bars = days.map((d, i) => {
-    const hot = i === hotIdx && d.count > 0;
-    const tag = hot ? `<div class="bar__tag">+${Math.round((d.count / totalWeek) * 100)}%</div>` : '';
-    return `<div class="bar-col">
+  const bars = days
+    .map((d, i) => {
+      const hot = i === hotIdx && d.count > 0;
+      const tag = hot
+        ? `<div class="bar__tag">+${Math.round((d.count / totalWeek) * 100)}%</div>`
+        : '';
+      return `<div class="bar-col">
       <div class="bar-wrap">${tag}
         <div class="bar ${hot ? 'bar--hot' : ''}" style="height:${Math.max(8, Math.round((d.count / max) * 100))}%" title="${L(`${d.count} đơn`, `${d.count} orders`)}"></div>
       </div>
       <div class="bar-lbl">${d.label}</div>
     </div>`;
-  }).join('');
+    })
+    .join('');
 
   return `<div class="dcard">
     <div class="dcard__head"><h4>${L('Đơn hàng theo ngày', 'Orders by day')}</h4><div class="spacer"></div>
@@ -297,10 +331,14 @@ function categoryDonutCard(products, cats) {
   });
   const gradient = stops.length ? `conic-gradient(${stops.join(',')})` : '#eee';
 
-  const legend = segs.map((g) => `<div class="legend__row">
+  const legend = segs
+    .map(
+      (g) => `<div class="legend__row">
     <span class="legend__bar" style="background:${g.color}"></span>
     <div><div class="legend__cap">${escapeHtml(g.n)}</div><div class="legend__pct">${g.pct}%</div></div>
-  </div>`).join('');
+  </div>`
+    )
+    .join('');
 
   return `<div class="dcard">
     <div class="dcard__head"><h4>${L('Sản phẩm theo danh mục', 'Products by category')}</h4></div>
@@ -315,9 +353,12 @@ function categoryDonutCard(products, cats) {
 
 /** Danh sách đơn hàng gần đây. */
 function recentOrdersCard(orders) {
-  const rows = orders.slice(0, 6).map((o) => {
-    const color = STATUS_COLOR[o.status] || '#888';
-    return `<div class="litem">
+  const rows =
+    orders
+      .slice(0, 6)
+      .map((o) => {
+        const color = STATUS_COLOR[o.status] || '#888';
+        return `<div class="litem">
       <div class="litem__icon" style="background:${color}22;color:${color}">${ic('box', 'i18')}</div>
       <div><div class="litem__name">${escapeHtml(o.code)}</div>
         <div class="litem__sub">${escapeHtml(o.buyer_name || '')} · ${fmtDate(o.created_at).split(' ')[1] || ''}</div></div>
@@ -325,7 +366,9 @@ function recentOrdersCard(orders) {
       <span class="status" style="color:${color};background:${color}22">${statusLabel(o.status)}</span>
       <div class="litem__val" style="color:var(--orange)">${fmtVnd(o.total)}</div>
     </div>`;
-  }).join('') || `<div class="muted" style="padding:12px 0">${L('Chưa có đơn hàng nào.', 'No orders yet.')}</div>`;
+      })
+      .join('') ||
+    `<div class="muted" style="padding:12px 0">${L('Chưa có đơn hàng nào.', 'No orders yet.')}</div>`;
 
   return `<div class="dcard">
     <div class="dcard__head"><h4>${L('Đơn hàng gần đây', 'Recent orders')}</h4><div class="spacer"></div>
@@ -351,15 +394,17 @@ function vmartCard(s) {
 function categoryListCard(products, cats) {
   const counts = {};
   products.forEach((p) => (counts[p.categoryId] = (counts[p.categoryId] || 0) + 1));
-  const rows = cats.map((c, i) => {
-    const color = PALETTE[i % PALETTE.length];
-    return `<div class="litem">
+  const rows = cats
+    .map((c, i) => {
+      const color = PALETTE[i % PALETTE.length];
+      return `<div class="litem">
       <div class="litem__icon" style="background:${color}22;color:${color}">${escapeHtml(c.name.charAt(0))}</div>
       <div><div class="litem__name">${escapeHtml(c.name)}</div>
         <div class="litem__sub">${escapeHtml(c.slug)}</div></div>
       <div class="litem__val">${L(`${counts[c.id] || 0} SP`, `${counts[c.id] || 0} items`)}</div>
     </div>`;
-  }).join('');
+    })
+    .join('');
 
   return `<div class="dcard">
     <div class="dcard__head"><h4>${L('Danh mục', 'Categories')}</h4><div class="spacer"></div>
@@ -371,21 +416,27 @@ function categoryListCard(products, cats) {
 // ---------- View: Sản phẩm ----------
 async function viewProducts(el) {
   const products = await Api.get('/admin/products');
-  const rows = products.map((p) => `
+  const rows = products
+    .map(
+      (p) => `
     <tr>
       <td><img class="thumb" src="${escapeHtml(p.imageUrl || '')}" onerror="this.style.visibility='hidden'"/></td>
       <td>${escapeHtml(p.name)}</td>
       <td>${escapeHtml(p.shopName)}</td>
       <td><b style="color:var(--orange)">${fmtVnd(p.minPrice)}</b></td>
       <td>${p.totalStock}</td>
-      <td>${p.status === 'active'
-        ? `<span class="tag tag--on">${L('Đang bán', 'Active')}</span>`
-        : `<span class="tag tag--off">${L('Đang ẩn', 'Hidden')}</span>`}</td>
+      <td>${
+        p.status === 'active'
+          ? `<span class="tag tag--on">${L('Đang bán', 'Active')}</span>`
+          : `<span class="tag tag--off">${L('Đang ẩn', 'Hidden')}</span>`
+      }</td>
       <td style="white-space:nowrap">
         <button class="btn btn--sm" data-action="edit-product" data-id="${p.id}">${L('Sửa', 'Edit')}</button>
         <button class="btn btn--sm btn--danger" data-action="del-product" data-id="${p.id}" data-name="${escapeHtml(p.name)}">${L('Xóa', 'Delete')}</button>
       </td>
-    </tr>`).join('');
+    </tr>`
+    )
+    .join('');
 
   el.innerHTML = `
     <div class="section-head"><h3>${L('Sản phẩm', 'Products')} (${products.length})</h3><div class="spacer"></div>
@@ -417,7 +468,9 @@ async function productFormModal(prodId) {
   const imageUrl = detail?.imageUrl || '';
   const shopId = detail?.shop?.id ?? (shops[0] ? shops[0].id : '');
   const catId = detail?.categoryId ?? '';
-  const variants = detail?.variants?.length ? detail.variants : [{ name: 'Mặc định', price: '', stock: '' }];
+  const variants = detail?.variants?.length
+    ? detail.variants
+    : [{ name: 'Mặc định', price: '', stock: '' }];
 
   openModal(`
     <button class="modal__close" data-action="close">×</button>
@@ -510,7 +563,9 @@ async function productFormModal(prodId) {
 // ---------- View: Người dùng ----------
 async function viewUsers(el) {
   const users = await Api.get('/admin/users');
-  const rows = users.map((u) => `
+  const rows = users
+    .map(
+      (u) => `
     <tr>
       <td>${u.id}</td>
       <td>${escapeHtml(u.fullName)}</td>
@@ -518,10 +573,16 @@ async function viewUsers(el) {
       <td><span class="tag ${u.role === 'admin' ? 'tag--admin' : 'tag--user'}">${u.role}</span></td>
       <td>${u.shop ? escapeHtml(u.shop.name) : '<span class="muted">—</span>'}</td>
       <td><span class="tag ${u.isActive ? 'tag--on' : 'tag--off'}">${u.isActive ? L('Hoạt động', 'Active') : L('Đã khóa', 'Locked')}</span></td>
-      <td>${u.role === 'admin' ? '' : `<button class="btn btn--sm ${u.isActive ? 'btn--danger' : 'btn--ok'}"
+      <td>${
+        u.role === 'admin'
+          ? ''
+          : `<button class="btn btn--sm ${u.isActive ? 'btn--danger' : 'btn--ok'}"
         data-action="toggle-user" data-id="${u.id}" data-active="${u.isActive ? 0 : 1}">
-        ${u.isActive ? L('Khóa', 'Lock') : L('Mở khóa', 'Unlock')}</button>`}</td>
-    </tr>`).join('');
+        ${u.isActive ? L('Khóa', 'Lock') : L('Mở khóa', 'Unlock')}</button>`
+      }</td>
+    </tr>`
+    )
+    .join('');
 
   el.innerHTML = `<div class="panel"><table class="table">
     <thead><tr><th>ID</th><th>${L('Họ tên', 'Full name')}</th><th>Email</th><th>${L('Vai trò', 'Role')}</th><th>Shop</th><th>${L('Trạng thái', 'Status')}</th><th></th></tr></thead>
@@ -531,8 +592,11 @@ async function viewUsers(el) {
 // ---------- View: Đơn hàng ----------
 async function viewOrders(el) {
   const orders = await Api.get('/admin/orders'); // trả snake_case từ DB
-  if (!orders.length) return (el.innerHTML = `<div class="center-msg">${L('Chưa có đơn hàng nào', 'No orders yet')}</div>`);
-  const rows = orders.map((o) => `
+  if (!orders.length)
+    return (el.innerHTML = `<div class="center-msg">${L('Chưa có đơn hàng nào', 'No orders yet')}</div>`);
+  const rows = orders
+    .map(
+      (o) => `
     <tr>
       <td><b>${escapeHtml(o.code)}</b></td>
       <td>${escapeHtml(o.buyer_name)}</td>
@@ -542,7 +606,9 @@ async function viewOrders(el) {
         ${o.payment_status === 'paid' ? `<span class="tag tag--on">${L('Đã trả', 'Paid')}</span>` : `<span class="muted">${L('Chưa trả', 'Unpaid')}</span>`}</td>
       <td><b style="color:var(--orange)">${fmtVnd(o.total)}</b></td>
       <td class="muted">${fmtDate(o.created_at)}</td>
-    </tr>`).join('');
+    </tr>`
+    )
+    .join('');
 
   el.innerHTML = `<div class="panel"><table class="table">
     <thead><tr><th>${L('Mã đơn', 'Order')}</th><th>${L('Khách', 'Customer')}</th><th>Shop</th><th>${L('Trạng thái', 'Status')}</th><th>${L('Thanh toán', 'Payment')}</th><th>${L('Tổng', 'Total')}</th><th>${L('Ngày', 'Date')}</th></tr></thead>
@@ -552,8 +618,12 @@ async function viewOrders(el) {
 // ---------- View: Danh mục ----------
 async function viewCategories(el) {
   const cats = await Api.get('/categories');
-  const rows = cats.map((c) => `<tr><td>${c.id}</td><td>${escapeHtml(c.name)}</td>
-    <td class="muted">${escapeHtml(c.slug)}</td><td>${escapeHtml(c.icon || '')}</td></tr>`).join('');
+  const rows = cats
+    .map(
+      (c) => `<tr><td>${c.id}</td><td>${escapeHtml(c.name)}</td>
+    <td class="muted">${escapeHtml(c.slug)}</td><td>${escapeHtml(c.icon || '')}</td></tr>`
+    )
+    .join('');
 
   el.innerHTML = `
     <div class="section-head">
@@ -567,10 +637,14 @@ async function viewCategories(el) {
 
 function slugify(str) {
   return (str || '')
-    .normalize('NFD').replace(/[̀-ͯ]/g, '') // bỏ dấu tiếng Việt
-    .replace(/đ/g, 'd').replace(/Đ/g, 'D')
-    .toLowerCase().trim()
-    .replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '');
+    .normalize('NFD')
+    .replace(/[̀-ͯ]/g, '') // bỏ dấu tiếng Việt
+    .replace(/đ/g, 'd')
+    .replace(/Đ/g, 'D')
+    .toLowerCase()
+    .trim()
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-+|-+$/g, '');
 }
 
 function addCategoryModal() {
@@ -613,7 +687,10 @@ function addCategoryModal() {
 // ---------- Sự kiện ----------
 document.addEventListener('click', async (e) => {
   const nav = e.target.closest('[data-nav]');
-  if (nav) { location.hash = '#/' + nav.getAttribute('data-nav'); return; }
+  if (nav) {
+    location.hash = '#/' + nav.getAttribute('data-nav');
+    return;
+  }
 
   const el = e.target.closest('[data-action]');
   if (!el) return;
@@ -636,8 +713,9 @@ document.addEventListener('click', async (e) => {
     if (e.target === el) closeModal();
   } else if (action === 'toggle-user') {
     try {
-      await Api.put(`/admin/users/${el.getAttribute('data-id')}/status`,
-        { isActive: el.getAttribute('data-active') === '1' });
+      await Api.put(`/admin/users/${el.getAttribute('data-id')}/status`, {
+        isActive: el.getAttribute('data-active') === '1',
+      });
       toast(L('Đã cập nhật tài khoản', 'Account updated'));
       route();
     } catch (err) {
@@ -650,7 +728,14 @@ document.addEventListener('click', async (e) => {
   } else if (action === 'edit-product') {
     productFormModal(el.getAttribute('data-id'));
   } else if (action === 'del-product') {
-    if (confirm(L(`Xóa sản phẩm "${el.getAttribute('data-name')}"?`, `Delete product "${el.getAttribute('data-name')}"?`))) {
+    if (
+      confirm(
+        L(
+          `Xóa sản phẩm "${el.getAttribute('data-name')}"?`,
+          `Delete product "${el.getAttribute('data-name')}"?`
+        )
+      )
+    ) {
       try {
         await Api.del('/admin/products/' + el.getAttribute('data-id'));
         toast(L('Đã xóa sản phẩm', 'Product deleted'));

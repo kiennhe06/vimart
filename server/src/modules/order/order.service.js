@@ -27,7 +27,10 @@ function genCode(prefix) {
 export async function checkout(userId, { addressId, paymentMethod, note }) {
   return withTransaction(async (client) => {
     // 1) Lấy địa chỉ nhận hàng (phải là của người dùng)
-    const addrRes = await client.query('SELECT * FROM addresses WHERE id = $1 AND user_id = $2', [addressId, userId]);
+    const addrRes = await client.query('SELECT * FROM addresses WHERE id = $1 AND user_id = $2', [
+      addressId,
+      userId,
+    ]);
     const address = addrRes.rows[0];
     if (!address) throw new AppError(400, 'Địa chỉ nhận hàng không hợp lệ');
 
@@ -74,9 +77,18 @@ export async function checkout(userId, { addressId, paymentMethod, note }) {
          VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,0,$11,$12)
          RETURNING id, code, total`,
         [
-          genCode('VM'), groupCode, userId, shopId,
-          address.recipient_name, address.phone, addressText,
-          paymentMethod, subtotal, shippingFee, total, note ?? null,
+          genCode('VM'),
+          groupCode,
+          userId,
+          shopId,
+          address.recipient_name,
+          address.phone,
+          addressText,
+          paymentMethod,
+          subtotal,
+          shippingFee,
+          total,
+          note ?? null,
         ]
       );
       const order = orderRes.rows[0];
@@ -94,10 +106,22 @@ export async function checkout(userId, { addressId, paymentMethod, note }) {
           `INSERT INTO order_items
             (order_id, product_id, variant_id, product_name, variant_name, image_url, price, quantity)
            VALUES ($1,$2,$3,$4,$5,$6,$7,$8)`,
-          [order.id, it.product_id, it.variant_id, it.product_name, it.variant_name, it.image_url, it.price, it.quantity]
+          [
+            order.id,
+            it.product_id,
+            it.variant_id,
+            it.product_name,
+            it.variant_name,
+            it.image_url,
+            it.price,
+            it.quantity,
+          ]
         );
         // Cộng số lượng đã bán cho sản phẩm
-        await client.query('UPDATE products SET sold_count = sold_count + $1 WHERE id = $2', [it.quantity, it.product_id]);
+        await client.query('UPDATE products SET sold_count = sold_count + $1 WHERE id = $2', [
+          it.quantity,
+          it.product_id,
+        ]);
       }
 
       createdOrders.push({ id: order.id, code: order.code, shopId, total: Number(order.total) });
@@ -222,13 +246,22 @@ export async function getOrderDetail(userId, orderId) {
 
 /** Hoàn kho khi hủy đơn (cộng lại tồn kho, trừ số đã bán). */
 async function restoreStock(client, orderId) {
-  const items = await client.query('SELECT variant_id, product_id, quantity FROM order_items WHERE order_id = $1', [orderId]);
+  const items = await client.query(
+    'SELECT variant_id, product_id, quantity FROM order_items WHERE order_id = $1',
+    [orderId]
+  );
   for (const it of items.rows) {
     if (it.variant_id) {
-      await client.query('UPDATE product_variants SET stock = stock + $1 WHERE id = $2', [it.quantity, it.variant_id]);
+      await client.query('UPDATE product_variants SET stock = stock + $1 WHERE id = $2', [
+        it.quantity,
+        it.variant_id,
+      ]);
     }
     if (it.product_id) {
-      await client.query('UPDATE products SET sold_count = GREATEST(sold_count - $1, 0) WHERE id = $2', [it.quantity, it.product_id]);
+      await client.query(
+        'UPDATE products SET sold_count = GREATEST(sold_count - $1, 0) WHERE id = $2',
+        [it.quantity, it.product_id]
+      );
     }
   }
 }
@@ -260,7 +293,8 @@ export async function changeStatus(userId, orderId, action) {
         break;
       case 'ship': // shop giao hàng
         if (!isSeller) throw new AppError(403, 'Chỉ shop được cập nhật giao hàng');
-        if (order.status !== 'confirmed') throw new AppError(400, 'Đơn phải được xác nhận trước khi giao');
+        if (order.status !== 'confirmed')
+          throw new AppError(400, 'Đơn phải được xác nhận trước khi giao');
         newStatus = 'shipping';
         break;
       case 'reject': // shop từ chối đơn (hoàn kho)
@@ -271,7 +305,8 @@ export async function changeStatus(userId, orderId, action) {
         break;
       case 'cancel': // người mua hủy khi shop chưa xác nhận
         if (!isBuyer) throw new AppError(403, 'Chỉ người mua được hủy đơn');
-        if (order.status !== 'pending') throw new AppError(400, 'Chỉ hủy được khi shop chưa xác nhận');
+        if (order.status !== 'pending')
+          throw new AppError(400, 'Chỉ hủy được khi shop chưa xác nhận');
         await restoreStock(client, orderId);
         newStatus = 'cancelled';
         break;

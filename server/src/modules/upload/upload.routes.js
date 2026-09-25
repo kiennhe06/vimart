@@ -48,7 +48,8 @@ router.post('/', authRequired, (req, res, next) => {
   upload.single('image')(req, res, (err) => {
     if (err) {
       // Lỗi dung lượng của multer
-      if (err.code === 'LIMIT_FILE_SIZE') return next(new AppError(400, 'Ảnh quá lớn (tối đa 5MB)'));
+      if (err.code === 'LIMIT_FILE_SIZE')
+        return next(new AppError(400, 'Ảnh quá lớn (tối đa 5MB)'));
       return next(err);
     }
     if (!req.file) return next(new AppError(400, 'Chưa chọn file ảnh'));

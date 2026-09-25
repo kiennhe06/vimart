@@ -22,7 +22,10 @@ async function getPayment(groupCode, userId) {
  */
 export async function createVnpayUrl(userId, groupCode, ipAddr) {
   if (!isVnpayConfigured()) {
-    throw new AppError(400, 'Chưa cấu hình VNPay (VNP_TMN_CODE / VNP_HASH_SECRET trong .env). Dùng /mock-pay khi test.');
+    throw new AppError(
+      400,
+      'Chưa cấu hình VNPay (VNP_TMN_CODE / VNP_HASH_SECRET trong .env). Dùng /mock-pay khi test.'
+    );
   }
   const payment = await getPayment(groupCode, userId);
   if (payment.status === 'paid') throw new AppError(400, 'Đơn này đã được thanh toán');
@@ -71,10 +74,11 @@ export async function handleVnpayReturn(vnpQuery) {
 
 /** Cập nhật trạng thái thanh toán cho nhóm đơn + bản ghi payment. */
 async function markGroupPaid(groupCode, paidOk, responseCode) {
-  await query(
-    'UPDATE payments SET status = $1, vnp_response_code = $2 WHERE group_code = $3',
-    [paidOk ? 'paid' : 'failed', responseCode ?? null, groupCode]
-  );
+  await query('UPDATE payments SET status = $1, vnp_response_code = $2 WHERE group_code = $3', [
+    paidOk ? 'paid' : 'failed',
+    responseCode ?? null,
+    groupCode,
+  ]);
   if (paidOk) {
     await query("UPDATE orders SET payment_status = 'paid' WHERE group_code = $1", [groupCode]);
   }
@@ -85,7 +89,8 @@ async function markGroupPaid(groupCode, paidOk, responseCode) {
  * Dùng để test luồng đặt hàng -> thanh toán khi chưa có tài khoản sandbox.
  */
 export async function mockPay(userId, groupCode) {
-  if (env.nodeEnv === 'production') throw new AppError(403, 'Không dùng được ở môi trường production');
+  if (env.nodeEnv === 'production')
+    throw new AppError(403, 'Không dùng được ở môi trường production');
   const payment = await getPayment(groupCode, userId);
   if (payment.status === 'paid') throw new AppError(400, 'Đơn này đã được thanh toán');
   await markGroupPaid(groupCode, true, 'MOCK');
