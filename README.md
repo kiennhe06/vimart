@@ -1,6 +1,7 @@
 # ViMart 🛒
 
 [![CI](https://github.com/kiennhe06/vimart/actions/workflows/ci.yml/badge.svg)](https://github.com/kiennhe06/vimart/actions/workflows/ci.yml)
+[![CodeQL](https://github.com/kiennhe06/vimart/actions/workflows/codeql.yml/badge.svg)](https://github.com/kiennhe06/vimart/actions/workflows/codeql.yml)
 
 Ứng dụng **chợ online nhiều shop (kiểu Shopee)** — đồ án tốt nghiệp.
 
@@ -31,11 +32,16 @@ make setup          # cài deps 2 phía + bật git hook (chạy 1 lần)
 make check          # cổng đầy đủ: format-check + lint + test (giống hệt CI)
 
 make be-test        # test backend (node:test + Postgres, DB vimart_test)
+make be-coverage    # test backend + báo cáo coverage (c8)
 make app-test       # test Flutter (unit + widget)
+make app-coverage   # test Flutter + coverage (lcov)
 make lint           # eslint (backend/web) + flutter analyze
 ```
 
-- **CI** (`.github/workflows/ci.yml`) chạy 2 job trên mỗi push/PR vào `main`: **backend** (lint + format + test với Postgres service) và **flutter** (analyze + test).
+- **CI** (`.github/workflows/ci.yml`): concurrency (hủy run cũ), quyền tối thiểu, **path-filter** (chỉ chạy job liên quan), cache (npm + Flutter), **coverage** (c8 + lcov, tải lên artifact), action **ghim theo SHA**. Job `backend` (Postgres service) + `flutter` + cổng tổng hợp `CI passed`.
+- **Bảo mật/deps:** CodeQL (`codeql.yml`) phân tích JS/TS, **Dependabot** (npm + pub + github-actions) hằng tuần. _(Bật "Dependency graph" trong Settings → Code security để có thêm Dependabot alerts.)_
+- **Release:** đẩy tag `v*` → tự build APK và tạo GitHub Release kèm file (`release.yml`).
+- **Đóng góp:** có sẵn PR template + issue templates (`.github/`).
 - **Git hook**: `pre-commit` chạy format-check + lint; `pre-push` chạy test. Bật bằng `make setup` (hoặc `make hooks`). Bỏ qua khi cần: `git commit/push --no-verify`.
 - **DB test tách riêng** `vimart_test` — bộ test tự tạo lại schema + seed; sẽ **từ chối chạy** nếu `DATABASE_URL` không trỏ tới `vimart_test` (tránh xóa nhầm dữ liệu dev).
 - Postgres: máy đã cài Homebrew Postgres là đủ; hoặc `make db-up` để dùng Docker (`docker-compose.yml`, cùng phiên bản 16 với CI).

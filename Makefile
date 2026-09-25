@@ -44,6 +44,10 @@ be-test: ## Test backend (node:test + Postgres, DB vimart_test)
 	@createdb vimart_test 2>/dev/null || true
 	cd server && NODE_ENV=test npm test
 
+be-coverage: ## Test backend kèm báo cáo coverage (c8)
+	@createdb vimart_test 2>/dev/null || true
+	cd server && NODE_ENV=test npm run coverage
+
 ## ---------- Flutter (lib/, test/) ----------
 app-analyze: ## flutter analyze
 	flutter analyze
@@ -56,6 +60,9 @@ app-format-check: ## Kiểm tra dart format thư mục test/
 
 app-test: ## flutter test
 	flutter test
+
+app-coverage: ## flutter test kèm coverage (lcov)
+	flutter test --coverage
 
 ## ---------- Tổng hợp (dùng ở local) ----------
 lint: be-lint app-analyze ## Lint cả 2 phía
