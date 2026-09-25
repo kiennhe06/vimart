@@ -15,6 +15,7 @@ import paymentRoutes from './modules/payment/payment.routes.js';
 import reviewRoutes from './modules/review/review.routes.js';
 import favoriteRoutes from './modules/favorite/favorite.routes.js';
 import adminRoutes from './modules/admin/admin.routes.js';
+import uploadRoutes from './modules/upload/upload.routes.js';
 
 const router = Router();
 
@@ -29,5 +30,6 @@ router.use('/payments', paymentRoutes);
 router.use('/reviews', reviewRoutes);
 router.use('/favorites', favoriteRoutes);
 router.use('/admin', adminRoutes);
+router.use('/uploads', uploadRoutes);
 
 export default router;

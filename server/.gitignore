@@ -4,3 +4,7 @@ node_modules/
 dist/
 coverage/
 .DS_Store
+
+# Ảnh người dùng upload (không commit)
+public/uploads/*
+!public/uploads/.gitkeep
