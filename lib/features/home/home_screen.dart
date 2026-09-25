@@ -4,6 +4,9 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../core/i18n/app_strings.dart';
 import '../../models/product.dart';
+import '../../widgets/app_skeleton.dart';
+import '../../widgets/async_view.dart';
+import '../../widgets/entrance.dart';
 import '../catalog/catalog_providers.dart';
 import 'home_ui.dart';
 import 'widgets/category_circles.dart';
@@ -44,21 +47,27 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                 child: ListView(
                   padding: const EdgeInsets.only(bottom: 24),
                   children: [
-                    const _PromoBanner(),
-                    VimartSearchBox(
-                      hint: s.searchHint,
-                      onSubmitted: (v) => setState(() => _keyword = v.trim()),
-                    ),
-                    categoriesAsync.maybeWhen(
-                      data: (cats) => CategoryCircles(
-                        categories: cats,
-                        selectedId: _categoryId,
-                        onSelect: (id) => setState(() => _categoryId = id),
-                        allLabel: s.all,
+                    const FadeSlideIn(index: 0, child: _PromoBanner()),
+                    FadeSlideIn(
+                      index: 1,
+                      child: VimartSearchBox(
+                        hint: s.searchHint,
+                        onSubmitted: (v) => setState(() => _keyword = v.trim()),
                       ),
-                      orElse: () => const SizedBox(height: 96),
                     ),
-                    _SectionHeader(title: s.forYou, seeAll: s.seeAll),
+                    FadeSlideIn(
+                      index: 2,
+                      child: categoriesAsync.maybeWhen(
+                        data: (cats) => CategoryCircles(
+                          categories: cats,
+                          selectedId: _categoryId,
+                          onSelect: (id) => setState(() => _categoryId = id),
+                          allLabel: s.all,
+                        ),
+                        orElse: () => const SizedBox(height: 96),
+                      ),
+                    ),
+                    FadeSlideIn(index: 3, child: _SectionHeader(title: s.forYou, seeAll: s.seeAll)),
                     _buildProducts(productsAsync, query, s),
                   ],
                 ),
@@ -72,19 +81,22 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
 
   Widget _buildProducts(AsyncValue<List<ProductCard>> async, ProductQuery query, AppStrings s) {
     return async.when(
-      loading: () => Padding(
-        padding: const EdgeInsets.all(40),
-        child: Center(child: Text(s.loadingProducts, style: HomeText.meta)),
+      loading: () => const SkeletonGrid(
+        count: 6,
+        padding: EdgeInsets.fromLTRB(HomeDims.pagePadding, 4, HomeDims.pagePadding, 8),
       ),
       error: (err, _) => Padding(
-        padding: const EdgeInsets.all(40),
-        child: Center(child: Text(err.toString(), textAlign: TextAlign.center, style: HomeText.meta)),
+        padding: const EdgeInsets.symmetric(vertical: 24),
+        child: ErrorView(
+          message: err.toString(),
+          onRetry: () => ref.invalidate(productListProvider(query)),
+        ),
       ),
       data: (products) {
         if (products.isEmpty) {
           return Padding(
-            padding: const EdgeInsets.all(40),
-            child: Center(child: Text(s.noProducts, style: HomeText.meta)),
+            padding: const EdgeInsets.symmetric(vertical: 24),
+            child: EmptyView(message: s.noProducts, icon: Icons.search_off_rounded),
           );
         }
         return GridView.builder(
@@ -98,9 +110,12 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
             childAspectRatio: 0.66,
           ),
           itemCount: products.length,
-          itemBuilder: (_, i) => ProductTile(
-            product: products[i],
-            tint: kCategoryTints[i % kCategoryTints.length],
+          itemBuilder: (_, i) => FadeSlideIn(
+            index: i,
+            child: ProductTile(
+              product: products[i],
+              tint: kCategoryTints[i % kCategoryTints.length],
+            ),
           ),
         );
       },

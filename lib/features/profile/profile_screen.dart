@@ -2,9 +2,11 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../app/motion.dart';
 import '../../app/theme.dart';
 import '../../core/i18n/app_strings.dart';
 import '../../core/i18n/locale_provider.dart';
+import '../../widgets/app_feedback.dart';
 import '../../widgets/login_required_view.dart';
 import '../auth/auth_provider.dart';
 import '../seller/seller_repository.dart';
@@ -183,7 +185,7 @@ class ProfileScreen extends ConsumerWidget {
                 if (ctx.mounted) Navigator.pop(ctx, true);
               } catch (e) {
                 if (ctx.mounted) {
-                  ScaffoldMessenger.of(ctx).showSnackBar(SnackBar(content: Text(e.toString())));
+                  showAppSnack(ctx, e.toString(), type: AppSnackType.error);
                 }
               }
             },
@@ -193,7 +195,7 @@ class ProfileScreen extends ConsumerWidget {
       ),
     );
     if (created == true && context.mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(s.shopCreated)));
+      showAppSnack(context, s.shopCreated, type: AppSnackType.success);
     }
   }
 }
@@ -213,7 +215,10 @@ class _MenuRow extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return InkWell(
-      onTap: onTap,
+      onTap: () {
+        AppHaptics.light();
+        onTap();
+      },
       child: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
         child: Row(
@@ -232,8 +237,17 @@ class _MenuRow extends StatelessWidget {
                       color: danger ? AppColors.danger : null)),
             ),
             if (trailingText != null)
-              Text(trailingText!,
-                  style: const TextStyle(color: AppColors.brand, fontWeight: FontWeight.w700, fontSize: 13)),
+              AnimatedSwitcher(
+                duration: AppMotion.dur(context, AppMotion.fast),
+                transitionBuilder: (c, a) => FadeTransition(
+                  opacity: a,
+                  child: SizeTransition(sizeFactor: a, axis: Axis.horizontal, child: c),
+                ),
+                child: Text(trailingText!,
+                    key: ValueKey(trailingText),
+                    style: const TextStyle(
+                        color: AppColors.brand, fontWeight: FontWeight.w700, fontSize: 13)),
+              ),
             const SizedBox(width: 4),
             Icon(Icons.chevron_right_rounded, color: Colors.grey.shade400),
           ],

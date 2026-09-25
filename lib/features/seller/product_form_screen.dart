@@ -4,6 +4,7 @@ import 'package:image_picker/image_picker.dart';
 
 import '../../app/theme.dart';
 import '../../core/i18n/app_strings.dart';
+import '../../widgets/app_feedback.dart';
 import '../../core/providers.dart';
 import '../../models/category.dart';
 import '../../models/product.dart';
@@ -47,10 +48,10 @@ class _ProductFormScreenState extends ConsumerState<ProductFormScreen> {
       final url = await ref.read(apiClientProvider).uploadImage(picked.path);
       setState(() => _imageUrl.text = url);
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(ref.read(stringsProvider).imageUploaded)));
+        showAppSnack(context, ref.read(stringsProvider).imageUploaded, type: AppSnackType.success);
       }
     } catch (e) {
-      if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(e.toString())));
+      if (mounted) showAppSnack(context, e.toString(), type: AppSnackType.error);
     } finally {
       if (mounted) setState(() => _uploadingImage = false);
     }
@@ -120,11 +121,11 @@ class _ProductFormScreenState extends ConsumerState<ProductFormScreen> {
       ref.invalidate(myProductsProvider);
       if (widget.productId != null) ref.invalidate(productDetailProvider(widget.productId!));
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(ref.read(stringsProvider).productSaved)));
+        showAppSnack(context, ref.read(stringsProvider).productSaved, type: AppSnackType.success);
         Navigator.pop(context);
       }
     } catch (e) {
-      if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(e.toString())));
+      if (mounted) showAppSnack(context, e.toString(), type: AppSnackType.error);
     } finally {
       if (mounted) setState(() => _saving = false);
     }

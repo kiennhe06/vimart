@@ -2,7 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../core/i18n/app_strings.dart';
+import '../../widgets/app_skeleton.dart';
 import '../../widgets/async_view.dart';
+import '../../widgets/entrance.dart';
 import '../home/home_ui.dart';
 import '../home/widgets/product_tile.dart';
 import 'favorite_provider.dart';
@@ -19,6 +21,7 @@ class FavoritesScreen extends ConsumerWidget {
       appBar: AppBar(title: Text(s.favoriteProducts)),
       body: AsyncView(
         value: async,
+        loading: const SkeletonGrid(),
         onRetry: () => ref.invalidate(favoritesProvider),
         data: (products) {
           if (products.isEmpty) {
@@ -33,9 +36,12 @@ class FavoritesScreen extends ConsumerWidget {
               mainAxisSpacing: 14,
             ),
             itemCount: products.length,
-            itemBuilder: (_, i) => ProductTile(
-              product: products[i],
-              tint: kCategoryTints[i % kCategoryTints.length],
+            itemBuilder: (_, i) => FadeSlideIn(
+              index: i,
+              child: ProductTile(
+                product: products[i],
+                tint: kCategoryTints[i % kCategoryTints.length],
+              ),
             ),
           );
         },

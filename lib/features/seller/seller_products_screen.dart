@@ -6,8 +6,12 @@ import '../../app/theme.dart';
 import '../../core/format.dart';
 import '../../core/i18n/app_strings.dart';
 import '../../models/product.dart';
+import '../../widgets/app_feedback.dart';
+import '../../widgets/app_skeleton.dart';
 import '../../widgets/async_view.dart';
+import '../../widgets/entrance.dart';
 import '../../widgets/network_image_box.dart';
+import '../../widgets/pressable.dart';
 import 'seller_repository.dart';
 
 /// Màn quản lý sản phẩm của shop — thẻ bo tròn, có ảnh + nút sửa/xóa mềm.
@@ -32,6 +36,7 @@ class SellerProductsScreen extends ConsumerWidget {
         onRefresh: () => ref.refresh(myProductsProvider.future),
         child: AsyncView(
           value: async,
+          loading: const SkeletonList(count: 5, padding: EdgeInsets.fromLTRB(16, 12, 16, 90)),
           onRetry: () => ref.invalidate(myProductsProvider),
           data: (products) {
             if (products.isEmpty) {
@@ -43,7 +48,7 @@ class SellerProductsScreen extends ConsumerWidget {
             return ListView.builder(
               padding: const EdgeInsets.fromLTRB(16, 12, 16, 90),
               itemCount: products.length,
-              itemBuilder: (_, i) => _ProductRow(product: products[i]),
+              itemBuilder: (_, i) => FadeSlideIn(index: i, child: _ProductRow(product: products[i])),
             );
           },
         ),
@@ -100,8 +105,9 @@ class _ProductRow extends ConsumerWidget {
   }
 
   Widget _iconBtn(IconData icon, Color bg, Color fg, VoidCallback onTap) {
-    return GestureDetector(
+    return Pressable(
       onTap: onTap,
+      scale: 0.85,
       child: Container(
         width: 38, height: 38,
         decoration: BoxDecoration(color: bg, borderRadius: BorderRadius.circular(11)),
@@ -133,7 +139,7 @@ class _ProductRow extends ConsumerWidget {
         ref.invalidate(myProductsProvider);
       } catch (e) {
         if (context.mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(e.toString())));
+          showAppSnack(context, e.toString(), type: AppSnackType.error);
         }
       }
     }

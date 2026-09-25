@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 
+import 'motion.dart';
+
 /// Bảng màu ViMart — phong cách "grocery" tươi sáng, xanh lá chủ đạo.
 /// Luôn ưu tiên dùng qua Theme.of(context).colorScheme để đồng bộ sáng/tối.
 class AppColors {
@@ -34,9 +36,18 @@ ThemeData _buildTheme(Brightness brightness) {
 
   final isLight = brightness == Brightness.light;
 
+  const pageTransitions = PageTransitionsTheme(
+    builders: {
+      TargetPlatform.iOS: _FadeThroughPageTransitions(),
+      TargetPlatform.android: _FadeThroughPageTransitions(),
+      TargetPlatform.macOS: _FadeThroughPageTransitions(),
+    },
+  );
+
   return ThemeData(
     useMaterial3: true,
     colorScheme: colorScheme,
+    pageTransitionsTheme: pageTransitions,
     scaffoldBackgroundColor: isLight ? const Color(0xFFF4F6F5) : null,
     appBarTheme: AppBarTheme(
       backgroundColor: isLight ? const Color(0xFFF4F6F5) : colorScheme.surface,
@@ -113,4 +124,30 @@ ThemeData _buildTheme(Brightness brightness) {
     ),
     dividerTheme: const DividerThemeData(color: Color(0xFFECEFF1), thickness: 1),
   );
+}
+
+/// Chuyển trang mờ dần + phóng nhẹ (fade-through) — êm, đồng bộ mọi nền tảng.
+/// Tôn trọng giảm chuyển động: khi bật thì không hiệu ứng.
+class _FadeThroughPageTransitions extends PageTransitionsBuilder {
+  const _FadeThroughPageTransitions();
+
+  @override
+  Widget buildTransitions<T>(
+    PageRoute<T> route,
+    BuildContext context,
+    Animation<double> animation,
+    Animation<double> secondaryAnimation,
+    Widget child,
+  ) {
+    if (context.reduceMotion) return child;
+    final curved = CurvedAnimation(
+      parent: animation,
+      curve: AppMotion.emphasized,
+      reverseCurve: AppMotion.exit,
+    );
+    return FadeTransition(
+      opacity: curved,
+      child: Transform.scale(scale: 0.98 + 0.02 * curved.value, child: child),
+    );
+  }
 }

@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart' show Icons;
 import 'package:flutter/widgets.dart';
 
+import '../../../app/motion.dart';
+import '../../../widgets/pressable.dart';
 import '../home_ui.dart';
 
 /// Thanh điều hướng dưới cùng dạng "viên thuốc" nổi — mỗi mục là 1 vòng tròn.
@@ -81,46 +83,65 @@ class _NavCircle extends StatelessWidget {
       button: true,
       selected: selected,
       label: label,
-      child: GestureDetector(
-        behavior: HitTestBehavior.opaque,
+      child: Pressable(
         onTap: onTap,
+        scale: 0.9,
         child: Stack(
-        clipBehavior: Clip.none,
-        children: [
-          AnimatedContainer(
-            duration: const Duration(milliseconds: 180),
-            width: 52,
-            height: 52,
-            decoration: BoxDecoration(
-              shape: BoxShape.circle,
-              color: selected ? HomeColors.brandSoft : HomeColors.surface,
-              border: Border.all(
-                color: selected ? HomeColors.brand : HomeColors.border,
-                width: selected ? 2 : 1.2,
+          clipBehavior: Clip.none,
+          children: [
+            AnimatedContainer(
+              duration: AppMotion.dur(context, AppMotion.base),
+              curve: AppMotion.emphasized,
+              width: 52,
+              height: 52,
+              alignment: Alignment.center,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                color: selected ? HomeColors.brandSoft : HomeColors.surface,
+                border: Border.all(
+                  color: selected ? HomeColors.brand : HomeColors.border,
+                  width: selected ? 2 : 1.2,
+                ),
+              ),
+              child: AnimatedScale(
+                scale: selected ? 1.12 : 1.0,
+                duration: AppMotion.dur(context, AppMotion.base),
+                curve: AppMotion.pop,
+                child: Icon(icon,
+                    size: 24, color: selected ? HomeColors.brand : HomeColors.textSecondary),
               ),
             ),
-            child: Icon(icon, size: 24, color: selected ? HomeColors.brand : HomeColors.textSecondary),
-          ),
-          if (badgeCount > 0)
+            // Badge giỏ hàng: hiện/ẩn bằng scale (pop) + số nhảy khi đổi.
             Positioned(
               right: -2,
               top: -2,
-              child: Container(
-                padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 1),
-                constraints: const BoxConstraints(minWidth: 18),
-                alignment: Alignment.center,
-                decoration: BoxDecoration(
-                  color: HomeColors.brand,
-                  borderRadius: BorderRadius.circular(10),
-                  border: Border.all(color: HomeColors.surface, width: 2),
-                ),
-                child: Text(
-                  badgeCount > 99 ? '99+' : '$badgeCount',
-                  style: const TextStyle(color: Color(0xFFFFFFFF), fontSize: 10, fontWeight: FontWeight.w800),
+              child: AnimatedScale(
+                scale: badgeCount > 0 ? 1 : 0,
+                duration: AppMotion.dur(context, AppMotion.base),
+                curve: AppMotion.pop,
+                child: Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 1),
+                  constraints: const BoxConstraints(minWidth: 18),
+                  alignment: Alignment.center,
+                  decoration: BoxDecoration(
+                    color: HomeColors.brand,
+                    borderRadius: BorderRadius.circular(10),
+                    border: Border.all(color: HomeColors.surface, width: 2),
+                  ),
+                  child: AnimatedSwitcher(
+                    duration: AppMotion.dur(context, AppMotion.fast),
+                    transitionBuilder: (c, a) => ScaleTransition(scale: a, child: c),
+                    child: Text(
+                      badgeCount > 99 ? '99+' : '$badgeCount',
+                      key: ValueKey(badgeCount),
+                      style: const TextStyle(
+                          color: Color(0xFFFFFFFF), fontSize: 10, fontWeight: FontWeight.w800),
+                    ),
+                  ),
                 ),
               ),
             ),
-        ],
+          ],
         ),
       ),
     );

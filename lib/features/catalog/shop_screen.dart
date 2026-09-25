@@ -3,7 +3,9 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../app/theme.dart';
 import '../../core/i18n/app_strings.dart';
+import '../../widgets/app_skeleton.dart';
 import '../../widgets/async_view.dart';
+import '../../widgets/entrance.dart';
 import '../home/home_ui.dart';
 import '../home/widgets/product_tile.dart';
 import 'catalog_providers.dart';
@@ -21,6 +23,7 @@ class ShopScreen extends ConsumerWidget {
       appBar: AppBar(title: Text(s.shopProducts)),
       body: AsyncView(
         value: async,
+        loading: const SkeletonGrid(),
         onRetry: () => ref.invalidate(shopProductsProvider(shopId)),
         data: (products) {
           if (products.isEmpty) {
@@ -61,9 +64,12 @@ class ShopScreen extends ConsumerWidget {
                     mainAxisSpacing: 14,
                   ),
                   itemCount: products.length,
-                  itemBuilder: (_, i) => ProductTile(
-                    product: products[i],
-                    tint: kCategoryTints[i % kCategoryTints.length],
+                  itemBuilder: (_, i) => FadeSlideIn(
+                    index: i,
+                    child: ProductTile(
+                      product: products[i],
+                      tint: kCategoryTints[i % kCategoryTints.length],
+                    ),
                   ),
                 ),
               ),

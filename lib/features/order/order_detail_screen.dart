@@ -1,9 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../app/motion.dart';
 import '../../app/theme.dart';
 import '../../core/format.dart';
 import '../../core/i18n/app_strings.dart';
+import '../../widgets/app_feedback.dart';
 import '../../models/order.dart';
 import '../../widgets/async_view.dart';
 import '../auth/auth_provider.dart';
@@ -72,7 +74,7 @@ class _OrderDetailBodyState extends ConsumerState<_OrderDetailBody> {
       await ref.read(orderRepositoryProvider).action(order.summary.id, action);
       _refresh();
     } catch (e) {
-      if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(e.toString())));
+      if (mounted) showAppSnack(context, e.toString(), type: AppSnackType.error);
     } finally {
       if (mounted) setState(() => _busy = false);
     }
@@ -251,7 +253,7 @@ class _ReviewDialogState extends ConsumerState<_ReviewDialog> {
       ref.invalidate(productDetailProvider(widget.productId));
       if (mounted) Navigator.pop(context, true);
     } catch (e) {
-      if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(e.toString())));
+      if (mounted) showAppSnack(context, e.toString(), type: AppSnackType.error);
     } finally {
       if (mounted) setState(() => _saving = false);
     }
@@ -269,9 +271,18 @@ class _ReviewDialogState extends ConsumerState<_ReviewDialog> {
             mainAxisAlignment: MainAxisAlignment.center,
             children: List.generate(5, (i) {
               final star = i + 1;
+              final on = star <= _rating;
               return IconButton(
-                icon: Icon(star <= _rating ? Icons.star : Icons.star_border, color: AppColors.accent),
-                onPressed: () => setState(() => _rating = star),
+                icon: AnimatedScale(
+                  scale: on ? 1.15 : 1.0,
+                  duration: AppMotion.dur(context, AppMotion.base),
+                  curve: AppMotion.pop,
+                  child: Icon(on ? Icons.star_rounded : Icons.star_border_rounded, color: AppColors.accent),
+                ),
+                onPressed: () {
+                  AppHaptics.light();
+                  setState(() => _rating = star);
+                },
               );
             }),
           ),

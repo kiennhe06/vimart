@@ -3,7 +3,11 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../app/theme.dart';
 import '../../core/i18n/app_strings.dart';
+import '../../widgets/app_feedback.dart';
+import '../../widgets/app_skeleton.dart';
 import '../../widgets/async_view.dart';
+import '../../widgets/entrance.dart';
+import '../../widgets/pressable.dart';
 import 'address_provider.dart';
 
 /// Màn hình quản lý sổ địa chỉ nhận hàng.
@@ -25,6 +29,7 @@ class AddressesScreen extends ConsumerWidget {
       ),
       body: AsyncView(
         value: async,
+        loading: const SkeletonList(count: 3),
         onRetry: () => ref.invalidate(addressesProvider),
         data: (addresses) {
           if (addresses.isEmpty) {
@@ -35,7 +40,9 @@ class AddressesScreen extends ConsumerWidget {
             itemCount: addresses.length,
             itemBuilder: (_, i) {
               final a = addresses[i];
-              return Container(
+              return FadeSlideIn(
+                index: i,
+                child: Container(
                 margin: const EdgeInsets.only(bottom: 12),
                 padding: const EdgeInsets.all(14),
                 decoration: BoxDecoration(
@@ -76,14 +83,15 @@ class AddressesScreen extends ConsumerWidget {
                         ],
                       ),
                     ),
-                    GestureDetector(
+                    Pressable(
+                      scale: 0.85,
                       onTap: () async {
                         try {
                           await ref.read(addressRepositoryProvider).remove(a.id);
                           ref.invalidate(addressesProvider);
                         } catch (e) {
                           if (context.mounted) {
-                            ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(e.toString())));
+                            showAppSnack(context, e.toString(), type: AppSnackType.error);
                           }
                         }
                       },
@@ -95,6 +103,7 @@ class AddressesScreen extends ConsumerWidget {
                     ),
                   ],
                 ),
+              ),
               );
             },
           );
@@ -143,7 +152,7 @@ class AddressesScreen extends ConsumerWidget {
                 if (ctx.mounted) Navigator.pop(ctx, true);
               } catch (e) {
                 if (ctx.mounted) {
-                  ScaffoldMessenger.of(ctx).showSnackBar(SnackBar(content: Text(e.toString())));
+                  showAppSnack(ctx, e.toString(), type: AppSnackType.error);
                 }
               }
             },

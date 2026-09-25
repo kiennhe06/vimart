@@ -15,9 +15,33 @@ import '../features/seller/product_form_screen.dart';
 import '../features/seller/seller_orders_screen.dart';
 import '../features/seller/seller_products_screen.dart';
 import 'home_shell.dart';
+import 'motion.dart';
+import 'theme.dart';
 
 /// Các route công khai (khách vãng lai xem được, không cần đăng nhập).
 const _publicRoutes = {'/', '/login', '/register'};
+
+/// Trang có chuyển cảnh fade-through + phóng nhẹ (tôn trọng giảm chuyển động).
+CustomTransitionPage<void> _appPage(GoRouterState state, Widget child) {
+  return CustomTransitionPage<void>(
+    key: state.pageKey,
+    child: child,
+    transitionDuration: AppMotion.page,
+    reverseTransitionDuration: AppMotion.base,
+    transitionsBuilder: (context, animation, secondaryAnimation, child) {
+      if (context.reduceMotion) return child;
+      final curved = CurvedAnimation(
+        parent: animation,
+        curve: AppMotion.emphasized,
+        reverseCurve: AppMotion.exit,
+      );
+      return FadeTransition(
+        opacity: curved,
+        child: Transform.scale(scale: 0.98 + 0.02 * curved.value, child: child),
+      );
+    },
+  );
+}
 
 /// Cấu hình điều hướng toàn app (go_router) + bảo vệ route cần đăng nhập.
 final routerProvider = Provider<GoRouter>((ref) {
@@ -52,47 +76,86 @@ final routerProvider = Provider<GoRouter>((ref) {
     routes: [
       GoRoute(path: '/splash', builder: (_, _) => const _SplashScreen()),
       GoRoute(path: '/', builder: (_, _) => const HomeShell()),
-      GoRoute(path: '/login', builder: (_, _) => const LoginScreen()),
-      GoRoute(path: '/register', builder: (_, _) => const RegisterScreen()),
+      GoRoute(path: '/login', pageBuilder: (_, s) => _appPage(s, const LoginScreen())),
+      GoRoute(path: '/register', pageBuilder: (_, s) => _appPage(s, const RegisterScreen())),
       GoRoute(
         path: '/product/:id',
-        builder: (_, s) => ProductDetailScreen(productId: int.parse(s.pathParameters['id']!)),
+        pageBuilder: (_, s) =>
+            _appPage(s, ProductDetailScreen(productId: int.parse(s.pathParameters['id']!))),
       ),
       GoRoute(
         path: '/shop/:id',
-        builder: (_, s) => ShopScreen(shopId: int.parse(s.pathParameters['id']!)),
+        pageBuilder: (_, s) => _appPage(s, ShopScreen(shopId: int.parse(s.pathParameters['id']!))),
       ),
-      GoRoute(path: '/checkout', builder: (_, _) => const CheckoutScreen()),
-      GoRoute(path: '/favorites', builder: (_, _) => const FavoritesScreen()),
-      GoRoute(path: '/addresses', builder: (_, _) => const AddressesScreen()),
+      GoRoute(path: '/checkout', pageBuilder: (_, s) => _appPage(s, const CheckoutScreen())),
+      GoRoute(path: '/favorites', pageBuilder: (_, s) => _appPage(s, const FavoritesScreen())),
+      GoRoute(path: '/addresses', pageBuilder: (_, s) => _appPage(s, const AddressesScreen())),
       GoRoute(
         path: '/order/:id',
-        builder: (_, s) => OrderDetailScreen(orderId: int.parse(s.pathParameters['id']!)),
+        pageBuilder: (_, s) =>
+            _appPage(s, OrderDetailScreen(orderId: int.parse(s.pathParameters['id']!))),
       ),
-      GoRoute(path: '/seller/products', builder: (_, _) => const SellerProductsScreen()),
-      GoRoute(path: '/seller/products/new', builder: (_, _) => const ProductFormScreen()),
+      GoRoute(
+        path: '/seller/products',
+        pageBuilder: (_, s) => _appPage(s, const SellerProductsScreen()),
+      ),
+      GoRoute(
+        path: '/seller/products/new',
+        pageBuilder: (_, s) => _appPage(s, const ProductFormScreen()),
+      ),
       GoRoute(
         path: '/seller/products/edit/:id',
-        builder: (_, s) => ProductFormScreen(productId: int.parse(s.pathParameters['id']!)),
+        pageBuilder: (_, s) =>
+            _appPage(s, ProductFormScreen(productId: int.parse(s.pathParameters['id']!))),
       ),
-      GoRoute(path: '/seller/orders', builder: (_, _) => const SellerOrdersScreen()),
+      GoRoute(path: '/seller/orders', pageBuilder: (_, s) => _appPage(s, const SellerOrdersScreen())),
     ],
   );
 });
 
-/// Màn hình chờ trong lúc kiểm tra đăng nhập khi mở app.
-class _SplashScreen extends StatelessWidget {
+/// Màn hình chờ trong lúc kiểm tra đăng nhập khi mở app — logo "thở" nhẹ.
+class _SplashScreen extends StatefulWidget {
   const _SplashScreen();
   @override
+  State<_SplashScreen> createState() => _SplashScreenState();
+}
+
+class _SplashScreenState extends State<_SplashScreen> with SingleTickerProviderStateMixin {
+  late final AnimationController _c =
+      AnimationController(vsync: this, duration: const Duration(milliseconds: 1100))
+        ..repeat(reverse: true);
+
+  @override
+  void dispose() {
+    _c.dispose();
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
-    return const Scaffold(
+    final pulse = context.reduceMotion
+        ? const AlwaysStoppedAnimation(1.0)
+        : Tween(begin: 0.92, end: 1.06).animate(CurvedAnimation(parent: _c, curve: Curves.easeInOut));
+    return Scaffold(
       body: Center(
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Icon(Icons.storefront, size: 72, color: Color(0xFFF4511E)),
-            SizedBox(height: 16),
-            CircularProgressIndicator(),
+            ScaleTransition(
+              scale: pulse,
+              child: Container(
+                width: 96,
+                height: 96,
+                decoration: const BoxDecoration(color: AppColors.brandSoft, shape: BoxShape.circle),
+                child: const Icon(Icons.storefront_rounded, size: 48, color: AppColors.brand),
+              ),
+            ),
+            const SizedBox(height: 22),
+            const SizedBox(
+              width: 26,
+              height: 26,
+              child: CircularProgressIndicator(strokeWidth: 2.6, color: AppColors.brand),
+            ),
           ],
         ),
       ),

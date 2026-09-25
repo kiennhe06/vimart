@@ -1,11 +1,16 @@
-import 'package:flutter/material.dart' show Icons, ScaffoldMessenger, SnackBar, SnackBarAction, CircularProgressIndicator;
+import 'package:flutter/material.dart'
+    show Icons, CircularProgressIndicator, SnackBarAction, Colors;
 import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../../app/motion.dart';
 import '../../../core/format.dart';
 import '../../../core/i18n/app_strings.dart';
 import '../../../models/product.dart';
+import '../../../widgets/app_feedback.dart';
+import '../../../widgets/network_image_box.dart';
+import '../../../widgets/pressable.dart';
 import '../../auth/auth_provider.dart';
 import '../../cart/cart_provider.dart';
 import '../../catalog/catalog_repository.dart';
@@ -23,15 +28,18 @@ class ProductTile extends ConsumerStatefulWidget {
 
 class _ProductTileState extends ConsumerState<ProductTile> {
   bool _adding = false;
+  bool _justAdded = false;
 
   /// Thêm nhanh: lấy phân loại đầu tiên còn hàng rồi bỏ vào giỏ.
   Future<void> _quickAdd() async {
     final s = ref.read(stringsProvider);
     if (!ref.read(authProvider).isLoggedIn) {
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-        content: Text(s.loginToBuy),
+      showAppSnack(
+        context,
+        s.loginToBuy,
+        type: AppSnackType.warning,
         action: SnackBarAction(label: s.login, onPressed: () => context.push('/login')),
-      ));
+      );
       return;
     }
     setState(() => _adding = true);
@@ -43,16 +51,17 @@ class _ProductTileState extends ConsumerState<ProductTile> {
             ? detail.variants.first
             : Variant(id: 0, name: '-', price: 0, stock: 0),
       );
-      if (variant.id == 0) throw Exception(ref.read(stringsProvider).tempOutOfStock);
+      if (variant.id == 0) throw Exception(s.tempOutOfStock);
       await ref.read(cartProvider.notifier).add(variant.id, 1);
       if (mounted) {
-        ScaffoldMessenger.of(context)
-            .showSnackBar(SnackBar(content: Text(ref.read(stringsProvider).addedToCart)));
+        setState(() => _justAdded = true);
+        showAppSnack(context, s.addedToCart, type: AppSnackType.success);
+        Future.delayed(const Duration(milliseconds: 1100), () {
+          if (mounted) setState(() => _justAdded = false);
+        });
       }
     } catch (e) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(e.toString())));
-      }
+      if (mounted) showAppSnack(context, e.toString(), type: AppSnackType.error);
     } finally {
       if (mounted) setState(() => _adding = false);
     }
@@ -63,8 +72,7 @@ class _ProductTileState extends ConsumerState<ProductTile> {
     final p = widget.product;
     final s = ref.watch(stringsProvider);
     final tint = widget.tint ?? HomeColors.brandSoft;
-    return GestureDetector(
-      behavior: HitTestBehavior.opaque,
+    return Pressable(
       onTap: () => context.push('/product/${p.id}'),
       child: Container(
         decoration: BoxDecoration(
@@ -76,13 +84,16 @@ class _ProductTileState extends ConsumerState<ProductTile> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // Ảnh trên nền pastel bo tròn
+            // Ảnh trên nền pastel bo tròn — Hero nối sang trang chi tiết.
             Expanded(
               child: Container(
                 width: double.infinity,
                 decoration: BoxDecoration(color: tint, borderRadius: BorderRadius.circular(16)),
                 clipBehavior: Clip.antiAlias,
-                child: _image(p.imageUrl),
+                child: Hero(
+                  tag: 'product-image-${p.id}',
+                  child: NetworkImageBox(url: p.imageUrl),
+                ),
               ),
             ),
             const SizedBox(height: 10),
@@ -106,34 +117,36 @@ class _ProductTileState extends ConsumerState<ProductTile> {
     );
   }
 
-  Widget _image(String? url) {
-    if (url == null || url.isEmpty) {
-      return const Icon(Icons.image_not_supported_outlined, color: HomeColors.textSecondary);
-    }
-    return Image.network(
-      url,
-      fit: BoxFit.cover,
-      loadingBuilder: (c, child, progress) => progress == null ? child : const SizedBox(),
-      errorBuilder: (c, e, s) => const Icon(Icons.broken_image_outlined, color: HomeColors.textSecondary),
-    );
-  }
-
-  /// Thanh "+" đầy chiều rộng ở đáy thẻ (thêm nhanh vào giỏ).
+  /// Thanh "+" đầy chiều rộng ở đáy thẻ (thêm nhanh vào giỏ) — morph "+" → ✓.
   Widget _addBar() {
-    return GestureDetector(
-      onTap: _adding ? null : _quickAdd,
-      child: Container(
+    final busy = _adding;
+    return Pressable(
+      onTap: (busy || _justAdded) ? null : _quickAdd,
+      haptic: false, // haptic do showAppSnack(success) đảm nhiệm
+      scale: 0.94,
+      child: AnimatedContainer(
+        duration: AppMotion.dur(context, AppMotion.base),
+        curve: AppMotion.emphasized,
         height: 36,
         alignment: Alignment.center,
         decoration: BoxDecoration(
-          color: HomeColors.brandSoft,
+          color: _justAdded ? HomeColors.brand : HomeColors.brandSoft,
           borderRadius: BorderRadius.circular(12),
         ),
-        child: _adding
-            ? const SizedBox(
-                height: 16, width: 16,
-                child: CircularProgressIndicator(strokeWidth: 2, color: HomeColors.brand))
-            : const Icon(Icons.add_rounded, color: HomeColors.brand, size: 22),
+        child: AnimatedSwitcher(
+          duration: AppMotion.dur(context, AppMotion.fast),
+          transitionBuilder: (c, a) => ScaleTransition(scale: a, child: c),
+          child: busy
+              ? const SizedBox(
+                  key: ValueKey('load'),
+                  height: 16,
+                  width: 16,
+                  child: CircularProgressIndicator(strokeWidth: 2, color: HomeColors.brand),
+                )
+              : _justAdded
+                  ? const Icon(Icons.check_rounded, key: ValueKey('ok'), color: Colors.white, size: 22)
+                  : const Icon(Icons.add_rounded, key: ValueKey('add'), color: HomeColors.brand, size: 22),
+        ),
       ),
     );
   }
