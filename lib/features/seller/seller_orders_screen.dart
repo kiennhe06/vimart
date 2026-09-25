@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../app/theme.dart';
 import '../../widgets/async_view.dart';
+import '../../widgets/pill_tab_bar.dart';
 import '../order/order_providers.dart';
 import '../order/orders_screen.dart' show OrderCard;
 
@@ -24,7 +26,7 @@ class SellerOrdersScreen extends ConsumerWidget {
       child: Scaffold(
         appBar: AppBar(
           title: const Text('Đơn hàng của shop'),
-          bottom: TabBar(isScrollable: true, tabs: _tabs.map((t) => Tab(text: t.$1)).toList()),
+          bottom: pillTabBar(_tabs.map((t) => t.$1).toList()),
         ),
         body: TabBarView(children: _tabs.map((t) => _ShopOrderList(status: t.$2)).toList()),
       ),
@@ -40,6 +42,7 @@ class _ShopOrderList extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final async = ref.watch(shopOrdersProvider(status));
     return RefreshIndicator(
+      color: AppColors.brand,
       onRefresh: () => ref.refresh(shopOrdersProvider(status).future),
       child: AsyncView(
         value: async,
@@ -52,7 +55,7 @@ class _ShopOrderList extends ConsumerWidget {
             ]);
           }
           return ListView.builder(
-            padding: const EdgeInsets.all(12),
+            padding: const EdgeInsets.all(16),
             itemCount: orders.length,
             itemBuilder: (_, i) => OrderCard(order: orders[i], showBuyer: true),
           );

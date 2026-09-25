@@ -3,8 +3,9 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../app/theme.dart';
 import '../../widgets/async_view.dart';
+import '../home/home_ui.dart';
+import '../home/widgets/product_tile.dart';
 import 'catalog_providers.dart';
-import 'widgets/product_card_view.dart';
 
 /// Trang shop công khai: hiển thị danh sách sản phẩm của một shop.
 class ShopScreen extends ConsumerWidget {
@@ -27,28 +28,41 @@ class ShopScreen extends ConsumerWidget {
             children: [
               Container(
                 width: double.infinity,
+                margin: const EdgeInsets.all(16),
                 padding: const EdgeInsets.all(16),
-                color: AppColors.brand.withValues(alpha: 0.08),
+                decoration: BoxDecoration(color: AppColors.brandSoft, borderRadius: BorderRadius.circular(20)),
                 child: Row(
                   children: [
-                    const CircleAvatar(backgroundColor: AppColors.brand, child: Icon(Icons.storefront, color: Colors.white)),
-                    const SizedBox(width: 12),
-                    Text(products.first.shopName ?? 'Shop',
-                        style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+                    const CircleAvatar(radius: 26, backgroundColor: AppColors.brand,
+                        child: Icon(Icons.storefront_rounded, color: Colors.white, size: 26)),
+                    const SizedBox(width: 14),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(products.first.shopName ?? 'Shop',
+                              style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w800)),
+                          Text('${products.length} sản phẩm', style: const TextStyle(color: Colors.grey, fontSize: 13)),
+                        ],
+                      ),
+                    ),
                   ],
                 ),
               ),
               Expanded(
                 child: GridView.builder(
-                  padding: const EdgeInsets.all(12),
+                  padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
                   gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
                     crossAxisCount: 2,
-                    childAspectRatio: 0.62,
-                    crossAxisSpacing: 12,
-                    mainAxisSpacing: 12,
+                    childAspectRatio: 0.66,
+                    crossAxisSpacing: 14,
+                    mainAxisSpacing: 14,
                   ),
                   itemCount: products.length,
-                  itemBuilder: (_, i) => ProductCardView(product: products[i]),
+                  itemBuilder: (_, i) => ProductTile(
+                    product: products[i],
+                    tint: kCategoryTints[i % kCategoryTints.length],
+                  ),
                 ),
               ),
             ],

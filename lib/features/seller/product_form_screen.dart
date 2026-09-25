@@ -1,9 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:image_picker/image_picker.dart';
 
+import '../../app/theme.dart';
+import '../../core/providers.dart';
 import '../../models/category.dart';
 import '../../models/product.dart';
 import '../../widgets/async_view.dart';
+import '../../widgets/network_image_box.dart';
 import '../catalog/catalog_providers.dart';
 import 'seller_repository.dart';
 
@@ -27,8 +31,29 @@ class _ProductFormScreenState extends ConsumerState<ProductFormScreen> {
   final List<_VariantControllers> _variants = [];
   bool _saving = false;
   bool _prefilled = false;
+  bool _uploadingImage = false;
 
   bool get _isEdit => widget.productId != null;
+
+  /// Chọn ảnh từ thư viện rồi upload lên server, lấy URL gán vào ô link ảnh.
+  Future<void> _pickAndUploadImage() async {
+    final picker = ImagePicker();
+    final picked = await picker.pickImage(source: ImageSource.gallery, imageQuality: 85);
+    if (picked == null) return; // người dùng hủy chọn
+
+    setState(() => _uploadingImage = true);
+    try {
+      final url = await ref.read(apiClientProvider).uploadImage(picked.path);
+      setState(() => _imageUrl.text = url);
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Đã tải ảnh lên')));
+      }
+    } catch (e) {
+      if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(e.toString())));
+    } finally {
+      if (mounted) setState(() => _uploadingImage = false);
+    }
+  }
 
   @override
   void initState() {
@@ -157,12 +182,48 @@ class _ProductFormScreenState extends ConsumerState<ProductFormScreen> {
                   orElse: () => const SizedBox.shrink(),
                 ),
                 const SizedBox(height: 12),
-                TextFormField(
-                  controller: _imageUrl,
-                  decoration: const InputDecoration(
-                    labelText: 'Link ảnh (URL)',
-                    hintText: 'https://...',
-                  ),
+                const Text('Ảnh sản phẩm', style: TextStyle(fontSize: 13, color: Colors.grey)),
+                const SizedBox(height: 6),
+                Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    // Xem trước ảnh (tự cập nhật khi link đổi)
+                    ClipRRect(
+                      borderRadius: BorderRadius.circular(10),
+                      child: SizedBox(
+                        width: 76,
+                        height: 76,
+                        child: ValueListenableBuilder(
+                          valueListenable: _imageUrl,
+                          builder: (_, value, _) => NetworkImageBox(url: value.text),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          OutlinedButton.icon(
+                            onPressed: _uploadingImage ? null : _pickAndUploadImage,
+                            icon: _uploadingImage
+                                ? const SizedBox(height: 16, width: 16, child: CircularProgressIndicator(strokeWidth: 2))
+                                : const Icon(Icons.image_outlined, color: AppColors.brand),
+                            label: Text(_uploadingImage ? 'Đang tải ảnh...' : 'Chọn ảnh từ máy'),
+                          ),
+                          const SizedBox(height: 8),
+                          TextFormField(
+                            controller: _imageUrl,
+                            decoration: const InputDecoration(
+                              labelText: 'hoặc dán link ảnh',
+                              hintText: 'https://...',
+                              isDense: true,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
                 ),
                 const SizedBox(height: 12),
                 TextFormField(

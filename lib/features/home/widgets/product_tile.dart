@@ -1,138 +1,137 @@
-import 'dart:math' as math;
-
+import 'package:flutter/material.dart' show Icons, ScaffoldMessenger, SnackBar, SnackBarAction, CircularProgressIndicator;
 import 'package:flutter/widgets.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../core/format.dart';
 import '../../../models/product.dart';
+import '../../auth/auth_provider.dart';
+import '../../cart/cart_provider.dart';
+import '../../catalog/catalog_repository.dart';
 import '../home_ui.dart';
 
-/// Card sản phẩm tự dựng hoàn toàn (KHÔNG dùng Card):
-/// Container(bo góc + bóng) > Column [ ảnh vuông bo góc trên, khối chữ ].
-class ProductTile extends StatelessWidget {
-  const ProductTile({super.key, required this.product});
-
+/// Thẻ sản phẩm phong cách grocery: ảnh nền mềm + tên + giá + nút "+" thêm nhanh.
+class ProductTile extends ConsumerStatefulWidget {
+  const ProductTile({super.key, required this.product, this.tint});
   final ProductCard product;
+  final Color? tint;
+
+  @override
+  ConsumerState<ProductTile> createState() => _ProductTileState();
+}
+
+class _ProductTileState extends ConsumerState<ProductTile> {
+  bool _adding = false;
+
+  /// Thêm nhanh: lấy phân loại đầu tiên còn hàng rồi bỏ vào giỏ.
+  Future<void> _quickAdd() async {
+    if (!ref.read(authProvider).isLoggedIn) {
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+        content: const Text('Vui lòng đăng nhập để mua hàng'),
+        action: SnackBarAction(label: 'Đăng nhập', onPressed: () => context.push('/login')),
+      ));
+      return;
+    }
+    setState(() => _adding = true);
+    try {
+      final detail = await ref.read(catalogRepositoryProvider).getProduct(widget.product.id);
+      final variant = detail.variants.firstWhere(
+        (v) => v.inStock,
+        orElse: () => detail.variants.isNotEmpty
+            ? detail.variants.first
+            : Variant(id: 0, name: '-', price: 0, stock: 0),
+      );
+      if (variant.id == 0) throw Exception('Sản phẩm tạm hết hàng');
+      await ref.read(cartProvider.notifier).add(variant.id, 1);
+      if (mounted) {
+        ScaffoldMessenger.of(context)
+            .showSnackBar(const SnackBar(content: Text('Đã thêm vào giỏ hàng')));
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(e.toString())));
+      }
+    } finally {
+      if (mounted) setState(() => _adding = false);
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
+    final p = widget.product;
+    final tint = widget.tint ?? HomeColors.brandSoft;
     return GestureDetector(
       behavior: HitTestBehavior.opaque,
-      onTap: () => context.push('/product/${product.id}'),
+      onTap: () => context.push('/product/${p.id}'),
       child: Container(
         decoration: BoxDecoration(
           color: HomeColors.surface,
           borderRadius: BorderRadius.circular(HomeDims.radiusCard),
-          boxShadow: const [
-            BoxShadow(color: HomeColors.shadow, blurRadius: 12, offset: Offset(0, 4)),
-          ],
+          boxShadow: const [BoxShadow(color: HomeColors.shadow, blurRadius: 14, offset: Offset(0, 6))],
         ),
+        padding: const EdgeInsets.all(10),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // Ảnh vuông, bo tròn 2 góc trên
+            // Ảnh trên nền pastel bo tròn
             Expanded(
-              child: ClipRRect(
-                borderRadius: const BorderRadius.vertical(top: Radius.circular(HomeDims.radiusCard)),
-                child: _ProductImage(url: product.imageUrl),
+              child: Container(
+                width: double.infinity,
+                decoration: BoxDecoration(color: tint, borderRadius: BorderRadius.circular(16)),
+                clipBehavior: Clip.antiAlias,
+                child: _image(p.imageUrl),
               ),
             ),
-            // Khối thông tin
-            Padding(
-              padding: const EdgeInsets.fromLTRB(10, 8, 10, 10),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  SizedBox(
-                    height: 34,
-                    child: Text(
-                      product.name,
-                      style: HomeText.productName,
-                      maxLines: 2,
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                  ),
-                  const SizedBox(height: 6),
-                  Text(formatVnd(product.minPrice), style: HomeText.price),
-                  const SizedBox(height: 8),
-                  Row(
-                    children: [
-                      const _Star(size: 12),
-                      const SizedBox(width: 3),
-                      Text(
-                        product.ratingCount > 0 ? product.ratingAvg.toStringAsFixed(1) : 'Mới',
-                        style: HomeText.meta,
-                      ),
-                      const Spacer(),
-                      Text('Đã bán ${product.soldCount}', style: HomeText.meta),
-                    ],
-                  ),
-                ],
-              ),
+            const SizedBox(height: 10),
+            Text(p.name, maxLines: 1, overflow: TextOverflow.ellipsis, style: HomeText.productName),
+            const SizedBox(height: 2),
+            Row(
+              children: [
+                const Icon(Icons.star_rounded, size: 14, color: HomeColors.star),
+                const SizedBox(width: 2),
+                Text(p.ratingCount > 0 ? p.ratingAvg.toStringAsFixed(1) : 'Mới', style: HomeText.meta),
+                Text('  •  Đã bán ${p.soldCount}', style: HomeText.meta),
+              ],
             ),
+            const SizedBox(height: 6),
+            Text(formatVnd(p.minPrice), style: HomeText.price),
+            const SizedBox(height: 8),
+            _addBar(),
           ],
         ),
       ),
     );
   }
-}
 
-/// Ảnh sản phẩm: nền tải + xử lý lỗi, tự viết (không dùng thư viện ngoài).
-class _ProductImage extends StatelessWidget {
-  const _ProductImage({this.url});
-  final String? url;
-
-  @override
-  Widget build(BuildContext context) {
-    if (url == null || url!.isEmpty) return _fallback();
+  Widget _image(String? url) {
+    if (url == null || url.isEmpty) {
+      return const Icon(Icons.image_not_supported_outlined, color: HomeColors.textSecondary);
+    }
     return Image.network(
-      url!,
+      url,
       fit: BoxFit.cover,
-      width: double.infinity,
-      height: double.infinity,
-      loadingBuilder: (context, child, progress) =>
-          progress == null ? child : const ColoredBox(color: Color(0xFFF0F0F3)),
-      errorBuilder: (context, error, stack) => _fallback(),
+      loadingBuilder: (c, child, progress) => progress == null ? child : const SizedBox(),
+      errorBuilder: (c, e, s) => const Icon(Icons.broken_image_outlined, color: HomeColors.textSecondary),
     );
   }
 
-  Widget _fallback() => const ColoredBox(color: Color(0xFFEDEDF1));
-}
-
-/// Ngôi sao đánh giá tự vẽ bằng CustomPaint.
-class _Star extends StatelessWidget {
-  const _Star({required this.size});
-  final double size;
-  @override
-  Widget build(BuildContext context) {
-    return CustomPaint(size: Size(size, size), painter: _StarPainter());
+  /// Thanh "+" đầy chiều rộng ở đáy thẻ (thêm nhanh vào giỏ).
+  Widget _addBar() {
+    return GestureDetector(
+      onTap: _adding ? null : _quickAdd,
+      child: Container(
+        height: 36,
+        alignment: Alignment.center,
+        decoration: BoxDecoration(
+          color: HomeColors.brandSoft,
+          borderRadius: BorderRadius.circular(12),
+        ),
+        child: _adding
+            ? const SizedBox(
+                height: 16, width: 16,
+                child: CircularProgressIndicator(strokeWidth: 2, color: HomeColors.brand))
+            : const Icon(Icons.add_rounded, color: HomeColors.brand, size: 22),
+      ),
+    );
   }
-}
-
-class _StarPainter extends CustomPainter {
-  @override
-  void paint(Canvas canvas, Size size) {
-    final paint = Paint()..color = HomeColors.star;
-    final path = Path();
-    final cx = size.width / 2;
-    final cy = size.height / 2;
-    final outer = size.width / 2;
-    final inner = outer * 0.42;
-    for (int i = 0; i < 10; i++) {
-      final r = i.isEven ? outer : inner;
-      final angle = -math.pi / 2 + i * math.pi / 5;
-      final x = cx + r * math.cos(angle);
-      final y = cy + r * math.sin(angle);
-      if (i == 0) {
-        path.moveTo(x, y);
-      } else {
-        path.lineTo(x, y);
-      }
-    }
-    path.close();
-    canvas.drawPath(path, paint);
-  }
-
-  @override
-  bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
 }

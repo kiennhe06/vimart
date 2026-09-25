@@ -79,7 +79,13 @@ class AuthNotifier extends Notifier<AuthState> {
   Future<void> _persist(User user, String token) async {
     await ref.read(tokenStorageProvider).save(token);
     ref.read(apiClientProvider).token = token;
-    state = AuthState(loading: false, user: user);
+    // /auth/login chỉ trả thông tin cơ bản (không kèm shop). Gọi /auth/me để lấy
+    // đầy đủ (biết người dùng đã có shop hay chưa) rồi mới cập nhật trạng thái.
+    try {
+      state = AuthState(loading: false, user: await ref.read(authRepositoryProvider).me());
+    } catch (_) {
+      state = AuthState(loading: false, user: user);
+    }
   }
 }
 

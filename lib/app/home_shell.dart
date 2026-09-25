@@ -9,19 +9,12 @@ import '../features/home/home_ui.dart';
 import '../features/home/widgets/vimart_bottom_nav.dart';
 import '../features/order/orders_screen.dart';
 import '../features/profile/profile_screen.dart';
+import 'nav_provider.dart';
 
-/// Khung chính của app.
-/// Thanh điều hướng dưới cùng được DỰNG LẠI TỪ ĐẦU (VimartBottomNav) — không dùng
-/// NavigationBar/BottomNavigationBar. Dùng IndexedStack để giữ trạng thái từng tab.
-class HomeShell extends ConsumerStatefulWidget {
+/// Khung chính của app với thanh điều hướng dưới dạng "viên thuốc" nổi.
+/// Chỉ số tab lấy từ [bottomNavIndexProvider] để chuyển tab được từ mọi nơi.
+class HomeShell extends ConsumerWidget {
   const HomeShell({super.key});
-
-  @override
-  ConsumerState<HomeShell> createState() => _HomeShellState();
-}
-
-class _HomeShellState extends ConsumerState<HomeShell> {
-  int _index = 0;
 
   static const _screens = [
     HomeScreen(),
@@ -31,20 +24,19 @@ class _HomeShellState extends ConsumerState<HomeShell> {
   ];
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
+    final index = ref.watch(bottomNavIndexProvider);
     final cartCount = ref.watch(cartCountProvider);
 
-    // Material cung cấp DefaultTextStyle chuẩn (tránh gạch chân vàng debug khi
-    // Text không có ancestor Material). Đây là widget nền tảng, không phải component UI ăn sẵn.
     return Material(
       color: HomeColors.background,
       child: Column(
         children: [
-          Expanded(child: IndexedStack(index: _index, children: _screens)),
+          Expanded(child: IndexedStack(index: index, children: _screens)),
           VimartBottomNav(
-            currentIndex: _index,
+            currentIndex: index,
             cartCount: cartCount,
-            onTap: (i) => setState(() => _index = i),
+            onTap: (i) => ref.read(bottomNavIndexProvider.notifier).go(i),
           ),
         ],
       ),

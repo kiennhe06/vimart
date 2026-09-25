@@ -2,7 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../widgets/async_view.dart';
-import '../catalog/widgets/product_card_view.dart';
+import '../home/home_ui.dart';
+import '../home/widgets/product_tile.dart';
 import 'favorite_provider.dart';
 
 /// Màn hình danh sách sản phẩm yêu thích.
@@ -22,15 +23,18 @@ class FavoritesScreen extends ConsumerWidget {
             return const EmptyView(message: 'Bạn chưa thích sản phẩm nào', icon: Icons.favorite_border);
           }
           return GridView.builder(
-            padding: const EdgeInsets.all(12),
+            padding: const EdgeInsets.all(16),
             gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
               crossAxisCount: 2,
-              childAspectRatio: 0.62,
-              crossAxisSpacing: 12,
-              mainAxisSpacing: 12,
+              childAspectRatio: 0.66,
+              crossAxisSpacing: 14,
+              mainAxisSpacing: 14,
             ),
             itemCount: products.length,
-            itemBuilder: (_, i) => ProductCardView(product: products[i]),
+            itemBuilder: (_, i) => ProductTile(
+              product: products[i],
+              tint: kCategoryTints[i % kCategoryTints.length],
+            ),
           );
         },
       ),

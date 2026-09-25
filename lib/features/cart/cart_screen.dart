@@ -7,10 +7,12 @@ import '../../core/format.dart';
 import '../../models/cart.dart';
 import '../../widgets/async_view.dart';
 import '../../widgets/login_required_view.dart';
+import '../../widgets/network_image_box.dart';
 import '../auth/auth_provider.dart';
 import 'cart_provider.dart';
 
-/// Tab Giỏ hàng: hiển thị các món gộp theo shop, chỉnh số lượng, và đi tới thanh toán.
+/// Giỏ hàng phong cách grocery: nhóm theo shop, mỗi món có bộ tăng/giảm tròn,
+/// và thanh thanh toán lớn ở dưới.
 class CartScreen extends ConsumerWidget {
   const CartScreen({super.key});
 
@@ -26,67 +28,80 @@ class CartScreen extends ConsumerWidget {
           : AsyncView(
               value: cartAsync,
               onRetry: () => ref.invalidate(cartProvider),
-              data: (cart) => _buildCart(context, ref, cart),
+              data: (cart) => _buildCart(context, cart),
             ),
     );
   }
 
-  Widget _buildCart(BuildContext context, WidgetRef ref, Cart cart) {
+  Widget _buildCart(BuildContext context, Cart cart) {
     if (cart.isEmpty) {
       return const EmptyView(message: 'Giỏ hàng đang trống', icon: Icons.shopping_cart_outlined);
     }
+    final shippingTotal = cart.shops.length * 30000;
+    final total = cart.subtotal + shippingTotal;
+
     return Column(
       children: [
         Expanded(
           child: ListView(
-            padding: const EdgeInsets.all(12),
-            children: [
-              for (final shop in cart.shops) _ShopGroup(shop: shop),
-            ],
+            padding: const EdgeInsets.fromLTRB(16, 8, 16, 16),
+            children: [for (final shop in cart.shops) _ShopGroup(shop: shop)],
           ),
         ),
-        _CartFooter(cart: cart),
+        _Footer(subtotal: cart.subtotal, shipping: shippingTotal, total: total, count: cart.itemCount),
       ],
     );
   }
 }
 
-/// Nhóm các món của 1 shop.
+/// Khối 1 shop: header (tên shop + thời gian giao) + các món.
 class _ShopGroup extends StatelessWidget {
   const _ShopGroup({required this.shop});
   final CartShop shop;
 
   @override
   Widget build(BuildContext context) {
-    return Card(
-      margin: const EdgeInsets.only(bottom: 12),
-      child: Padding(
-        padding: const EdgeInsets.all(12),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              children: [
-                const Icon(Icons.storefront, size: 18),
-                const SizedBox(width: 6),
-                Text(shop.shopName, style: const TextStyle(fontWeight: FontWeight.bold)),
-              ],
-            ),
-            const Divider(),
-            for (final item in shop.items) _CartItemRow(item: item),
-          ],
-        ),
+    return Container(
+      margin: const EdgeInsets.only(bottom: 14),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(20),
+        boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.05), blurRadius: 12, offset: const Offset(0, 4))],
+      ),
+      padding: const EdgeInsets.all(14),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              const CircleAvatar(radius: 16, backgroundColor: AppColors.brandSoft,
+                  child: Icon(Icons.storefront_rounded, size: 18, color: AppColors.brand)),
+              const SizedBox(width: 10),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(shop.shopName, style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 15)),
+                    const Text('Giao trong 15 phút', style: TextStyle(color: Colors.grey, fontSize: 12)),
+                  ],
+                ),
+              ),
+            ],
+          ),
+          const Divider(height: 20),
+          for (final item in shop.items) _CartItemRow(item: item),
+        ],
       ),
     );
   }
 }
 
-/// Một dòng sản phẩm trong giỏ, có nút tăng/giảm và xóa.
+/// 1 món trong giỏ: ảnh + tên + phân loại + giá + bộ tăng/giảm tròn.
 class _CartItemRow extends ConsumerWidget {
   const _CartItemRow({required this.item});
   final CartItem item;
 
-  Future<void> _changeQty(BuildContext context, WidgetRef ref, int qty) async {
+  Future<void> _change(BuildContext context, WidgetRef ref, int qty) async {
     try {
       if (qty <= 0) {
         await ref.read(cartProvider.notifier).remove(item.cartItemId);
@@ -103,45 +118,35 @@ class _CartItemRow extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 6),
+      padding: const EdgeInsets.symmetric(vertical: 8),
       child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
+          ClipRRect(
+            borderRadius: BorderRadius.circular(14),
+            child: Container(
+              width: 64, height: 64, color: AppColors.brandSoft,
+              child: NetworkImageBox(url: item.imageUrl),
+            ),
+          ),
+          const SizedBox(width: 12),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(item.productName, maxLines: 2, overflow: TextOverflow.ellipsis),
-                Text('Phân loại: ${item.variantName}',
-                    style: const TextStyle(fontSize: 12, color: Colors.grey)),
+                Text(item.productName, maxLines: 1, overflow: TextOverflow.ellipsis,
+                    style: const TextStyle(fontWeight: FontWeight.w700)),
+                Text(item.variantName, style: const TextStyle(color: Colors.grey, fontSize: 12)),
                 const SizedBox(height: 4),
                 Text(formatVnd(item.price),
-                    style: const TextStyle(color: AppColors.brand, fontWeight: FontWeight.bold)),
+                    style: const TextStyle(color: AppColors.brand, fontWeight: FontWeight.w800, fontSize: 15)),
               ],
             ),
           ),
-          Column(
-            children: [
-              Row(
-                children: [
-                  _QtyButton(icon: Icons.remove, onTap: () => _changeQty(context, ref, item.quantity - 1)),
-                  Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 10),
-                    child: Text('${item.quantity}', style: const TextStyle(fontSize: 16)),
-                  ),
-                  _QtyButton(
-                    icon: Icons.add,
-                    onTap: item.quantity < item.stock
-                        ? () => _changeQty(context, ref, item.quantity + 1)
-                        : null,
-                  ),
-                ],
-              ),
-              TextButton(
-                onPressed: () => _changeQty(context, ref, 0),
-                child: const Text('Xóa', style: TextStyle(color: AppColors.danger)),
-              ),
-            ],
+          _QtyStepper(
+            qty: item.quantity,
+            canIncrease: item.quantity < item.stock,
+            onDecrease: () => _change(context, ref, item.quantity - 1),
+            onIncrease: () => _change(context, ref, item.quantity + 1),
           ),
         ],
       ),
@@ -149,60 +154,92 @@ class _CartItemRow extends ConsumerWidget {
   }
 }
 
-class _QtyButton extends StatelessWidget {
-  const _QtyButton({required this.icon, this.onTap});
-  final IconData icon;
-  final VoidCallback? onTap;
+/// Bộ tăng/giảm số lượng dạng nút tròn (− viền, + nền xanh).
+class _QtyStepper extends StatelessWidget {
+  const _QtyStepper({
+    required this.qty,
+    required this.canIncrease,
+    required this.onDecrease,
+    required this.onIncrease,
+  });
+  final int qty;
+  final bool canIncrease;
+  final VoidCallback onDecrease;
+  final VoidCallback onIncrease;
 
   @override
   Widget build(BuildContext context) {
-    return InkWell(
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        _circle(Icons.remove_rounded, onDecrease, filled: false),
+        SizedBox(width: 30, child: Text('$qty', textAlign: TextAlign.center,
+            style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 15))),
+        _circle(Icons.add_rounded, canIncrease ? onIncrease : null, filled: true),
+      ],
+    );
+  }
+
+  Widget _circle(IconData icon, VoidCallback? onTap, {required bool filled}) {
+    return GestureDetector(
       onTap: onTap,
       child: Container(
-        padding: const EdgeInsets.all(4),
+        width: 32, height: 32,
         decoration: BoxDecoration(
-          border: Border.all(color: Colors.grey.shade300),
-          borderRadius: BorderRadius.circular(6),
+          shape: BoxShape.circle,
+          color: filled ? (onTap == null ? Colors.grey.shade200 : AppColors.brand) : Colors.white,
+          border: filled ? null : Border.all(color: const Color(0xFFDDE1E6)),
         ),
-        child: Icon(icon, size: 18, color: onTap == null ? Colors.grey.shade300 : null),
+        child: Icon(icon, size: 18, color: filled ? Colors.white : AppColors.brand),
       ),
     );
   }
 }
 
-/// Thanh tổng tiền + nút mua hàng.
-class _CartFooter extends StatelessWidget {
-  const _CartFooter({required this.cart});
-  final Cart cart;
+/// Thanh dưới cùng: tổng tiền + nút thanh toán lớn.
+class _Footer extends StatelessWidget {
+  const _Footer({required this.subtotal, required this.shipping, required this.total, required this.count});
+  final int subtotal, shipping, total, count;
 
   @override
   Widget build(BuildContext context) {
     return SafeArea(
+      top: false,
       child: Container(
-        padding: const EdgeInsets.all(16),
+        padding: const EdgeInsets.fromLTRB(16, 14, 16, 14),
         decoration: BoxDecoration(
-          color: Theme.of(context).colorScheme.surface,
-          boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.06), blurRadius: 8)],
+          color: Colors.white,
+          borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
+          boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.06), blurRadius: 16, offset: const Offset(0, -4))],
         ),
-        child: Row(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
           children: [
-            Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                const Text('Tạm tính', style: TextStyle(color: Colors.grey)),
-                Text(formatVnd(cart.subtotal),
-                    style: const TextStyle(
-                        color: AppColors.brand, fontSize: 18, fontWeight: FontWeight.bold)),
-              ],
-            ),
-            const Spacer(),
-            FilledButton(
+            _row('Tạm tính', formatVnd(subtotal)),
+            const SizedBox(height: 6),
+            _row('Phí vận chuyển', formatVnd(shipping)),
+            const Padding(padding: EdgeInsets.symmetric(vertical: 10), child: Divider(height: 1)),
+            _row('Tổng cộng', formatVnd(total), highlight: true),
+            const SizedBox(height: 14),
+            ElevatedButton(
               onPressed: () => context.push('/checkout'),
-              child: Text('Mua hàng (${cart.itemCount})'),
+              child: Text('Thanh toán • $count món'),
             ),
           ],
         ),
       ),
+    );
+  }
+
+  Widget _row(String label, String value, {bool highlight = false}) {
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      children: [
+        Text(label, style: TextStyle(color: highlight ? null : Colors.grey.shade700,
+            fontWeight: highlight ? FontWeight.w800 : FontWeight.w500, fontSize: highlight ? 16 : 14)),
+        Text(value, style: TextStyle(color: highlight ? AppColors.brand : null,
+            fontWeight: FontWeight.w800, fontSize: highlight ? 18 : 14)),
+      ],
     );
   }
 }

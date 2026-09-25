@@ -40,6 +40,16 @@ class ApiClient {
   Future<dynamic> delete(String path, {Object? body}) =>
       _request(() => _dio.delete(path, data: body, options: _options));
 
+  /// Upload 1 file ảnh lên server, trả về URL công khai của ảnh.
+  /// Dùng multipart/form-data với field tên "image" (khớp backend).
+  Future<String> uploadImage(String filePath) async {
+    final formData = FormData.fromMap({
+      'image': await MultipartFile.fromFile(filePath),
+    });
+    final data = await _request(() => _dio.post('/uploads', data: formData, options: _options));
+    return (data as Map<String, dynamic>)['url'] as String;
+  }
+
   /// Thực hiện request và bóc tách kết quả / lỗi.
   Future<dynamic> _request(Future<Response> Function() run) async {
     try {

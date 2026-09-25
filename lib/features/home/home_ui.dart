@@ -1,97 +1,69 @@
 import 'package:flutter/widgets.dart';
 
-/// Bộ màu & typography tập trung cho giao diện Trang chủ (dựng lại từ đầu).
-/// Khai báo 1 nơi, không hard-code màu rải rác trong widget.
+/// Bộ token màu & typography — phong cách "grocery" tươi sáng, xanh lá chủ đạo.
+/// Dùng chung cho phần trang chủ (dựng tay). Các màn khác dùng theme ở app/theme.dart.
 class HomeColors {
   const HomeColors._();
 
-  static const Color primaryOrange = Color(0xFFF4511E); // cam thương hiệu
-  static const Color background = Color(0xFFF4F4F6); // nền tổng thể (xám rất nhạt)
-  static const Color surface = Color(0xFFFFFFFF); // nền card / ô / thanh
-  static const Color textPrimary = Color(0xFF1E1E24); // chữ chính (gần đen)
-  static const Color textSecondary = Color(0xFF8B8B92); // chữ phụ (xám)
-  static const Color border = Color(0xFFE7E7EC); // viền mảnh
-  static const Color selectedBg = Color(0xFFFDE7DE); // nền item đang chọn (cam nhạt)
-  static const Color star = Color(0xFFFFB300); // sao đánh giá (vàng)
-  static const Color barrier = Color(0x33000000); // lớp mờ khi mở menu
-  static const Color shadow = Color(0x14000000); // bóng đổ nhẹ
+  static const Color brand = Color(0xFF1EA65A); // xanh lá tươi (chủ đạo)
+  static const Color brandDark = Color(0xFF158048);
+  static const Color brandSoft = Color(0xFFE7F6EE); // nền xanh nhạt
+  static const Color accent = Color(0xFFFF7A45); // cam nhấn (khuyến mãi/giá sale)
+  static const Color background = Color(0xFFF4F6F5); // nền tổng thể (trắng ngả)
+  static const Color surface = Color(0xFFFFFFFF);
+  static const Color textPrimary = Color(0xFF1B2430);
+  static const Color textSecondary = Color(0xFF8B93A1);
+  static const Color border = Color(0xFFECEFF1);
+  static const Color star = Color(0xFFFFB020);
+  static const Color shadow = Color(0x12000000);
 }
 
-/// Kiểu chữ dùng chung.
+/// Màu pastel cho các vòng tròn danh mục (xoay vòng theo thứ tự).
+const List<Color> kCategoryTints = [
+  Color(0xFFE7F6EE), // mint
+  Color(0xFFFFEDE2), // peach
+  Color(0xFFEDE9FE), // lavender
+  Color(0xFFFDF3D3), // lemon
+  Color(0xFFE2F0FF), // sky
+  Color(0xFFFFE7EE), // rose
+];
+const List<Color> kCategoryInk = [
+  Color(0xFF1EA65A),
+  Color(0xFFFF7A45),
+  Color(0xFF7C5CFC),
+  Color(0xFFE0A81E),
+  Color(0xFF2B8AF0),
+  Color(0xFFF0498A),
+];
+
 class HomeText {
   const HomeText._();
 
   static const TextStyle logo = TextStyle(
-    color: HomeColors.primaryOrange,
-    fontSize: 26,
-    fontWeight: FontWeight.w800,
-    letterSpacing: 0.2,
-  );
-
-  static const TextStyle searchHint = TextStyle(
-    color: HomeColors.textSecondary,
-    fontSize: 15,
-  );
-
-  static const TextStyle searchInput = TextStyle(
-    color: HomeColors.textPrimary,
-    fontSize: 15,
-  );
-
+    color: HomeColors.brand, fontSize: 24, fontWeight: FontWeight.w800, letterSpacing: -0.5);
+  static const TextStyle greeting = TextStyle(
+    color: HomeColors.textSecondary, fontSize: 13, fontWeight: FontWeight.w500);
+  static const TextStyle sectionTitle = TextStyle(
+    color: HomeColors.textPrimary, fontSize: 18, fontWeight: FontWeight.w800, letterSpacing: -0.3);
+  static const TextStyle searchHint = TextStyle(color: HomeColors.textSecondary, fontSize: 15);
+  static const TextStyle searchInput = TextStyle(color: HomeColors.textPrimary, fontSize: 15);
   static const TextStyle chip = TextStyle(
-    color: HomeColors.textPrimary,
-    fontSize: 14,
-    fontWeight: FontWeight.w500,
-  );
-
-  static const TextStyle chipSelected = TextStyle(
-    color: HomeColors.primaryOrange,
-    fontSize: 14,
-    fontWeight: FontWeight.w700,
-  );
-
-  static const TextStyle sortLabel = TextStyle(
-    color: HomeColors.textPrimary,
-    fontSize: 15,
-    fontWeight: FontWeight.w600,
-  );
-
+    color: HomeColors.textPrimary, fontSize: 13, fontWeight: FontWeight.w600);
   static const TextStyle productName = TextStyle(
-    color: HomeColors.textPrimary,
-    fontSize: 13,
-    height: 1.3,
-  );
-
+    color: HomeColors.textPrimary, fontSize: 14, fontWeight: FontWeight.w700, height: 1.25);
   static const TextStyle price = TextStyle(
-    color: HomeColors.primaryOrange,
-    fontSize: 16,
-    fontWeight: FontWeight.w800,
-  );
-
-  static const TextStyle meta = TextStyle(
-    color: HomeColors.textSecondary,
-    fontSize: 11,
-  );
-
+    color: HomeColors.textPrimary, fontSize: 16, fontWeight: FontWeight.w800);
+  static const TextStyle meta = TextStyle(color: HomeColors.textSecondary, fontSize: 12);
   static const TextStyle navActive = TextStyle(
-    color: HomeColors.primaryOrange,
-    fontSize: 11,
-    fontWeight: FontWeight.w700,
-  );
-
+    color: HomeColors.brand, fontSize: 11, fontWeight: FontWeight.w700);
   static const TextStyle navInactive = TextStyle(
-    color: HomeColors.textSecondary,
-    fontSize: 11,
-    fontWeight: FontWeight.w500,
-  );
+    color: HomeColors.textSecondary, fontSize: 11, fontWeight: FontWeight.w500);
 }
 
-/// Khoảng cách & bo góc chuẩn.
 class HomeDims {
   const HomeDims._();
-
-  static const double pagePadding = 16; // padding trái/phải trang
-  static const double gridGap = 12; // khoảng cách giữa 2 card
-  static const double radiusCard = 14;
-  static const double radiusPill = 12;
+  static const double pagePadding = 18;
+  static const double gridGap = 14;
+  static const double radiusCard = 20;
+  static const double radiusPill = 16;
 }

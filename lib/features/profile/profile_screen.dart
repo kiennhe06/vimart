@@ -7,7 +7,8 @@ import '../../widgets/login_required_view.dart';
 import '../auth/auth_provider.dart';
 import '../seller/seller_repository.dart';
 
-/// Tab Tài khoản: thông tin người dùng + lối vào các tính năng cá nhân & kênh bán.
+/// Tab Tài khoản — phong cách grocery: thẻ hồ sơ bo tròn + menu dạng thẻ,
+/// mỗi mục có icon chip màu pastel.
 class ProfileScreen extends ConsumerWidget {
   const ProfileScreen({super.key});
 
@@ -25,79 +26,114 @@ class ProfileScreen extends ConsumerWidget {
     return Scaffold(
       appBar: AppBar(title: const Text('Tài khoản')),
       body: ListView(
+        padding: const EdgeInsets.fromLTRB(16, 8, 16, 24),
         children: [
-          // Thẻ thông tin người dùng
+          // Thẻ hồ sơ
           Container(
-            padding: const EdgeInsets.all(16),
-            color: AppColors.brand.withValues(alpha: 0.08),
+            padding: const EdgeInsets.all(18),
+            decoration: _cardDecoration(),
             child: Row(
               children: [
-                CircleAvatar(
-                  radius: 28,
-                  backgroundColor: AppColors.brand,
+                Container(
+                  width: 58, height: 58,
+                  decoration: const BoxDecoration(color: AppColors.brand, shape: BoxShape.circle),
+                  alignment: Alignment.center,
                   child: Text(
                     user.fullName.isNotEmpty ? user.fullName[0].toUpperCase() : '?',
-                    style: const TextStyle(color: Colors.white, fontSize: 22),
+                    style: const TextStyle(color: Colors.white, fontSize: 24, fontWeight: FontWeight.w800),
                   ),
                 ),
-                const SizedBox(width: 12),
+                const SizedBox(width: 14),
                 Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text(user.fullName,
-                          style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
-                      Text(user.email, style: const TextStyle(color: Colors.grey)),
-                      if (user.isAdmin)
-                        const Text('Quản trị viên', style: TextStyle(color: AppColors.brand)),
+                      Text(user.fullName, style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w800)),
+                      const SizedBox(height: 2),
+                      Text(user.email, style: const TextStyle(color: Colors.grey, fontSize: 13)),
+                      const SizedBox(height: 8),
+                      _badge(user.isAdmin ? 'Quản trị viên' : (user.hasShop ? 'Người bán' : 'Người mua')),
                     ],
                   ),
                 ),
               ],
             ),
           ),
-          const SizedBox(height: 8),
+          const SizedBox(height: 16),
 
-          _tile(Icons.favorite_border, 'Sản phẩm yêu thích', () => context.push('/favorites')),
-          _tile(Icons.location_on_outlined, 'Sổ địa chỉ', () => context.push('/addresses')),
+          // Nhóm: tiện ích cá nhân
+          _menuCard([
+            _MenuRow(Icons.favorite_rounded, const Color(0xFFFFEDE2), const Color(0xFFFF7A45),
+                'Sản phẩm yêu thích', () => context.push('/favorites')),
+            _MenuRow(Icons.location_on_rounded, const Color(0xFFE2F0FF), const Color(0xFF2B8AF0),
+                'Sổ địa chỉ', () => context.push('/addresses')),
+          ]),
 
-          const Divider(),
+          const SizedBox(height: 14),
           _sectionLabel('Kênh người bán'),
-          if (user.hasShop) ...[
-            _tile(Icons.inventory_2_outlined, 'Sản phẩm của shop', () => context.push('/seller/products')),
-            _tile(Icons.receipt_long_outlined, 'Đơn hàng của shop', () => context.push('/seller/orders')),
-          ] else
-            _tile(Icons.storefront_outlined, 'Mở shop bán hàng', () => _openShopDialog(context, ref)),
+          _menuCard(
+            user.hasShop
+                ? [
+                    _MenuRow(Icons.inventory_2_rounded, AppColors.brandSoft, AppColors.brand,
+                        'Sản phẩm của shop', () => context.push('/seller/products')),
+                    _MenuRow(Icons.receipt_long_rounded, const Color(0xFFFDF3D3), const Color(0xFFE0A81E),
+                        'Đơn hàng của shop', () => context.push('/seller/orders')),
+                  ]
+                : [
+                    _MenuRow(Icons.storefront_rounded, AppColors.brandSoft, AppColors.brand,
+                        'Mở shop bán hàng', () => _openShopDialog(context, ref)),
+                  ],
+          ),
 
-          if (user.isAdmin) ...[
-            const Divider(),
-            _sectionLabel('Quản trị'),
+          if (user.isAdmin)
             const Padding(
-              padding: EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-              child: Text('Trang quản trị (thống kê, duyệt shop...) dùng qua API admin. '
-                  'Xem docs/FUTURE.md để phát triển giao diện admin.',
-                  style: TextStyle(color: Colors.grey, fontSize: 13)),
+              padding: EdgeInsets.fromLTRB(4, 12, 4, 0),
+              child: Text('Trang quản trị (thống kê, duyệt...) dùng qua web admin.',
+                  style: TextStyle(color: Colors.grey, fontSize: 12)),
             ),
-          ],
 
-          const Divider(),
-          _tile(Icons.logout, 'Đăng xuất', () => _confirmLogout(context, ref), color: AppColors.danger),
+          const SizedBox(height: 14),
+          _menuCard([
+            _MenuRow(Icons.logout_rounded, const Color(0xFFFDECEC), AppColors.danger,
+                'Đăng xuất', () => _confirmLogout(context, ref), danger: true),
+          ]),
         ],
       ),
     );
   }
 
-  Widget _tile(IconData icon, String title, VoidCallback onTap, {Color? color}) => ListTile(
-        leading: Icon(icon, color: color),
-        title: Text(title, style: TextStyle(color: color)),
-        trailing: const Icon(Icons.chevron_right),
-        onTap: onTap,
+  BoxDecoration _cardDecoration() => BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(20),
+        boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.05), blurRadius: 12, offset: const Offset(0, 4))],
+      );
+
+  Widget _badge(String text) => Container(
+        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+        decoration: BoxDecoration(color: AppColors.brandSoft, borderRadius: BorderRadius.circular(20)),
+        child: Text(text, style: const TextStyle(color: AppColors.brand, fontSize: 12, fontWeight: FontWeight.w700)),
       );
 
   Widget _sectionLabel(String text) => Padding(
-        padding: const EdgeInsets.fromLTRB(16, 8, 16, 4),
-        child: Text(text, style: const TextStyle(fontWeight: FontWeight.bold, color: Colors.grey)),
+        padding: const EdgeInsets.fromLTRB(6, 0, 6, 8),
+        child: Text(text, style: const TextStyle(fontWeight: FontWeight.w800, color: Colors.grey, fontSize: 13)),
       );
+
+  Widget _menuCard(List<_MenuRow> rows) {
+    return Container(
+      decoration: _cardDecoration(),
+      clipBehavior: Clip.antiAlias,
+      child: Column(
+        children: [
+          for (int i = 0; i < rows.length; i++) ...[
+            rows[i],
+            if (i < rows.length - 1)
+              const Padding(padding: EdgeInsets.only(left: 64), child: Divider(height: 1)),
+          ],
+        ],
+      ),
+    );
+  }
 
   Future<void> _confirmLogout(BuildContext context, WidgetRef ref) async {
     final ok = await showDialog<bool>(
@@ -139,9 +175,7 @@ class ProfileScreen extends ConsumerWidget {
               if (nameCtrl.text.trim().length < 2) return;
               try {
                 await ref.read(sellerRepositoryProvider).createShop(
-                      name: nameCtrl.text.trim(),
-                      description: descCtrl.text.trim(),
-                    );
+                    name: nameCtrl.text.trim(), description: descCtrl.text.trim());
                 await ref.read(authProvider.notifier).refreshUser();
                 if (ctx.mounted) Navigator.pop(ctx, true);
               } catch (e) {
@@ -158,5 +192,44 @@ class ProfileScreen extends ConsumerWidget {
     if (created == true && context.mounted) {
       ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Mở shop thành công!')));
     }
+  }
+}
+
+/// Một dòng menu: icon chip màu + nhãn + mũi tên.
+class _MenuRow extends StatelessWidget {
+  const _MenuRow(this.icon, this.tint, this.ink, this.label, this.onTap, {this.danger = false});
+  final IconData icon;
+  final Color tint;
+  final Color ink;
+  final String label;
+  final VoidCallback onTap;
+  final bool danger;
+
+  @override
+  Widget build(BuildContext context) {
+    return InkWell(
+      onTap: onTap,
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+        child: Row(
+          children: [
+            Container(
+              width: 40, height: 40,
+              decoration: BoxDecoration(color: tint, borderRadius: BorderRadius.circular(12)),
+              child: Icon(icon, color: ink, size: 21),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Text(label,
+                  style: TextStyle(
+                      fontSize: 15,
+                      fontWeight: FontWeight.w600,
+                      color: danger ? AppColors.danger : null)),
+            ),
+            Icon(Icons.chevron_right_rounded, color: Colors.grey.shade400),
+          ],
+        ),
+      ),
+    );
   }
 }

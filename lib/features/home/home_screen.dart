@@ -1,21 +1,19 @@
-import 'package:flutter/material.dart' show RefreshIndicator;
+import 'package:flutter/material.dart' show Icons, RefreshIndicator, Colors;
 import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../models/product.dart';
 import '../catalog/catalog_providers.dart';
 import 'home_ui.dart';
-import 'widgets/category_selector.dart';
+import 'widgets/category_circles.dart';
 import 'widgets/product_tile.dart';
-import 'widgets/sort_control.dart';
 import 'widgets/vimart_header.dart';
 import 'widgets/vimart_search_box.dart';
 
-/// Màn hình Trang chủ được dựng lại hoàn toàn từ widget nền tảng.
-/// Phần DATA (provider/repository) giữ nguyên; chỉ UI là mới.
+/// Trang chủ phong cách grocery: header, banner khuyến mãi, tìm kiếm,
+/// vòng tròn danh mục, và lưới sản phẩm gợi ý.
 class HomeScreen extends ConsumerStatefulWidget {
   const HomeScreen({super.key});
-
   @override
   ConsumerState<HomeScreen> createState() => _HomeScreenState();
 }
@@ -23,18 +21,10 @@ class HomeScreen extends ConsumerStatefulWidget {
 class _HomeScreenState extends ConsumerState<HomeScreen> {
   String _keyword = '';
   int? _categoryId;
-  String _sort = 'newest';
-  bool _sortMenuOpen = false;
-
-  // Vị trí menu sort = tổng chiều cao các khối phía trên (tính từ mép SafeArea).
-  double get _menuTop =>
-      VimartHeader.height + VimartSearchBox.areaHeight + CategorySelector.height + SortControl.height - 6;
-
-  void _closeMenu() => setState(() => _sortMenuOpen = false);
 
   @override
   Widget build(BuildContext context) {
-    final query = (keyword: _keyword, categoryId: _categoryId, sort: _sort);
+    final query = (keyword: _keyword, categoryId: _categoryId, sort: 'best_selling');
     final productsAsync = ref.watch(productListProvider(query));
     final categoriesAsync = ref.watch(categoriesProvider);
 
@@ -42,88 +32,69 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
       color: HomeColors.background,
       child: SafeArea(
         bottom: false,
-        child: Stack(
+        child: Column(
           children: [
-            // ---- Nội dung chính ----
-            Column(
-              children: [
-                const VimartHeader(),
-                VimartSearchBox(onSubmitted: (v) => setState(() => _keyword = v.trim())),
-                categoriesAsync.maybeWhen(
-                  data: (cats) => CategorySelector(
-                    categories: cats,
-                    selectedId: _categoryId,
-                    onSelect: (id) => setState(() {
-                      _categoryId = id;
-                      _sortMenuOpen = false;
-                    }),
-                  ),
-                  orElse: () => const SizedBox(height: CategorySelector.height),
+            const VimartHeader(),
+            Expanded(
+              child: RefreshIndicator(
+                color: HomeColors.brand,
+                onRefresh: () => ref.refresh(productListProvider(query).future),
+                child: ListView(
+                  padding: const EdgeInsets.only(bottom: 24),
+                  children: [
+                    const _PromoBanner(),
+                    VimartSearchBox(onSubmitted: (v) => setState(() => _keyword = v.trim())),
+                    categoriesAsync.maybeWhen(
+                      data: (cats) => CategoryCircles(
+                        categories: cats,
+                        selectedId: _categoryId,
+                        onSelect: (id) => setState(() => _categoryId = id),
+                      ),
+                      orElse: () => const SizedBox(height: 96),
+                    ),
+                    const _SectionHeader(title: 'Gợi ý cho bạn'),
+                    _buildProducts(productsAsync, query),
+                  ],
                 ),
-                SortControl(
-                  currentSort: _sort,
-                  menuOpen: _sortMenuOpen,
-                  onTap: () => setState(() => _sortMenuOpen = !_sortMenuOpen),
-                ),
-                Expanded(child: _buildGrid(productsAsync, query)),
-              ],
+              ),
             ),
-
-            // ---- Lớp mờ đóng menu khi bấm ra ngoài ----
-            if (_sortMenuOpen)
-              Positioned.fill(
-                child: GestureDetector(
-                  behavior: HitTestBehavior.opaque,
-                  onTap: _closeMenu,
-                  child: const ColoredBox(color: HomeColors.barrier),
-                ),
-              ),
-
-            // ---- Menu sort (overlay) ----
-            if (_sortMenuOpen)
-              Positioned(
-                top: _menuTop,
-                left: HomeDims.pagePadding,
-                child: SortMenu(
-                  currentSort: _sort,
-                  onSelect: (key) => setState(() {
-                    _sort = key;
-                    _sortMenuOpen = false;
-                  }),
-                ),
-              ),
           ],
         ),
       ),
     );
   }
 
-  Widget _buildGrid(AsyncValue<List<ProductCard>> async, ProductQuery query) {
+  Widget _buildProducts(AsyncValue<List<ProductCard>> async, ProductQuery query) {
     return async.when(
-      loading: () => const _CenterMessage(text: 'Đang tải sản phẩm...'),
-      error: (err, _) => _ErrorMessage(
-        message: err.toString(),
-        onRetry: () => ref.invalidate(productListProvider(query)),
+      loading: () => const Padding(
+        padding: EdgeInsets.all(40),
+        child: Center(child: Text('Đang tải sản phẩm...', style: HomeText.meta)),
+      ),
+      error: (err, _) => Padding(
+        padding: const EdgeInsets.all(40),
+        child: Center(child: Text(err.toString(), textAlign: TextAlign.center, style: HomeText.meta)),
       ),
       data: (products) {
         if (products.isEmpty) {
-          return const _CenterMessage(text: 'Không tìm thấy sản phẩm nào');
+          return const Padding(
+            padding: EdgeInsets.all(40),
+            child: Center(child: Text('Không tìm thấy sản phẩm nào', style: HomeText.meta)),
+          );
         }
-        return RefreshIndicator(
-          color: HomeColors.primaryOrange,
-          onRefresh: () => ref.refresh(productListProvider(query).future),
-          child: GridView.builder(
-            padding: const EdgeInsets.fromLTRB(
-                HomeDims.pagePadding, 4, HomeDims.pagePadding, HomeDims.pagePadding),
-            physics: const AlwaysScrollableScrollPhysics(),
-            gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-              crossAxisCount: 2,
-              mainAxisSpacing: HomeDims.gridGap,
-              crossAxisSpacing: HomeDims.gridGap,
-              childAspectRatio: 0.64,
-            ),
-            itemCount: products.length,
-            itemBuilder: (_, i) => ProductTile(product: products[i]),
+        return GridView.builder(
+          padding: const EdgeInsets.fromLTRB(HomeDims.pagePadding, 4, HomeDims.pagePadding, 8),
+          shrinkWrap: true,
+          physics: const NeverScrollableScrollPhysics(),
+          gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+            crossAxisCount: 2,
+            mainAxisSpacing: HomeDims.gridGap,
+            crossAxisSpacing: HomeDims.gridGap,
+            childAspectRatio: 0.66,
+          ),
+          itemCount: products.length,
+          itemBuilder: (_, i) => ProductTile(
+            product: products[i],
+            tint: kCategoryTints[i % kCategoryTints.length],
           ),
         );
       },
@@ -131,51 +102,71 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
   }
 }
 
-/// Thông báo giữa màn (loading / rỗng).
-class _CenterMessage extends StatelessWidget {
-  const _CenterMessage({required this.text});
-  final String text;
+/// Banner khuyến mãi gradient xanh ở đầu trang.
+class _PromoBanner extends StatelessWidget {
+  const _PromoBanner();
   @override
   Widget build(BuildContext context) {
-    return Center(
-      child: Padding(
-        padding: const EdgeInsets.all(32),
-        child: Text(text, textAlign: TextAlign.center, style: HomeText.meta),
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(HomeDims.pagePadding, 4, HomeDims.pagePadding, 6),
+      child: Container(
+        padding: const EdgeInsets.all(20),
+        decoration: BoxDecoration(
+          gradient: const LinearGradient(
+            colors: [HomeColors.brand, HomeColors.brandDark],
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+          ),
+          borderRadius: BorderRadius.circular(22),
+          boxShadow: const [BoxShadow(color: Color(0x3316A34A), blurRadius: 18, offset: Offset(0, 8))],
+        ),
+        child: Row(
+          children: [
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Text('Giảm 10% đơn đầu tiên 🎉',
+                      style: TextStyle(color: Color(0xFFFFFFFF), fontSize: 18, fontWeight: FontWeight.w800)),
+                  const SizedBox(height: 6),
+                  Text('Mua sắm tươi ngon, giao tận nơi',
+                      style: TextStyle(color: Colors.white.withValues(alpha: 0.9), fontSize: 13)),
+                  const SizedBox(height: 12),
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 7),
+                    decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(14)),
+                    child: const Text('Mua ngay',
+                        style: TextStyle(color: HomeColors.brand, fontWeight: FontWeight.w700, fontSize: 13)),
+                  ),
+                ],
+              ),
+            ),
+            Container(
+              width: 64, height: 64,
+              decoration: BoxDecoration(color: Colors.white.withValues(alpha: 0.18), shape: BoxShape.circle),
+              child: const Icon(Icons.shopping_basket_rounded, color: Color(0xFFFFFFFF), size: 34),
+            ),
+          ],
+        ),
       ),
     );
   }
 }
 
-/// Thông báo lỗi + nút thử lại tự dựng.
-class _ErrorMessage extends StatelessWidget {
-  const _ErrorMessage({required this.message, required this.onRetry});
-  final String message;
-  final VoidCallback onRetry;
-
+/// Tiêu đề mục + "Xem tất cả".
+class _SectionHeader extends StatelessWidget {
+  const _SectionHeader({required this.title});
+  final String title;
   @override
   Widget build(BuildContext context) {
-    return Center(
-      child: Padding(
-        padding: const EdgeInsets.all(32),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Text(message, textAlign: TextAlign.center, style: HomeText.meta),
-            const SizedBox(height: 16),
-            GestureDetector(
-              onTap: onRetry,
-              child: Container(
-                padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
-                decoration: BoxDecoration(
-                  color: HomeColors.primaryOrange,
-                  borderRadius: BorderRadius.circular(HomeDims.radiusPill),
-                ),
-                child: const Text('Thử lại',
-                    style: TextStyle(color: Color(0xFFFFFFFF), fontWeight: FontWeight.w700)),
-              ),
-            ),
-          ],
-        ),
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(HomeDims.pagePadding, 8, HomeDims.pagePadding, 4),
+      child: Row(
+        children: [
+          Text(title, style: HomeText.sectionTitle),
+          const Spacer(),
+          Text('Xem tất cả', style: TextStyle(color: HomeColors.brand, fontSize: 13, fontWeight: FontWeight.w600)),
+        ],
       ),
     );
   }

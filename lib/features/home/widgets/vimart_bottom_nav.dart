@@ -10,9 +10,9 @@ class NavItemData {
   final String label;
 }
 
-/// Thanh điều hướng dưới cùng — tự dựng bằng Container + Row + GestureDetector
-/// (KHÔNG dùng BottomNavigationBar/NavigationBar).
-/// Mục đang chọn: icon + chữ cam, có "viên thuốc" nền cam nhạt bao quanh icon.
+/// Thanh điều hướng dưới cùng dạng "viên thuốc" nổi — mỗi mục là 1 vòng tròn.
+/// Mục đang chọn: vòng tròn tô màu xanh nhạt + viền xanh + icon xanh.
+/// (Tự dựng bằng Container + Row + GestureDetector — không dùng NavigationBar.)
 class VimartBottomNav extends StatelessWidget {
   const VimartBottomNav({
     super.key,
@@ -35,32 +35,35 @@ class VimartBottomNav extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final bottomInset = MediaQuery.of(context).viewPadding.bottom;
-    return Container(
-      decoration: const BoxDecoration(
-        color: HomeColors.surface,
-        border: Border(top: BorderSide(color: HomeColors.border)),
-        boxShadow: [BoxShadow(color: HomeColors.shadow, blurRadius: 16, offset: Offset(0, -2))],
-      ),
-      padding: EdgeInsets.only(top: 8, bottom: 8 + bottomInset, left: 8, right: 8),
-      child: Row(
-        children: [
-          for (int i = 0; i < _items.length; i++)
-            Expanded(
-              child: _NavItem(
+    return Padding(
+      padding: EdgeInsets.only(left: 18, right: 18, top: 6, bottom: 8 + bottomInset),
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+        decoration: BoxDecoration(
+          color: HomeColors.surface,
+          borderRadius: BorderRadius.circular(36),
+          border: Border.all(color: HomeColors.border),
+          boxShadow: const [BoxShadow(color: Color(0x1A000000), blurRadius: 22, offset: Offset(0, 8))],
+        ),
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.spaceAround,
+          children: [
+            for (int i = 0; i < _items.length; i++)
+              _NavCircle(
                 data: _items[i],
                 selected: i == currentIndex,
                 badgeCount: i == 1 ? cartCount : 0,
                 onTap: () => onTap(i),
               ),
-            ),
-        ],
+          ],
+        ),
       ),
     );
   }
 }
 
-class _NavItem extends StatelessWidget {
-  const _NavItem({
+class _NavCircle extends StatelessWidget {
+  const _NavCircle({
     required this.data,
     required this.selected,
     required this.onTap,
@@ -74,56 +77,45 @@ class _NavItem extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final color = selected ? HomeColors.primaryOrange : HomeColors.textSecondary;
     return GestureDetector(
       behavior: HitTestBehavior.opaque,
       onTap: onTap,
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
+      child: Stack(
+        clipBehavior: Clip.none,
         children: [
-          Stack(
-            clipBehavior: Clip.none,
-            children: [
-              // Viên thuốc nền cam nhạt khi được chọn
-              AnimatedContainer(
-                duration: const Duration(milliseconds: 150),
-                width: 52,
-                height: 30,
+          AnimatedContainer(
+            duration: const Duration(milliseconds: 180),
+            width: 52,
+            height: 52,
+            decoration: BoxDecoration(
+              shape: BoxShape.circle,
+              color: selected ? HomeColors.brandSoft : HomeColors.surface,
+              border: Border.all(
+                color: selected ? HomeColors.brand : HomeColors.border,
+                width: selected ? 2 : 1.2,
+              ),
+            ),
+            child: Icon(data.icon, size: 24, color: selected ? HomeColors.brand : HomeColors.textSecondary),
+          ),
+          if (badgeCount > 0)
+            Positioned(
+              right: -2,
+              top: -2,
+              child: Container(
+                padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 1),
+                constraints: const BoxConstraints(minWidth: 18),
                 alignment: Alignment.center,
                 decoration: BoxDecoration(
-                  color: selected ? HomeColors.selectedBg : const Color(0x00000000),
-                  borderRadius: BorderRadius.circular(16),
+                  color: HomeColors.brand,
+                  borderRadius: BorderRadius.circular(10),
+                  border: Border.all(color: HomeColors.surface, width: 2),
                 ),
-                child: Icon(data.icon, size: 22, color: color),
+                child: Text(
+                  badgeCount > 99 ? '99+' : '$badgeCount',
+                  style: const TextStyle(color: Color(0xFFFFFFFF), fontSize: 10, fontWeight: FontWeight.w800),
+                ),
               ),
-              // Badge số lượng giỏ hàng
-              if (badgeCount > 0)
-                Positioned(
-                  right: 2,
-                  top: -4,
-                  child: Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 1),
-                    constraints: const BoxConstraints(minWidth: 16),
-                    alignment: Alignment.center,
-                    decoration: BoxDecoration(
-                      color: HomeColors.primaryOrange,
-                      borderRadius: BorderRadius.circular(9),
-                      border: Border.all(color: HomeColors.surface, width: 1.5),
-                    ),
-                    child: Text(
-                      badgeCount > 99 ? '99+' : '$badgeCount',
-                      style: const TextStyle(
-                        color: Color(0xFFFFFFFF),
-                        fontSize: 9,
-                        fontWeight: FontWeight.w700,
-                      ),
-                    ),
-                  ),
-                ),
-            ],
-          ),
-          const SizedBox(height: 3),
-          Text(data.label, style: selected ? HomeText.navActive : HomeText.navInactive),
+            ),
         ],
       ),
     );

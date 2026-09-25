@@ -63,7 +63,7 @@ class _VimartSearchBoxState extends State<VimartSearchBox> {
             color: HomeColors.surface,
             borderRadius: BorderRadius.circular(23),
             border: Border.all(
-              color: focused ? HomeColors.primaryOrange : HomeColors.border,
+              color: focused ? HomeColors.brand : HomeColors.border,
               width: focused ? 1.4 : 1,
             ),
           ),
@@ -82,7 +82,7 @@ class _VimartSearchBoxState extends State<VimartSearchBox> {
                       controller: _controller,
                       focusNode: _focusNode,
                       style: HomeText.searchInput,
-                      cursorColor: HomeColors.primaryOrange,
+                      cursorColor: HomeColors.brand,
                       backgroundCursorColor: HomeColors.border,
                       maxLines: 1,
                       textInputAction: TextInputAction.search,

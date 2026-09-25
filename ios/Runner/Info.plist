@@ -66,5 +66,9 @@
 		<string>UIInterfaceOrientationLandscapeLeft</string>
 		<string>UIInterfaceOrientationLandscapeRight</string>
 	</array>
+	<key>NSPhotoLibraryUsageDescription</key>
+	<string>ViMart cần truy cập thư viện ảnh để bạn chọn ảnh sản phẩm.</string>
+	<key>NSCameraUsageDescription</key>
+	<string>ViMart cần dùng camera để chụp ảnh sản phẩm.</string>
 </dict>
 </plist>

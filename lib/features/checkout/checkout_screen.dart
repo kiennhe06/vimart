@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:url_launcher/url_launcher.dart';
 
+import '../../app/nav_provider.dart';
 import '../../app/theme.dart';
 import '../../core/format.dart';
 import '../../models/address.dart';
@@ -82,6 +83,7 @@ class _CheckoutScreenState extends ConsumerState<CheckoutScreen> {
           TextButton(
             onPressed: () {
               Navigator.pop(ctx);
+              ref.read(bottomNavIndexProvider.notifier).go(0); // về tab Trang chủ
               context.go('/');
             },
             child: const Text('Về trang chủ'),
@@ -89,7 +91,8 @@ class _CheckoutScreenState extends ConsumerState<CheckoutScreen> {
           FilledButton(
             onPressed: () {
               Navigator.pop(ctx);
-              context.go('/orders');
+              ref.read(bottomNavIndexProvider.notifier).go(2); // sang tab Đơn hàng
+              context.go('/');
             },
             child: const Text('Xem đơn hàng'),
           ),

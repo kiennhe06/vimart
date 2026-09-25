@@ -3,10 +3,9 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../app/theme.dart';
-import '../../core/constants.dart';
 import 'auth_provider.dart';
 
-/// Màn hình đăng nhập bằng email + mật khẩu.
+/// Màn đăng nhập — phong cách grocery: logo trong vòng tròn mềm, ô nhập bo tròn.
 class LoginScreen extends ConsumerStatefulWidget {
   const LoginScreen({super.key});
   @override
@@ -34,9 +33,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
       await ref.read(authProvider.notifier).login(_emailCtrl.text.trim(), _passwordCtrl.text);
       if (mounted) context.go('/');
     } catch (e) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(e.toString())));
-      }
+      if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(e.toString())));
     } finally {
       if (mounted) setState(() => _submitting = false);
     }
@@ -54,16 +51,21 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
-                  const Icon(Icons.storefront, size: 72, color: AppColors.brand),
-                  const SizedBox(height: 8),
-                  Text(kAppName,
+                  // Logo trong vòng tròn mềm
+                  Center(
+                    child: Container(
+                      width: 92, height: 92,
+                      decoration: const BoxDecoration(color: AppColors.brandSoft, shape: BoxShape.circle),
+                      child: const Icon(Icons.storefront_rounded, size: 46, color: AppColors.brand),
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+                  const Text('ViMart',
                       textAlign: TextAlign.center,
-                      style: Theme.of(context)
-                          .textTheme
-                          .headlineMedium
-                          ?.copyWith(color: AppColors.brand, fontWeight: FontWeight.bold)),
+                      style: TextStyle(color: AppColors.brand, fontSize: 30, fontWeight: FontWeight.w900)),
                   const SizedBox(height: 4),
-                  const Text('Chợ online cho mọi người', textAlign: TextAlign.center),
+                  const Text('Chợ tươi ngon, giao tận nơi',
+                      textAlign: TextAlign.center, style: TextStyle(color: Colors.grey, fontSize: 14)),
                   const SizedBox(height: 32),
                   TextFormField(
                     controller: _emailCtrl,
@@ -71,7 +73,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                     decoration: const InputDecoration(labelText: 'Email', prefixIcon: Icon(Icons.email_outlined)),
                     validator: (v) => (v == null || !v.contains('@')) ? 'Email không hợp lệ' : null,
                   ),
-                  const SizedBox(height: 16),
+                  const SizedBox(height: 14),
                   TextFormField(
                     controller: _passwordCtrl,
                     obscureText: _obscure,
@@ -79,7 +81,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                       labelText: 'Mật khẩu',
                       prefixIcon: const Icon(Icons.lock_outline),
                       suffixIcon: IconButton(
-                        icon: Icon(_obscure ? Icons.visibility_off : Icons.visibility),
+                        icon: Icon(_obscure ? Icons.visibility_off_outlined : Icons.visibility_outlined),
                         onPressed: () => setState(() => _obscure = !_obscure),
                       ),
                     ),
@@ -89,39 +91,37 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                   ElevatedButton(
                     onPressed: _submitting ? null : _submit,
                     child: _submitting
-                        ? const SizedBox(height: 22, width: 22, child: CircularProgressIndicator(strokeWidth: 2))
+                        ? const SizedBox(height: 22, width: 22, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
                         : const Text('Đăng nhập'),
                   ),
-                  const SizedBox(height: 12),
+                  const SizedBox(height: 10),
                   Row(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
                       const Text('Chưa có tài khoản?'),
-                      TextButton(
-                        onPressed: () => context.push('/register'),
-                        child: const Text('Đăng ký ngay'),
-                      ),
+                      TextButton(onPressed: () => context.push('/register'), child: const Text('Đăng ký ngay')),
                     ],
                   ),
-                  TextButton(
-                    onPressed: () => context.go('/'),
-                    child: const Text('Xem hàng trước (khách vãng lai)'),
+                  Center(
+                    child: TextButton(
+                      onPressed: () => context.go('/'),
+                      child: const Text('Xem hàng trước (khách vãng lai)'),
+                    ),
                   ),
-                  const SizedBox(height: 8),
-                  Card(
-                    child: Padding(
-                      padding: const EdgeInsets.all(12),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: const [
-                          Text('Tài khoản dùng thử (mật khẩu: 123456)',
-                              style: TextStyle(fontWeight: FontWeight.bold)),
-                          SizedBox(height: 4),
-                          Text('• buyer@vimart.vn — người mua'),
-                          Text('• seller1@vimart.vn — người bán'),
-                          Text('• admin@vimart.vn — quản trị'),
-                        ],
-                      ),
+                  const SizedBox(height: 12),
+                  Container(
+                    padding: const EdgeInsets.all(16),
+                    decoration: BoxDecoration(color: AppColors.brandSoft, borderRadius: BorderRadius.circular(18)),
+                    child: const Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text('Tài khoản dùng thử (mật khẩu: 123456)',
+                            style: TextStyle(fontWeight: FontWeight.w800, color: AppColors.brandDark)),
+                        SizedBox(height: 6),
+                        Text('• buyer@vimart.vn — người mua'),
+                        Text('• seller1@vimart.vn — người bán'),
+                        Text('• admin@vimart.vn — quản trị'),
+                      ],
                     ),
                   ),
                 ],
