@@ -326,6 +326,7 @@ async function viewDashboard(el) {
     Api.get('/categories'),
   ]);
   state.dashOrders = orders; // để re-render biểu đồ khi đổi kỳ
+  state.dashStats = s; // giữ số liệu tổng (all-time) cho hero
 
   el.innerHTML = `<div class="dash">
     <div class="dash__col">${heroCard()}${revenueFlowCard(orders)}${recentOrdersCard(orders)}</div>
@@ -343,7 +344,7 @@ function heroCard() {
   return `<div class="hero" id="heroCard">
     <div class="hero__label">${L('Doanh thu (đơn hoàn thành)', 'Revenue (completed orders)')} · ${title}</div>
     <div class="hero__value">${fmtVnd(rev)}</div>
-    <div class="hero__sub">${L(`${cnt} đơn trong kỳ`, `${cnt} orders in period`)}</div>
+    <div class="hero__sub">${L(`${cnt} đơn trong kỳ · Tổng: ${fmtVnd(state.dashStats?.totalRevenue || 0)}`, `${cnt} orders in period · All-time: ${fmtVnd(state.dashStats?.totalRevenue || 0)}`)}</div>
     <div class="hero__actions">
       <button class="hero__btn hero__btn--dark" data-nav="orders">${L('Xem đơn hàng', 'View orders')}</button>
       <button class="hero__btn hero__btn--light" data-nav="products">${L('Sản phẩm', 'Products')}</button>
@@ -740,15 +741,34 @@ async function viewUsers(el) {
 }
 
 // ---------- View: Đơn hàng ----------
-async function viewOrders(el) {
-  const orders = await Api.get('/admin/orders'); // trả snake_case từ DB
-  if (!orders.length)
-    return (el.innerHTML = stateView({
-      icon: 'box',
-      title: L('Chưa có đơn hàng', 'No orders yet'),
-      message: L('Đơn hàng của sàn sẽ hiển thị ở đây.', 'Marketplace orders will appear here.'),
-    }));
-  const rows = orders
+// Bộ lọc đơn hàng (giữ giữa các lần xem): trạng thái, khoảng ngày, tìm nhanh.
+const orderFilter = { status: '', from: '', to: '', q: '' };
+
+/** Lọc + vẽ lại phần thân bảng đơn hàng theo bộ lọc hiện tại. */
+function renderOrdersTable() {
+  const f = orderFilter;
+  const q = f.q.trim().toLowerCase();
+  const from = f.from ? new Date(f.from + 'T00:00:00') : null;
+  const to = f.to ? new Date(f.to + 'T23:59:59.999') : null;
+  const list = (state.allOrders || []).filter((o) => {
+    if (f.status && o.status !== f.status) return false;
+    const d = o.created_at ? new Date(o.created_at) : null;
+    if (from && (!d || d < from)) return false;
+    if (to && (!d || d > to)) return false;
+    if (q && !`${o.code} ${o.buyer_name || ''} ${o.shop_name || ''}`.toLowerCase().includes(q))
+      return false;
+    return true;
+  });
+
+  const count = document.getElementById('ordersCount');
+  if (count) count.textContent = L(`${list.length} đơn`, `${list.length} orders`);
+  const body = document.getElementById('ordersBody');
+  if (!body) return;
+  if (!list.length) {
+    body.innerHTML = `<tr><td colspan="7" class="muted" style="padding:28px;text-align:center">${L('Không có đơn khớp bộ lọc', 'No orders match the filter')}</td></tr>`;
+    return;
+  }
+  body.innerHTML = list
     .map(
       (o) => `
     <tr>
@@ -763,10 +783,61 @@ async function viewOrders(el) {
     </tr>`
     )
     .join('');
+}
 
-  el.innerHTML = `<div class="panel"><table class="table">
+async function viewOrders(el) {
+  const orders = await Api.get('/admin/orders'); // trả snake_case từ DB
+  state.allOrders = orders;
+  if (!orders.length)
+    return (el.innerHTML = stateView({
+      icon: 'box',
+      title: L('Chưa có đơn hàng', 'No orders yet'),
+      message: L('Đơn hàng của sàn sẽ hiển thị ở đây.', 'Marketplace orders will appear here.'),
+    }));
+
+  const statuses = ['pending', 'confirmed', 'shipping', 'completed', 'cancelled'];
+  const statusOpts = [`<option value="">${L('Tất cả trạng thái', 'All statuses')}</option>`]
+    .concat(
+      statuses.map(
+        (s) =>
+          `<option value="${s}" ${orderFilter.status === s ? 'selected' : ''}>${statusLabel(s)}</option>`
+      )
+    )
+    .join('');
+
+  el.innerHTML = `
+    <div class="toolbar">
+      <select id="fStatus">${statusOpts}</select>
+      <span class="toolbar__lbl">${L('Từ', 'From')}</span>
+      <input id="fFrom" type="date" value="${orderFilter.from}" />
+      <span class="toolbar__lbl">${L('đến', 'to')}</span>
+      <input id="fTo" type="date" value="${orderFilter.to}" />
+      <input id="fQ" type="search" placeholder="${L('Tìm mã / khách / shop', 'Search code / customer / shop')}" value="${escapeHtml(orderFilter.q)}" style="min-width:200px" />
+      <button class="btn btn--ghost btn--sm" data-action="orders-clear">${L('Xóa lọc', 'Clear')}</button>
+      <span class="tb-sep"></span>
+      <span class="toolbar__count" id="ordersCount"></span>
+    </div>
+    <div class="panel"><table class="table">
     <thead><tr><th>${L('Mã đơn', 'Order')}</th><th>${L('Khách', 'Customer')}</th><th>Shop</th><th>${L('Trạng thái', 'Status')}</th><th>${L('Thanh toán', 'Payment')}</th><th>${L('Tổng', 'Total')}</th><th>${L('Ngày', 'Date')}</th></tr></thead>
-    <tbody>${rows}</tbody></table></div>`;
+    <tbody id="ordersBody"></tbody></table></div>`;
+
+  document.getElementById('fStatus').addEventListener('change', (e) => {
+    orderFilter.status = e.target.value;
+    renderOrdersTable();
+  });
+  document.getElementById('fFrom').addEventListener('change', (e) => {
+    orderFilter.from = e.target.value;
+    renderOrdersTable();
+  });
+  document.getElementById('fTo').addEventListener('change', (e) => {
+    orderFilter.to = e.target.value;
+    renderOrdersTable();
+  });
+  document.getElementById('fQ').addEventListener('input', (e) => {
+    orderFilter.q = e.target.value;
+    renderOrdersTable();
+  });
+  renderOrdersTable();
 }
 
 // ---------- View: Danh mục ----------
@@ -871,6 +942,12 @@ document.addEventListener('click', async (e) => {
   } else if (action === 'chart-today') {
     chartView.offset = 0;
     rerenderChart();
+  } else if (action === 'orders-clear') {
+    orderFilter.status = '';
+    orderFilter.from = '';
+    orderFilter.to = '';
+    orderFilter.q = '';
+    route();
   } else if (action === 'chart-mode-week' || action === 'chart-mode-month') {
     const mode = action === 'chart-mode-month' ? 'month' : 'week';
     if (chartView.mode !== mode) {
