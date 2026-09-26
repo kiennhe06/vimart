@@ -6,6 +6,7 @@ import '../../app/theme.dart';
 import '../../core/format.dart';
 import '../../core/i18n/app_strings.dart';
 import '../../models/product.dart';
+import '../../widgets/app_dialog.dart';
 import '../../widgets/app_feedback.dart';
 import '../../widgets/app_skeleton.dart';
 import '../../widgets/async_view.dart';
@@ -118,8 +119,8 @@ class _ProductRow extends ConsumerWidget {
 
   Future<void> _confirmDelete(BuildContext context, WidgetRef ref) async {
     final s = ref.read(stringsProvider);
-    final ok = await showDialog<bool>(
-      context: context,
+    final ok = await showAppDialog<bool>(
+      context,
       builder: (ctx) => AlertDialog(
         title: Text(s.deleteProduct),
         content: Text(s.deleteProductConfirm(product.name)),
@@ -137,6 +138,9 @@ class _ProductRow extends ConsumerWidget {
       try {
         await ref.read(sellerRepositoryProvider).deleteProduct(product.id);
         ref.invalidate(myProductsProvider);
+        if (context.mounted) {
+          showAppSnack(context, s.deleted, type: AppSnackType.success);
+        }
       } catch (e) {
         if (context.mounted) {
           showAppSnack(context, e.toString(), type: AppSnackType.error);

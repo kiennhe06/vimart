@@ -10,6 +10,7 @@ import '../../core/format.dart';
 import '../../core/i18n/app_strings.dart';
 import '../../models/address.dart';
 import '../../widgets/animated_checkmark.dart';
+import '../../widgets/app_busy.dart';
 import '../../widgets/app_dialog.dart';
 import '../../widgets/app_feedback.dart';
 import '../../widgets/app_skeleton.dart';
@@ -216,9 +217,7 @@ class _CheckoutScreenState extends ConsumerState<CheckoutScreen> {
                   padding: const EdgeInsets.all(12),
                   child: ElevatedButton(
                     onPressed: (_placing || cart.isEmpty) ? null : _placeOrder,
-                    child: _placing
-                        ? const SizedBox(height: 22, width: 22, child: CircularProgressIndicator(strokeWidth: 2))
-                        : Text(s.placeOrder(formatVnd(total))),
+                    child: BusySwitch(busy: _placing, child: Text(s.placeOrder(formatVnd(total)))),
                   ),
                 ),
               ),

@@ -7,6 +7,7 @@ import '../../app/theme.dart';
 import '../../core/format.dart';
 import '../../core/i18n/app_strings.dart';
 import '../../models/product.dart';
+import '../../widgets/app_busy.dart';
 import '../../widgets/app_feedback.dart';
 import '../../widgets/async_view.dart';
 import '../../widgets/network_image_box.dart';
@@ -341,12 +342,12 @@ class _ProductDetailScreenState extends ConsumerState<ProductDetailScreen> {
             Expanded(
               child: ElevatedButton(
                 onPressed: (_adding || !selected.inStock) ? null : () => _addToCart(selected),
-                child: _adding
-                    ? const SizedBox(height: 22, width: 22,
-                        child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
-                    : Text(selected.inStock
-                        ? ref.read(stringsProvider).addToCartWith(formatVnd(selected.price * _qty))
-                        : ref.read(stringsProvider).outOfStock),
+                child: BusySwitch(
+                  busy: _adding,
+                  child: Text(selected.inStock
+                      ? ref.read(stringsProvider).addToCartWith(formatVnd(selected.price * _qty))
+                      : ref.read(stringsProvider).outOfStock),
+                ),
               ),
             ),
           ],
