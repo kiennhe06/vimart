@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../app/design.dart';
 import '../../app/theme.dart';
 import '../../core/i18n/app_strings.dart';
+import '../../widgets/app_card.dart';
 import '../../widgets/app_feedback.dart';
 import '../../widgets/app_skeleton.dart';
 import '../../widgets/async_view.dart';
@@ -44,15 +45,9 @@ class AddressesScreen extends ConsumerWidget {
               final a = addresses[i];
               return FadeSlideIn(
                 index: i,
-                child: Container(
+                child: AppCard(
                 margin: const EdgeInsets.only(bottom: 12),
                 padding: const EdgeInsets.all(14),
-                decoration: BoxDecoration(
-                  color: context.c.surface,
-                  borderRadius: BorderRadius.circular(18),
-                  border: Border.all(color: context.c.border),
-                  boxShadow: AppShadow.soft(context.c.shadow),
-                ),
                 child: Row(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [

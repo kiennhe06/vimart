@@ -9,13 +9,13 @@ import '../../app/theme.dart';
 import '../../core/format.dart';
 import '../../core/i18n/app_strings.dart';
 import '../../models/order.dart';
+import '../../widgets/app_card.dart';
 import '../../widgets/app_refresh.dart';
 import '../../widgets/app_skeleton.dart';
 import '../../widgets/async_view.dart';
 import '../../widgets/entrance.dart';
 import '../../widgets/login_required_view.dart';
 import '../../widgets/pill_tab_bar.dart';
-import '../../widgets/pressable.dart';
 import '../auth/auth_provider.dart';
 import 'order_providers.dart';
 
@@ -124,19 +124,11 @@ class OrderCard extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final s = ref.watch(stringsProvider);
-    return Pressable(
+    return AppCard(
       onTap: () => context.push('/order/${order.id}'),
-      scale: 0.98,
-      child: Container(
-        margin: const EdgeInsets.only(bottom: 12),
-        padding: const EdgeInsets.all(14),
-        decoration: BoxDecoration(
-          color: context.c.surface,
-          borderRadius: BorderRadius.circular(18),
-          border: Border.all(color: context.c.border),
-          boxShadow: AppShadow.soft(context.c.shadow),
-        ),
-        child: Column(
+      margin: const EdgeInsets.only(bottom: 12),
+      padding: const EdgeInsets.all(14),
+      child: Column(
           children: [
             Row(
               children: [
@@ -179,7 +171,6 @@ class OrderCard extends ConsumerWidget {
             ),
           ],
         ),
-      ),
     );
   }
 }
