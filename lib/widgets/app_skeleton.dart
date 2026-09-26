@@ -49,7 +49,7 @@ class _Shimmer extends StatefulWidget {
 
 class _ShimmerState extends State<_Shimmer> with SingleTickerProviderStateMixin {
   late final AnimationController _c =
-      AnimationController(vsync: this, duration: const Duration(milliseconds: 1200))..repeat();
+      AnimationController(vsync: this, duration: AppMotion.ambientLoop)..repeat();
 
   @override
   void dispose() {

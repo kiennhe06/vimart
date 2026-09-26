@@ -27,7 +27,7 @@ class NetworkImageBox extends StatelessWidget {
         if (wasSynchronouslyLoaded) return child;
         return AnimatedOpacity(
           opacity: frame == null ? 0 : 1,
-          duration: AppMotion.dur(context, const Duration(milliseconds: 320)),
+          duration: AppMotion.dur(context, AppMotion.imageFade),
           curve: AppMotion.enter,
           child: child,
         );

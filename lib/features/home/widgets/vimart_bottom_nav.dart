@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart' show Icons;
 import 'package:flutter/widgets.dart';
 
+import '../../../app/cart_anchor.dart';
 import '../../../app/motion.dart';
 import '../../../widgets/pressable.dart';
 import '../home_ui.dart';
@@ -53,6 +54,8 @@ class VimartBottomNav extends StatelessWidget {
                 label: i < labels.length ? labels[i] : '',
                 selected: i == currentIndex,
                 badgeCount: i == 1 ? cartCount : 0,
+                // Đích cho hiệu ứng "bay vào giỏ".
+                anchorKey: i == 1 ? cartIconKey : null,
                 onTap: () => onTap(i),
               ),
           ],
@@ -69,6 +72,7 @@ class _NavCircle extends StatelessWidget {
     required this.selected,
     required this.onTap,
     this.badgeCount = 0,
+    this.anchorKey,
   });
 
   final IconData icon;
@@ -76,6 +80,9 @@ class _NavCircle extends StatelessWidget {
   final bool selected;
   final VoidCallback onTap;
   final int badgeCount;
+
+  /// GlobalKey đánh dấu icon giỏ (đích của hiệu ứng bay vào giỏ).
+  final Key? anchorKey;
 
   @override
   Widget build(BuildContext context) {
@@ -90,6 +97,7 @@ class _NavCircle extends StatelessWidget {
           clipBehavior: Clip.none,
           children: [
             AnimatedContainer(
+              key: anchorKey,
               duration: AppMotion.dur(context, AppMotion.base),
               curve: AppMotion.emphasized,
               width: 52,

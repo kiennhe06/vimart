@@ -167,6 +167,7 @@ class AppStrings {
   String get province => _('Tỉnh/Thành phố', 'Province/City');
   String get saveAddress => _('Lưu địa chỉ', 'Save address');
   String get addressSaved => _('Đã lưu địa chỉ', 'Address saved');
+  String get deleted => _('Đã xóa', 'Deleted');
   String get newAddress => _('Địa chỉ mới', 'New address');
   String get chooseProvince => _('Chọn Tỉnh/Thành phố', 'Select province/city');
   String get chooseWard => _('Chọn Phường/Xã', 'Select ward/commune');

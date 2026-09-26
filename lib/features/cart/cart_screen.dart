@@ -14,6 +14,7 @@ import '../../widgets/entrance.dart';
 import '../../widgets/login_required_view.dart';
 import '../../widgets/network_image_box.dart';
 import '../../widgets/pressable.dart';
+import '../../widgets/rolling_number.dart';
 import '../auth/auth_provider.dart';
 import 'cart_provider.dart';
 
@@ -263,14 +264,11 @@ class _Footer extends ConsumerWidget {
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
                 Text(s.total, style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 16)),
-                TweenAnimationBuilder<int>(
-                  tween: IntTween(begin: 0, end: total),
-                  duration: AppMotion.dur(context, AppMotion.slow),
-                  curve: AppMotion.enter,
-                  builder: (context, value, _) => Text(
-                    formatVnd(value),
-                    style: const TextStyle(color: AppColors.brand, fontWeight: FontWeight.w800, fontSize: 18),
-                  ),
+                // Tổng tiền "cuộn" tới giá trị mới khi đổi số lượng (secondary motion).
+                RollingNumber(
+                  value: total,
+                  format: formatVnd,
+                  style: const TextStyle(color: AppColors.brand, fontWeight: FontWeight.w800, fontSize: 18),
                 ),
               ],
             ),

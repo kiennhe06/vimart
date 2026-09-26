@@ -2,8 +2,10 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../app/motion.dart';
 import '../../app/theme.dart';
 import '../../core/i18n/app_strings.dart';
+import '../../widgets/app_busy.dart';
 import '../../widgets/app_feedback.dart';
 import 'auth_provider.dart';
 
@@ -84,7 +86,14 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                       labelText: s.password,
                       prefixIcon: const Icon(Icons.lock_outline),
                       suffixIcon: IconButton(
-                        icon: Icon(_obscure ? Icons.visibility_off_outlined : Icons.visibility_outlined),
+                        icon: AnimatedSwitcher(
+                          duration: AppMotion.dur(context, AppMotion.fast),
+                          transitionBuilder: (c, a) => ScaleTransition(
+                              scale: a, child: FadeTransition(opacity: a, child: c)),
+                          child: Icon(
+                              _obscure ? Icons.visibility_off_outlined : Icons.visibility_outlined,
+                              key: ValueKey(_obscure)),
+                        ),
                         onPressed: () => setState(() => _obscure = !_obscure),
                       ),
                     ),
@@ -93,9 +102,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                   const SizedBox(height: 24),
                   ElevatedButton(
                     onPressed: _submitting ? null : _submit,
-                    child: _submitting
-                        ? const SizedBox(height: 22, width: 22, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
-                        : Text(s.login),
+                    child: BusySwitch(busy: _submitting, child: Text(s.login)),
                   ),
                   const SizedBox(height: 10),
                   Row(

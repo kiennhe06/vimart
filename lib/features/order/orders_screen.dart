@@ -2,11 +2,13 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../app/motion.dart';
 import '../../app/nav_provider.dart';
 import '../../app/theme.dart';
 import '../../core/format.dart';
 import '../../core/i18n/app_strings.dart';
 import '../../models/order.dart';
+import '../../widgets/app_refresh.dart';
 import '../../widgets/app_skeleton.dart';
 import '../../widgets/async_view.dart';
 import '../../widgets/entrance.dart';
@@ -53,8 +55,7 @@ class _OrderList extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final async = ref.watch(myOrdersProvider(status));
-    return RefreshIndicator(
-      color: AppColors.brand,
+    return AppRefresh(
       onRefresh: () => ref.refresh(myOrdersProvider(status).future),
       child: AsyncView(
         value: async,
@@ -197,11 +198,19 @@ class OrderStatusChip extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    return Container(
+    // Đổi trạng thái (sau khi xác nhận/giao/hủy) -> màu nền chuyển mượt, nhãn cross-fade.
+    return AnimatedContainer(
+      duration: AppMotion.dur(context, AppMotion.base),
+      curve: AppMotion.emphasized,
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
       decoration: BoxDecoration(color: _color.withValues(alpha: 0.14), borderRadius: BorderRadius.circular(20)),
-      child: Text(ref.watch(stringsProvider).orderStatus(status),
-          style: TextStyle(color: _color, fontSize: 12, fontWeight: FontWeight.w700)),
+      child: AnimatedSwitcher(
+        duration: AppMotion.dur(context, AppMotion.base),
+        transitionBuilder: (c, a) => FadeTransition(opacity: a, child: c),
+        child: Text(ref.watch(stringsProvider).orderStatus(status),
+            key: ValueKey(status),
+            style: TextStyle(color: _color, fontSize: 12, fontWeight: FontWeight.w700)),
+      ),
     );
   }
 }

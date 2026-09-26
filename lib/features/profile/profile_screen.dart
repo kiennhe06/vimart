@@ -6,7 +6,9 @@ import '../../app/motion.dart';
 import '../../app/theme.dart';
 import '../../core/i18n/app_strings.dart';
 import '../../core/i18n/locale_provider.dart';
+import '../../widgets/app_dialog.dart';
 import '../../widgets/app_feedback.dart';
+import '../../widgets/entrance.dart';
 import '../../widgets/login_required_view.dart';
 import '../auth/auth_provider.dart';
 import '../seller/seller_repository.dart';
@@ -35,7 +37,9 @@ class ProfileScreen extends ConsumerWidget {
         padding: const EdgeInsets.fromLTRB(16, 8, 16, 24),
         children: [
           // Thẻ hồ sơ
-          Container(
+          FadeSlideIn(
+            index: 0,
+            child: Container(
             padding: const EdgeInsets.all(18),
             decoration: _cardDecoration(),
             child: Row(
@@ -65,10 +69,13 @@ class ProfileScreen extends ConsumerWidget {
               ],
             ),
           ),
+          ),
           const SizedBox(height: 16),
 
           // Nhóm: tiện ích cá nhân
-          _menuCard([
+          FadeSlideIn(
+            index: 1,
+            child: _menuCard([
             _MenuRow(Icons.favorite_rounded, const Color(0xFFFFEDE2), const Color(0xFFFF7A45),
                 s.favoriteProducts, () => context.push('/favorites')),
             _MenuRow(Icons.location_on_rounded, const Color(0xFFE2F0FF), const Color(0xFF2B8AF0),
@@ -78,10 +85,13 @@ class ProfileScreen extends ConsumerWidget {
                 s.language, () => ref.read(localeProvider.notifier).toggle(),
                 trailingText: localeCode == 'en' ? 'English' : 'Tiếng Việt'),
           ]),
+          ),
 
           const SizedBox(height: 14),
           _sectionLabel(s.sellerChannel),
-          _menuCard(
+          FadeSlideIn(
+            index: 2,
+            child: _menuCard(
             user.hasShop
                 ? [
                     _MenuRow(Icons.inventory_2_rounded, AppColors.brandSoft, AppColors.brand,
@@ -94,12 +104,16 @@ class ProfileScreen extends ConsumerWidget {
                         s.openShop, () => _openShopDialog(context, ref)),
                   ],
           ),
+          ),
 
           const SizedBox(height: 14),
-          _menuCard([
+          FadeSlideIn(
+            index: 3,
+            child: _menuCard([
             _MenuRow(Icons.logout_rounded, const Color(0xFFFDECEC), AppColors.danger,
                 s.logout, () => _confirmLogout(context, ref), danger: true),
           ]),
+          ),
         ],
       ),
     );
@@ -140,8 +154,8 @@ class ProfileScreen extends ConsumerWidget {
 
   Future<void> _confirmLogout(BuildContext context, WidgetRef ref) async {
     final s = ref.read(stringsProvider);
-    final ok = await showDialog<bool>(
-      context: context,
+    final ok = await showAppDialog<bool>(
+      context,
       builder: (ctx) => AlertDialog(
         title: Text(s.logout),
         content: Text(s.logoutConfirm),
@@ -161,8 +175,8 @@ class ProfileScreen extends ConsumerWidget {
     final s = ref.read(stringsProvider);
     final nameCtrl = TextEditingController();
     final descCtrl = TextEditingController();
-    final created = await showDialog<bool>(
-      context: context,
+    final created = await showAppDialog<bool>(
+      context,
       builder: (ctx) => AlertDialog(
         title: Text(s.openShop),
         content: Column(
