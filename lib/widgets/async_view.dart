@@ -120,6 +120,9 @@ class AsyncView<T> extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final child = value.when(
+      // Khi TẢI LẠI (đã có dữ liệu cũ) -> giữ nội dung, cập nhật im lặng, KHÔNG
+      // nháy skeleton. Chỉ hiện loading ở lần tải đầu.
+      skipLoadingOnReload: true,
       data: data,
       loading: () => loading ?? const LoadingView(),
       error: (err, _) => ErrorView(message: err.toString(), onRetry: onRetry),
