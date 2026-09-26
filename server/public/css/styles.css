@@ -37,7 +37,7 @@
   --field-bg: rgba(255, 255, 255, 0.045);
 
   --selected: var(--brand-ring);
-  --glow: rgba(124, 58, 237, 0.28); /* quầng nền trang trí */
+  --glow: rgba(244, 81, 30, 0.14); /* quầng nền ấm, đúng brand (tiết chế) */
 
   /* Ngữ nghĩa */
   --success: #37d67a;
@@ -85,7 +85,7 @@
   --fill-2: rgba(20, 16, 32, 0.07);
   --fill-3: rgba(20, 16, 32, 0.12);
   --field-bg: #ffffff;
-  --glow: rgba(124, 58, 237, 0.12);
+  --glow: rgba(244, 81, 30, 0.06);
   --shadow: 0 14px 34px rgba(20, 16, 40, 0.1);
   --shadow-sm: 0 8px 20px rgba(20, 16, 40, 0.07);
   color-scheme: light;
@@ -423,21 +423,6 @@ svg.ic {
   flex-shrink: 0;
   margin-left: auto;
 }
-.circle-btn {
-  width: 44px;
-  height: 44px;
-  border-radius: 50%;
-  background: var(--fill-1);
-  border: 1px solid var(--border);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  cursor: pointer;
-  font-size: 16px;
-}
-.circle-btn:hover {
-  background: var(--fill-2);
-}
 /* Language switch (VI / EN) */
 .lang-switch {
   display: flex;
@@ -734,16 +719,7 @@ svg.ic {
   color: var(--text-2);
   cursor: pointer;
 }
-.pill--up {
-  background: rgba(55, 214, 122, 0.18);
-  color: var(--success);
-}
-.pill--down {
-  background: rgba(255, 92, 108, 0.18);
-  color: var(--danger);
-}
-
-/* Thẻ số dư lớn (hero) — gradient cam bóng */
+/* Thẻ doanh thu (hero) — gradient cam thương hiệu */
 .hero {
   position: relative;
   overflow: hidden;
@@ -759,23 +735,6 @@ svg.ic {
   inset: 0;
   background: linear-gradient(160deg, var(--fill-3), transparent 45%);
   pointer-events: none;
-}
-.hero__tools {
-  position: absolute;
-  top: 20px;
-  right: 20px;
-  display: flex;
-  gap: 8px;
-}
-.hero__tool {
-  width: 34px;
-  height: 34px;
-  border-radius: 11px;
-  background: rgba(0, 0, 0, 0.16);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 15px;
 }
 .hero__label {
   font-size: 14px;
@@ -1079,8 +1038,7 @@ svg.ic {
 .litem:hover {
   background: var(--fill-1);
 }
-.hero__btn,
-.hero__tool {
+.hero__btn {
   transition:
     transform 0.18s cubic-bezier(0.2, 0.7, 0.2, 1),
     background 0.18s,
@@ -1090,12 +1048,6 @@ svg.ic {
   transform: translateY(-2px);
   box-shadow: 0 10px 22px rgba(0, 0, 0, 0.25);
 }
-.hero__tool {
-  cursor: pointer;
-}
-.hero__tool:hover {
-  background: rgba(0, 0, 0, 0.28);
-}
 .pill {
   transition:
     background 0.15s,
@@ -1103,15 +1055,7 @@ svg.ic {
 }
 .pill--soft:hover {
   background: var(--fill-2);
-  color: #fff;
-}
-.circle-btn {
-  transition:
-    background 0.15s,
-    transform 0.18s;
-}
-.circle-btn:hover {
-  transform: translateY(-2px);
+  color: var(--text);
 }
 .avatar {
   transition:
@@ -1125,10 +1069,8 @@ svg.ic {
 .navlink,
 .tab,
 .btn,
-.circle-btn,
 .avatar,
 .hero__btn,
-.hero__tool,
 .pill--soft,
 .litem {
   -webkit-tap-highlight-color: transparent;

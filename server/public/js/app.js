@@ -287,8 +287,8 @@ async function viewDashboard(el) {
 
   el.innerHTML = `<div class="dash">
     <div class="dash__col">${heroCard(s)}${revenueFlowCard(orders)}${recentOrdersCard(orders)}</div>
-    <div class="dash__col">${miniCard(ic('box', 'i20'), 'rgba(55,214,122,.16)', '#37d67a', L('Tổng đơn hàng', 'Total orders'), s.totalOrders, 'up')}
-      ${miniCard(ic('bag', 'i20'), 'rgba(244,81,30,.16)', '#ff9a3d', L('Sản phẩm đang bán', 'Active products'), s.totalProducts, null)}
+    <div class="dash__col">${miniCard(ic('box', 'i20'), 'rgba(55,214,122,.16)', '#37d67a', L('Tổng đơn hàng', 'Total orders'), s.totalOrders)}
+      ${miniCard(ic('bag', 'i20'), 'rgba(244,81,30,.16)', '#ff9a3d', L('Sản phẩm đang bán', 'Active products'), s.totalProducts)}
       ${categoryDonutCard(products, cats)}</div>
     <div class="dash__col">${vmartCard(s)}${categoryListCard(products, cats)}</div>
   </div>`;
@@ -297,10 +297,9 @@ async function viewDashboard(el) {
 /** Thẻ số dư lớn = doanh thu. */
 function heroCard(s) {
   return `<div class="hero">
-    <div class="hero__tools"><span class="hero__tool">${ic('grid', 'i16')}</span><span class="hero__tool">${ic('file', 'i16')}</span></div>
     <div class="hero__label">${L('Doanh thu (đơn hoàn thành)', 'Revenue (completed orders)')}</div>
     <div class="hero__value">${fmtVnd(s.totalRevenue)}</div>
-    <div class="hero__sub">${L(`+${s.totalOrders} đơn · ${s.totalUsers} người dùng trên sàn`, `+${s.totalOrders} orders · ${s.totalUsers} users on the platform`)}</div>
+    <div class="hero__sub">${L(`${s.totalOrders} đơn · ${s.totalUsers} người dùng trên sàn`, `${s.totalOrders} orders · ${s.totalUsers} users on the platform`)}</div>
     <div class="hero__actions">
       <button class="hero__btn hero__btn--dark" data-nav="orders">${L('Xem đơn hàng', 'View orders')}</button>
       <button class="hero__btn hero__btn--light" data-nav="products">${L('Sản phẩm', 'Products')}</button>
@@ -308,18 +307,11 @@ function heroCard(s) {
   </div>`;
 }
 
-function miniCard(icon, iconBg, iconColor, label, value, trend) {
-  const badge =
-    trend === 'up'
-      ? `<span class="pill pill--up">● ${L('Hoạt động', 'Active')}</span>`
-      : trend === 'down'
-        ? '<span class="pill pill--down">▼</span>'
-        : '';
+function miniCard(icon, iconBg, iconColor, label, value) {
   return `<div class="mini">
     <div class="mini__row">
       <div class="mini__icon" style="background:${iconBg};color:${iconColor}">${icon}</div>
       <div class="mini__label">${label}</div>
-      <div class="spacer" style="flex:1"></div>${badge}
     </div>
     <div class="mini__value">${value}</div>
   </div>`;
@@ -439,7 +431,7 @@ function recentOrdersCard(orders) {
         return `<div class="litem">
       <div class="litem__icon" style="background:${color}22;color:${color}">${ic('box', 'i18')}</div>
       <div><div class="litem__name">${escapeHtml(o.code)}</div>
-        <div class="litem__sub">${escapeHtml(o.buyer_name || '')} · ${fmtDate(o.created_at).split(' ')[1] || ''}</div></div>
+        <div class="litem__sub">${escapeHtml(o.buyer_name || '')} · ${o.created_at ? new Date(o.created_at).toLocaleDateString(lang === 'en' ? 'en-GB' : 'vi-VN') : ''}</div></div>
       <div class="spacer"></div>
       <span class="status" style="color:${color};background:${color}22">${statusLabel(o.status)}</span>
       <div class="litem__val" style="color:var(--orange)">${fmtVnd(o.total)}</div>
