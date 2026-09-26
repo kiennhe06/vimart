@@ -10,6 +10,8 @@ import '../../models/product.dart';
 import '../../widgets/app_busy.dart';
 import '../../widgets/app_feedback.dart';
 import '../../widgets/async_view.dart';
+import '../../widgets/burst.dart';
+import '../../widgets/fly_to_cart.dart';
 import '../../widgets/network_image_box.dart';
 import '../../widgets/pressable.dart';
 import '../auth/auth_provider.dart';
@@ -32,6 +34,23 @@ class _ProductDetailScreenState extends ConsumerState<ProductDetailScreen> {
   int _qty = 1;
   bool _adding = false;
   bool _fav = false;
+  String? _imageUrl; // ảnh sản phẩm hiện tại (cho hiệu ứng bay vào giỏ)
+  final GlobalKey _imgKey = GlobalKey();
+  final GlobalKey _favKey = GlobalKey();
+
+  void _launchFly() {
+    final box = _imgKey.currentContext?.findRenderObject() as RenderBox?;
+    if (box == null || !box.attached) return;
+    final origin = box.localToGlobal(Offset.zero);
+    flyToCart(context, from: origin & box.size, imageUrl: _imageUrl, color: AppColors.brandSoft);
+  }
+
+  void _burstFav() {
+    final box = _favKey.currentContext?.findRenderObject() as RenderBox?;
+    if (box == null || !box.attached) return;
+    final center = box.localToGlobal(box.size.center(Offset.zero));
+    burstAt(context, center, color: AppColors.danger);
+  }
 
   Future<void> _addToCart(Variant variant) async {
     if (!ref.read(authProvider).isLoggedIn) {
@@ -41,7 +60,10 @@ class _ProductDetailScreenState extends ConsumerState<ProductDetailScreen> {
     setState(() => _adding = true);
     try {
       await ref.read(cartProvider.notifier).add(variant.id, _qty);
-      if (mounted) showAppSnack(context, ref.read(stringsProvider).addedToCart, type: AppSnackType.success);
+      if (mounted) {
+        _launchFly();
+        showAppSnack(context, ref.read(stringsProvider).addedToCart, type: AppSnackType.success);
+      }
     } catch (e) {
       if (mounted) showAppSnack(context, e.toString(), type: AppSnackType.error);
     } finally {
@@ -63,6 +85,7 @@ class _ProductDetailScreenState extends ConsumerState<ProductDetailScreen> {
     if (!ref.read(authProvider).isLoggedIn) return _promptLogin();
     setState(() => _fav = true); // phản hồi tức thì (heart pop)
     AppHaptics.success();
+    _burstFav(); // chùm hạt tỏa quanh nút tim
     try {
       await ref.read(favoriteRepositoryProvider).add(widget.productId);
       ref.invalidate(favoritesProvider);
@@ -89,6 +112,7 @@ class _ProductDetailScreenState extends ConsumerState<ProductDetailScreen> {
 
   Widget _buildContent(ProductDetail product) {
     final s = ref.watch(stringsProvider);
+    _imageUrl = product.imageUrl;
     final selected = product.variants.firstWhere(
       (v) => v.id == _selectedVariantId,
       orElse: () => product.variants.isNotEmpty
@@ -124,6 +148,7 @@ class _ProductDetailScreenState extends ConsumerState<ProductDetailScreen> {
                           child: Padding(
                             padding: const EdgeInsets.all(20),
                             child: Hero(
+                              key: _imgKey,
                               tag: 'product-image-${widget.productId}',
                               child: NetworkImageBox(url: product.imageUrl, fit: BoxFit.contain),
                             ),
@@ -237,6 +262,7 @@ class _ProductDetailScreenState extends ConsumerState<ProductDetailScreen> {
       onTap: _fav ? null : _addFavorite,
       haptic: false,
       child: Container(
+        key: _favKey,
         width: 44, height: 44,
         decoration: const BoxDecoration(color: Colors.white, shape: BoxShape.circle),
         alignment: Alignment.center,

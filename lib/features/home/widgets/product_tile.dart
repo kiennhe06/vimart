@@ -9,6 +9,7 @@ import '../../../core/format.dart';
 import '../../../core/i18n/app_strings.dart';
 import '../../../models/product.dart';
 import '../../../widgets/app_feedback.dart';
+import '../../../widgets/fly_to_cart.dart';
 import '../../../widgets/network_image_box.dart';
 import '../../../widgets/pressable.dart';
 import '../../auth/auth_provider.dart';
@@ -29,6 +30,20 @@ class ProductTile extends ConsumerStatefulWidget {
 class _ProductTileState extends ConsumerState<ProductTile> {
   bool _adding = false;
   bool _justAdded = false;
+  final GlobalKey _imgKey = GlobalKey();
+
+  /// Bắn ảnh "bay vào giỏ" từ vị trí ảnh hiện tại của thẻ.
+  void _launchFly() {
+    final box = _imgKey.currentContext?.findRenderObject() as RenderBox?;
+    if (box == null || !box.attached) return;
+    final origin = box.localToGlobal(Offset.zero);
+    flyToCart(
+      context,
+      from: origin & box.size,
+      imageUrl: widget.product.imageUrl,
+      color: widget.tint ?? HomeColors.brandSoft,
+    );
+  }
 
   /// Thêm nhanh: lấy phân loại đầu tiên còn hàng rồi bỏ vào giỏ.
   Future<void> _quickAdd() async {
@@ -55,6 +70,7 @@ class _ProductTileState extends ConsumerState<ProductTile> {
       await ref.read(cartProvider.notifier).add(variant.id, 1);
       if (mounted) {
         setState(() => _justAdded = true);
+        _launchFly(); // ảnh bay vào giỏ
         showAppSnack(context, s.addedToCart, type: AppSnackType.success);
         Future.delayed(const Duration(milliseconds: 1100), () {
           if (mounted) setState(() => _justAdded = false);
@@ -91,6 +107,7 @@ class _ProductTileState extends ConsumerState<ProductTile> {
                 decoration: BoxDecoration(color: tint, borderRadius: BorderRadius.circular(16)),
                 clipBehavior: Clip.antiAlias,
                 child: Hero(
+                  key: _imgKey,
                   tag: 'product-image-${p.id}',
                   child: NetworkImageBox(url: p.imageUrl),
                 ),
