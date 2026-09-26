@@ -327,43 +327,61 @@ function miniCard(icon, iconBg, iconColor, label, value, trend) {
 
 /** Biểu đồ cột: số đơn theo 7 ngày gần nhất. */
 function revenueFlowCard(orders) {
+  // Gom nhóm theo NGÀY ĐỊA PHƯƠNG (khớp với ngày hiển thị ở bảng đơn), tránh
+  // lệch múi giờ do dùng toISOString() (UTC).
+  const dayKey = (dt) => {
+    const x = new Date(dt);
+    if (Number.isNaN(x.getTime())) return '';
+    return `${x.getFullYear()}-${String(x.getMonth() + 1).padStart(2, '0')}-${String(x.getDate()).padStart(2, '0')}`;
+  };
   const days = [];
   for (let i = 6; i >= 0; i--) {
     const d = new Date();
+    d.setHours(0, 0, 0, 0);
     d.setDate(d.getDate() - i);
     days.push({
-      key: d.toISOString().slice(0, 10),
+      key: dayKey(d),
+      at: new Date(d),
       label: `${d.getDate()}/${d.getMonth() + 1}`,
       count: 0,
     });
   }
   orders.forEach((o) => {
-    const k = (o.created_at || '').slice(0, 10);
-    const day = days.find((x) => x.key === k);
+    const day = days.find((x) => x.key === dayKey(o.created_at));
     if (day) day.count++;
   });
   const max = Math.max(1, ...days.map((d) => d.count));
-  const totalWeek = days.reduce((sum, d) => sum + d.count, 0) || 1;
+  const totalWeek = days.reduce((sum, d) => sum + d.count, 0);
   const hotIdx = days.reduce((best, d, i, a) => (d.count > a[best].count ? i : best), 0);
+  const fmtDay = (dt) => new Date(dt).toLocaleDateString(lang === 'en' ? 'en-GB' : 'vi-VN');
 
   const bars = days
     .map((d, i) => {
       const hot = i === hotIdx && d.count > 0;
-      const tag = hot
-        ? `<div class="bar__tag">+${Math.round((d.count / totalWeek) * 100)}%</div>`
-        : '';
+      const tag =
+        hot && totalWeek > 0
+          ? `<div class="bar__tag">${Math.round((d.count / totalWeek) * 100)}%</div>`
+          : '';
       return `<div class="bar-col">
       <div class="bar-wrap">${tag}
-        <div class="bar ${hot ? 'bar--hot' : ''}" style="height:${Math.max(8, Math.round((d.count / max) * 100))}%" title="${L(`${d.count} đơn`, `${d.count} orders`)}"></div>
+        <div class="bar ${hot ? 'bar--hot' : ''}" style="height:${d.count > 0 ? Math.max(14, Math.round((d.count / max) * 100)) : 6}%" title="${fmtDay(d.at)} — ${L(`${d.count} đơn`, `${d.count} orders`)}"></div>
       </div>
       <div class="bar-lbl">${d.label}</div>
     </div>`;
     })
     .join('');
 
+  // Khoảng ngày kèm năm để biết rõ đang xem tuần nào.
+  const range = `${days[0].label} – ${fmtDay(days[6].at)}`;
   return `<div class="dcard">
-    <div class="dcard__head"><h4>${L('Đơn hàng theo ngày', 'Orders by day')}</h4><div class="spacer"></div>
-      <span class="pill pill--soft">${L('7 ngày', '7 days')}</span></div>
+    <div class="dcard__head">
+      <div>
+        <h4>${L('Đơn hàng theo ngày', 'Orders by day')}</h4>
+        <div class="dcard__sub">${range} · ${L(`${totalWeek} đơn`, `${totalWeek} orders`)}</div>
+      </div>
+      <div class="spacer"></div>
+      <span class="pill pill--soft">${L('7 ngày', '7 days')}</span>
+    </div>
     <div class="bars">${bars}</div>
   </div>`;
 }
