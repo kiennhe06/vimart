@@ -2,8 +2,10 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:image_picker/image_picker.dart';
 
+import '../../app/motion.dart';
 import '../../app/theme.dart';
 import '../../core/i18n/app_strings.dart';
+import '../../widgets/app_busy.dart';
 import '../../widgets/app_feedback.dart';
 import '../../core/providers.dart';
 import '../../models/category.dart';
@@ -248,7 +250,17 @@ class _ProductFormScreenState extends ConsumerState<ProductFormScreen> {
                     ),
                   ],
                 ),
-                for (int i = 0; i < _variants.length; i++) _variantRow(i),
+                // Thêm/bớt phân loại -> chiều cao co giãn mượt thay vì nhảy.
+                AnimatedSize(
+                  duration: AppMotion.dur(context, AppMotion.base),
+                  curve: AppMotion.emphasized,
+                  alignment: Alignment.topCenter,
+                  child: Column(
+                    children: [
+                      for (int i = 0; i < _variants.length; i++) _variantRow(i),
+                    ],
+                  ),
+                ),
               ],
             ),
           ),
@@ -258,9 +270,7 @@ class _ProductFormScreenState extends ConsumerState<ProductFormScreen> {
             padding: const EdgeInsets.all(12),
             child: ElevatedButton(
               onPressed: _saving ? null : _save,
-              child: _saving
-                  ? const SizedBox(height: 22, width: 22, child: CircularProgressIndicator(strokeWidth: 2))
-                  : Text(s.saveProduct),
+              child: BusySwitch(busy: _saving, child: Text(s.saveProduct)),
             ),
           ),
         ),
@@ -272,6 +282,7 @@ class _ProductFormScreenState extends ConsumerState<ProductFormScreen> {
     final v = _variants[index];
     final s = ref.watch(stringsProvider);
     return Padding(
+      key: ObjectKey(v),
       padding: const EdgeInsets.symmetric(vertical: 6),
       child: Row(
         children: [
