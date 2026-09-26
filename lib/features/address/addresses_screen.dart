@@ -80,7 +80,7 @@ class AddressesScreen extends ConsumerWidget {
                             ],
                           ),
                           const SizedBox(height: 2),
-                          Text(a.phone, style: const TextStyle(color: Colors.grey, fontSize: 13)),
+                          Text(a.phone, style: TextStyle(color: context.c.textSecondary, fontSize: 13)),
                           const SizedBox(height: 2),
                           Text(a.fullAddress, style: const TextStyle(fontSize: 13, height: 1.35)),
                         ],

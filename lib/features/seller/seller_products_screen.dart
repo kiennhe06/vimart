@@ -93,7 +93,7 @@ class _ProductRow extends ConsumerWidget {
                     style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 14)),
                 const SizedBox(height: 4),
                 Text('${formatVnd(product.minPrice)} • ${s.sold(product.soldCount)}',
-                    style: const TextStyle(color: Colors.grey, fontSize: 12)),
+                    style: TextStyle(color: context.c.textSecondary, fontSize: 12)),
               ],
             ),
           ),

@@ -129,7 +129,7 @@ class _AddressFormSheetState extends ConsumerState<_AddressFormSheet> {
                   IconButton(
                     onPressed: () => Navigator.pop(context, false),
                     icon: const Icon(Icons.close_rounded),
-                    color: Colors.grey,
+                    color: context.c.textSecondary,
                   ),
                 ],
               ),
@@ -278,7 +278,7 @@ class _LocationPickerSheetState extends ConsumerState<_LocationPickerSheet> {
                 IconButton(
                   onPressed: () => Navigator.pop(context),
                   icon: const Icon(Icons.close_rounded),
-                  color: Colors.grey,
+                  color: context.c.textSecondary,
                 ),
               ],
             ),
@@ -306,7 +306,7 @@ class _LocationPickerSheetState extends ConsumerState<_LocationPickerSheet> {
                       ? all
                       : all.where((e) => e.name.toLowerCase().contains(_query)).toList();
                   if (list.isEmpty) {
-                    return Center(child: Text(s.noProducts, style: const TextStyle(color: Colors.grey)));
+                    return Center(child: Text(s.noProducts, style: TextStyle(color: context.c.textSecondary)));
                   }
                   return ListView.separated(
                     itemCount: list.length,
@@ -356,7 +356,7 @@ class _ErrorRetry extends StatelessWidget {
         children: [
           const Icon(Icons.wifi_off_rounded, size: 44, color: Colors.grey),
           const SizedBox(height: 10),
-          Text(message, textAlign: TextAlign.center, style: const TextStyle(color: Colors.grey)),
+          Text(message, textAlign: TextAlign.center, style: TextStyle(color: context.c.textSecondary)),
           const SizedBox(height: 12),
           OutlinedButton.icon(
             onPressed: onRetry,

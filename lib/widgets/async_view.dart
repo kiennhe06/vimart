@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../app/design.dart';
 import '../app/motion.dart';
 import '../core/i18n/app_strings.dart';
 
@@ -90,7 +91,7 @@ class EmptyView extends StatelessWidget {
             children: [
               Icon(icon, size: 56, color: Colors.grey.shade400),
               const SizedBox(height: 12),
-              Text(message, textAlign: TextAlign.center, style: const TextStyle(color: Colors.grey)),
+              Text(message, textAlign: TextAlign.center, style: TextStyle(color: context.c.textSecondary)),
             ],
           ),
         ),

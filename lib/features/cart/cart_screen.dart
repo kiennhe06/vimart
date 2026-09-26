@@ -96,7 +96,7 @@ class _ShopGroup extends ConsumerWidget {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(shop.shopName, style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 15)),
-                    Text(s.deliveryIn15, style: const TextStyle(color: Colors.grey, fontSize: 12)),
+                    Text(s.deliveryIn15, style: TextStyle(color: context.c.textSecondary, fontSize: 12)),
                   ],
                 ),
               ),
@@ -165,7 +165,7 @@ class _CartItemRow extends ConsumerWidget {
               children: [
                 Text(item.productName, maxLines: 1, overflow: TextOverflow.ellipsis,
                     style: const TextStyle(fontWeight: FontWeight.w700)),
-                Text(item.variantName, style: const TextStyle(color: Colors.grey, fontSize: 12)),
+                Text(item.variantName, style: TextStyle(color: context.c.textSecondary, fontSize: 12)),
                 const SizedBox(height: 4),
                 Text(formatVnd(item.price),
                     style: const TextStyle(color: AppColors.brand, fontWeight: FontWeight.w800, fontSize: 15)),

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:image_picker/image_picker.dart';
 
+import '../../app/design.dart';
 import '../../app/motion.dart';
 import '../../app/theme.dart';
 import '../../core/i18n/app_strings.dart';
@@ -188,7 +189,7 @@ class _ProductFormScreenState extends ConsumerState<ProductFormScreen> {
                   orElse: () => const SizedBox.shrink(),
                 ),
                 const SizedBox(height: 12),
-                Text(s.productImage, style: const TextStyle(fontSize: 13, color: Colors.grey)),
+                Text(s.productImage, style: TextStyle(fontSize: 13, color: context.c.textSecondary)),
                 const SizedBox(height: 6),
                 Row(
                   crossAxisAlignment: CrossAxisAlignment.start,

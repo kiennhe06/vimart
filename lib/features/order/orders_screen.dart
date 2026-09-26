@@ -97,7 +97,7 @@ class _EmptyOrders extends ConsumerWidget {
                 const SizedBox(height: 16),
                 Text(s.noOrders, style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w700)),
                 const SizedBox(height: 6),
-                Text(s.shopAndReturn, style: const TextStyle(color: Colors.grey)),
+                Text(s.shopAndReturn, style: TextStyle(color: context.c.textSecondary)),
                 const SizedBox(height: 18),
                 SizedBox(
                   width: 200,
@@ -153,7 +153,7 @@ class OrderCard extends ConsumerWidget {
                       Text(s.orderCode(order.code), style: const TextStyle(fontWeight: FontWeight.w800)),
                       const SizedBox(height: 2),
                       Text(showBuyer ? s.customer(order.buyerName ?? '-') : (order.shopName ?? ''),
-                          style: const TextStyle(color: Colors.grey, fontSize: 12)),
+                          style: TextStyle(color: context.c.textSecondary, fontSize: 12)),
                     ],
                   ),
                 ),
@@ -164,9 +164,9 @@ class OrderCard extends ConsumerWidget {
             Row(
               children: [
                 Icon(order.paymentMethod == 'cod' ? Icons.payments_outlined : Icons.account_balance_wallet_outlined,
-                    size: 16, color: Colors.grey),
+                    size: 16, color: context.c.textSecondary),
                 const SizedBox(width: 6),
-                Text(order.paymentMethod == 'cod' ? 'COD' : 'VNPay', style: const TextStyle(color: Colors.grey, fontSize: 13)),
+                Text(order.paymentMethod == 'cod' ? 'COD' : 'VNPay', style: TextStyle(color: context.c.textSecondary, fontSize: 13)),
                 if (order.isPaid)
                   Padding(
                     padding: const EdgeInsets.only(left: 8),

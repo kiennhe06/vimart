@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../app/design.dart';
 import '../../app/theme.dart';
 import '../../core/i18n/app_strings.dart';
 import '../../widgets/app_refresh.dart';
@@ -50,7 +51,7 @@ class ShopScreen extends ConsumerWidget {
                         children: [
                           Text(products.first.shopName ?? 'Shop',
                               style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w800)),
-                          Text(s.productsCount(products.length), style: const TextStyle(color: Colors.grey, fontSize: 13)),
+                          Text(s.productsCount(products.length), style: TextStyle(color: context.c.textSecondary, fontSize: 13)),
                         ],
                       ),
                     ),

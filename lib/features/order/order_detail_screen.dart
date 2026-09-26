@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../app/design.dart';
 import '../../app/motion.dart';
 import '../../app/theme.dart';
 import '../../core/format.dart';
@@ -110,7 +111,7 @@ class _OrderDetailBodyState extends ConsumerState<_OrderDetailBody> {
               _card(str.recipient, [
                 Text('${order.recipientName} • ${order.recipientPhone}'),
                 const SizedBox(height: 4),
-                Text(order.addressText, style: const TextStyle(color: Colors.grey)),
+                Text(order.addressText, style: TextStyle(color: context.c.textSecondary)),
               ]),
               // Sản phẩm
               _card(s.shopName ?? str.productsLabel, [

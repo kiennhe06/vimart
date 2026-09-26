@@ -64,7 +64,7 @@ class ProfileScreen extends ConsumerWidget {
                     children: [
                       Text(user.fullName, style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w800)),
                       const SizedBox(height: 2),
-                      Text(user.email, style: const TextStyle(color: Colors.grey, fontSize: 13)),
+                      Text(user.email, style: TextStyle(color: context.c.textSecondary, fontSize: 13)),
                       const SizedBox(height: 8),
                       _badge(user.isAdmin ? s.roleAdmin : (user.hasShop ? s.roleSeller : s.roleBuyer)),
                     ],

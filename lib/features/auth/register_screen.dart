@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../app/design.dart';
 import '../../app/motion.dart';
 import '../../app/theme.dart';
 import '../../core/i18n/app_strings.dart';
@@ -76,7 +77,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                 Text(s.registerTitle,
                     textAlign: TextAlign.center, style: const TextStyle(fontSize: 20, fontWeight: FontWeight.w800)),
                 const SizedBox(height: 4),
-                Text(s.registerSub, textAlign: TextAlign.center, style: const TextStyle(color: Colors.grey)),
+                Text(s.registerSub, textAlign: TextAlign.center, style: TextStyle(color: context.c.textSecondary)),
                 const SizedBox(height: 26),
                 TextFormField(
                   controller: _nameCtrl,

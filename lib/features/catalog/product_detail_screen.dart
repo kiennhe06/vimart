@@ -187,7 +187,7 @@ class _ProductDetailScreenState extends ConsumerState<ProductDetailScreen> {
                               style: const TextStyle(fontWeight: FontWeight.w600),
                             ),
                             const SizedBox(width: 12),
-                            Text(s.sold(product.soldCount), style: const TextStyle(color: Colors.grey)),
+                            Text(s.sold(product.soldCount), style: TextStyle(color: context.c.textSecondary)),
                           ],
                         ),
                         const SizedBox(height: 14),
@@ -219,7 +219,7 @@ class _ProductDetailScreenState extends ConsumerState<ProductDetailScreen> {
                           children: product.variants.map((v) => _variantChip(v, selected)).toList(),
                         ),
                         const SizedBox(height: 6),
-                        Text(s.remaining(selected.stock), style: const TextStyle(color: Colors.grey)),
+                        Text(s.remaining(selected.stock), style: TextStyle(color: context.c.textSecondary)),
                         const SizedBox(height: 20),
                         Text(s.description, style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 16)),
                         const SizedBox(height: 8),
@@ -230,7 +230,7 @@ class _ProductDetailScreenState extends ConsumerState<ProductDetailScreen> {
                             style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 16)),
                         const SizedBox(height: 8),
                         if (product.reviews.isEmpty)
-                          Text(s.noReviewYet, style: const TextStyle(color: Colors.grey))
+                          Text(s.noReviewYet, style: TextStyle(color: context.c.textSecondary))
                         else
                           ...product.reviews.map(_ReviewTile.new),
                       ],
