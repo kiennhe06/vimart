@@ -2,21 +2,93 @@
    ViMart Admin — DARK dashboard (bố cục theo payment dashboard,
    điểm nhấn màu cam thương hiệu).
    ============================================================ */
+/* ============================================================
+   DESIGN TOKENS — nguồn sự thật duy nhất. Theme-aware qua các
+   biến bên dưới; đổi Sáng/Tối chỉ bằng cách đảo giá trị token,
+   KHÔNG hard-code màu ở component.
+   ============================================================ */
 :root {
-  --orange: #f4511e;
-  --amber: #ff9a3d;
-  --bg: #16121e; /* nền nội dung (tối, ám tím) */
-  --surface: #221b30; /* thẻ */
-  --surface-2: #2b2340; /* hover */
+  /* Brand (cam thương hiệu admin — dùng --brand ở component để đổi 1 nơi) */
+  --brand: #f4511e;
+  --brand-2: #ff9a3d;
+  --brand-ring: rgba(244, 81, 30, 0.16);
+  --brand-shadow: rgba(244, 81, 30, 0.32);
+  /* Alias tương thích tên cũ */
+  --orange: var(--brand);
+  --amber: var(--brand-2);
+
+  /* Bậc bề mặt (background < surface < surface-2/elevated) */
+  --bg: #16121e;
+  --surface: #221b30;
+  --surface-2: #2b2340;
   --sidebar: #120d1a;
+
+  /* Bậc chữ */
   --text: #f3f0f8;
   --text-2: #9b93ab;
+  --text-muted: #6f6880;
+
+  /* Viền & lớp phủ (fill) theo bậc — thay cho rgba(255,255,255,x) rải rác */
   --border: rgba(255, 255, 255, 0.07);
-  --selected: rgba(244, 81, 30, 0.16);
+  --border-strong: rgba(255, 255, 255, 0.16);
+  --fill-1: rgba(255, 255, 255, 0.05);
+  --fill-2: rgba(255, 255, 255, 0.12);
+  --fill-3: rgba(255, 255, 255, 0.22);
+  --field-bg: rgba(255, 255, 255, 0.045);
+
+  --selected: var(--brand-ring);
+  --glow: rgba(124, 58, 237, 0.28); /* quầng nền trang trí */
+
+  /* Ngữ nghĩa */
   --success: #37d67a;
+  --warning: #ff9a3d;
   --danger: #ff5c6c;
+  --info: #4c7cf3;
+
+  /* Bo góc (thang) */
   --radius: 22px;
+  --radius-md: 16px;
+  --radius-sm: 14px;
+  --radius-xs: 11px;
+  --radius-pill: 999px;
+
+  /* Bóng đổ */
   --shadow: 0 12px 30px rgba(0, 0, 0, 0.35);
+  --shadow-sm: 0 8px 20px rgba(0, 0, 0, 0.28);
+
+  /* Spacing (thang 4pt) */
+  --sp-1: 4px;
+  --sp-2: 8px;
+  --sp-3: 12px;
+  --sp-4: 16px;
+  --sp-5: 20px;
+  --sp-6: 24px;
+  --sp-8: 32px;
+  --sp-10: 40px;
+
+  color-scheme: dark;
+}
+
+/* LIGHT theme — bảng riêng (không đảo màu): dùng khi chọn Sáng, hoặc khi hệ
+   thống Sáng và người dùng chưa chọn Tối. */
+:root[data-theme='light'] {
+  --bg: #f3f4f8;
+  --surface: #ffffff;
+  --surface-2: #f2f3f7;
+  --sidebar: #ffffff;
+  --text: #1a1622;
+  --text-2: #6a6478;
+  --text-muted: #9a94a8;
+  --border: rgba(20, 16, 32, 0.1);
+  --border-strong: rgba(20, 16, 32, 0.2);
+  --fill-1: rgba(20, 16, 32, 0.04);
+  --fill-2: rgba(20, 16, 32, 0.07);
+  --fill-3: rgba(20, 16, 32, 0.12);
+  --field-bg: #ffffff;
+  --glow: rgba(124, 58, 237, 0.12);
+  --shadow: 0 14px 34px rgba(20, 16, 40, 0.1);
+  --shadow-sm: 0 8px 20px rgba(20, 16, 40, 0.07);
+  color-scheme: light;
 }
 * {
   box-sizing: border-box;
@@ -52,7 +124,7 @@ a {
   height: 8px;
 }
 ::-webkit-scrollbar-thumb {
-  background: rgba(255, 255, 255, 0.12);
+  background: var(--fill-2);
   border-radius: 8px;
 }
 
@@ -187,12 +259,12 @@ svg.ic {
   background: rgba(55, 214, 122, 0.22);
 }
 .btn--ghost {
-  background: rgba(255, 255, 255, 0.06);
+  background: var(--fill-1);
   color: var(--text);
   border-color: var(--border);
 }
 .btn--ghost:hover {
-  background: rgba(255, 255, 255, 0.12);
+  background: var(--fill-2);
 }
 
 /* ---------- Màn đăng nhập ---------- */
@@ -202,8 +274,7 @@ svg.ic {
   align-items: center;
   justify-content: center;
   padding: 16px;
-  background:
-    radial-gradient(900px 500px at 50% -10%, rgba(124, 58, 237, 0.35), transparent), var(--bg);
+  background: radial-gradient(900px 500px at 50% -10%, var(--glow), transparent), var(--bg);
 }
 .login-card {
   background: var(--surface);
@@ -243,7 +314,7 @@ svg.ic {
 .field textarea {
   width: 100%;
   padding: 13px 16px;
-  background: rgba(255, 255, 255, 0.045);
+  background: var(--field-bg);
   border: 1px solid var(--border);
   border-radius: 14px;
   font-size: 15px;
@@ -257,12 +328,12 @@ svg.ic {
 }
 .field input::placeholder,
 .field textarea::placeholder {
-  color: rgba(155, 147, 171, 0.65);
+  color: var(--text-muted);
 }
 .field input:hover,
 .field select:hover,
 .field textarea:hover {
-  border-color: rgba(255, 255, 255, 0.16);
+  border-color: var(--border-strong);
 }
 .field input:focus,
 .field select:focus,
@@ -282,7 +353,7 @@ svg.ic {
 /* ---------- Bố cục: thanh điều hướng TRÊN cùng ---------- */
 .appwrap {
   min-height: 100vh;
-  background: radial-gradient(1200px 480px at 60% -12%, rgba(124, 58, 237, 0.28), transparent);
+  background: radial-gradient(1200px 480px at 60% -12%, var(--glow), transparent);
 }
 .topnav {
   display: flex;
@@ -307,7 +378,7 @@ svg.ic {
   margin: 0 auto;
   display: flex;
   gap: 4px;
-  background: rgba(255, 255, 255, 0.05);
+  background: var(--fill-1);
   border: 1px solid var(--border);
   border-radius: 34px;
   padding: 7px;
@@ -331,7 +402,7 @@ svg.ic {
 }
 .tab--active {
   color: #fff;
-  background: rgba(255, 255, 255, 0.08);
+  background: var(--fill-2);
 }
 .tab--active::after {
   content: '';
@@ -356,7 +427,7 @@ svg.ic {
   width: 44px;
   height: 44px;
   border-radius: 50%;
-  background: rgba(255, 255, 255, 0.06);
+  background: var(--fill-1);
   border: 1px solid var(--border);
   display: flex;
   align-items: center;
@@ -365,7 +436,7 @@ svg.ic {
   font-size: 16px;
 }
 .circle-btn:hover {
-  background: rgba(255, 255, 255, 0.12);
+  background: var(--fill-2);
 }
 /* Language switch (VI / EN) */
 .lang-switch {
@@ -373,7 +444,7 @@ svg.ic {
   gap: 2px;
   padding: 3px;
   border-radius: 999px;
-  background: rgba(255, 255, 255, 0.06);
+  background: var(--fill-1);
   border: 1px solid var(--border);
 }
 .lang-pill {
@@ -391,12 +462,21 @@ svg.ic {
     background 0.15s;
 }
 .lang-pill:hover {
-  color: #fff;
+  color: var(--text);
 }
 .lang-pill--on {
   color: #fff;
   background: linear-gradient(135deg, var(--amber), var(--orange));
   box-shadow: 0 4px 12px rgba(244, 81, 30, 0.4);
+}
+/* Biến thể pill chỉ có icon — tái dùng cho công tắc Giao diện (System/Sáng/Tối) */
+.lang-pill--icon {
+  padding: 6px 9px;
+  display: inline-flex;
+  align-items: center;
+}
+.lang-pill--icon.lang-pill--on svg {
+  color: #fff;
 }
 .login-lang {
   display: flex;
@@ -444,7 +524,7 @@ svg.ic {
   border-bottom: 1px solid var(--border);
 }
 .table th {
-  background: rgba(255, 255, 255, 0.03);
+  background: var(--fill-1);
   color: var(--text-2);
   font-weight: 600;
   font-size: 13px;
@@ -453,7 +533,7 @@ svg.ic {
   border-bottom: none;
 }
 .table tr:hover td {
-  background: rgba(255, 255, 255, 0.03);
+  background: var(--fill-1);
 }
 
 .tag {
@@ -469,7 +549,7 @@ svg.ic {
 }
 .tag--user {
   color: var(--text-2);
-  background: rgba(255, 255, 255, 0.07);
+  background: var(--border);
 }
 .tag--on {
   color: var(--success);
@@ -492,14 +572,14 @@ svg.ic {
   height: 42px;
   border-radius: 10px;
   object-fit: cover;
-  background: rgba(255, 255, 255, 0.06);
+  background: var(--fill-1);
 }
 .thumb-lg {
   width: 76px;
   height: 76px;
   border-radius: 12px;
   object-fit: cover;
-  background: rgba(255, 255, 255, 0.06);
+  background: var(--fill-1);
   flex-shrink: 0;
 }
 .var-row {
@@ -511,7 +591,7 @@ svg.ic {
 .var-row input {
   width: 100%;
   padding: 10px 12px;
-  background: rgba(255, 255, 255, 0.04);
+  background: var(--fill-1);
   border: 1px solid var(--border);
   border-radius: 9px;
   font-size: 14px;
@@ -540,6 +620,69 @@ svg.ic {
   text-align: center;
   color: var(--text-2);
   padding: 60px;
+}
+
+/* ---------- Trạng thái: skeleton / empty / error (Design System) ---------- */
+@keyframes skShimmer {
+  100% {
+    transform: translateX(100%);
+  }
+}
+.sk {
+  position: relative;
+  overflow: hidden;
+  background: var(--fill-1);
+  border-radius: 8px;
+  height: 14px;
+}
+.sk::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  transform: translateX(-100%);
+  background: linear-gradient(90deg, transparent, var(--fill-2), transparent);
+  animation: skShimmer 1.2s infinite;
+}
+.sk-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  padding: var(--sp-4);
+  display: grid;
+  gap: var(--sp-3);
+  margin-bottom: var(--sp-3);
+}
+.sk-row {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-3);
+}
+/* Trạng thái rỗng / lỗi — dùng chung, có icon + thông điệp + hành động */
+.state {
+  text-align: center;
+  padding: 56px var(--sp-5);
+  color: var(--text-2);
+  display: grid;
+  justify-items: center;
+  gap: var(--sp-3);
+}
+.state__icon {
+  width: 56px;
+  height: 56px;
+  border-radius: var(--radius-md);
+  display: grid;
+  place-items: center;
+  background: var(--fill-1);
+  color: var(--text-2);
+}
+.state--error .state__icon {
+  background: rgba(255, 92, 108, 0.14);
+  color: var(--danger);
+}
+.state__title {
+  color: var(--text);
+  font-weight: 700;
+  font-size: 15px;
 }
 
 /* ============================================================
@@ -582,7 +725,7 @@ svg.ic {
   border-radius: 20px;
 }
 .pill--soft {
-  background: rgba(255, 255, 255, 0.07);
+  background: var(--border);
   color: var(--text-2);
   cursor: pointer;
 }
@@ -609,7 +752,7 @@ svg.ic {
   content: '';
   position: absolute;
   inset: 0;
-  background: linear-gradient(160deg, rgba(255, 255, 255, 0.35), transparent 45%);
+  background: linear-gradient(160deg, var(--fill-3), transparent 45%);
   pointer-events: none;
 }
 .hero__tools {
@@ -729,7 +872,7 @@ svg.ic {
   width: 74%;
   min-height: 8px;
   border-radius: 12px;
-  background: rgba(255, 255, 255, 0.06);
+  background: var(--fill-1);
 }
 .bar--hot {
   background: linear-gradient(180deg, #ffc078, var(--orange));
@@ -907,12 +1050,12 @@ svg.ic {
 .dcard:hover,
 .mini:hover {
   transform: translateY(-3px);
-  border-color: rgba(255, 255, 255, 0.14);
+  border-color: var(--fill-2);
   box-shadow: 0 18px 42px rgba(0, 0, 0, 0.5);
 }
 .vcard:hover {
   transform: translateY(-3px);
-  box-shadow: 0 20px 44px rgba(124, 58, 237, 0.4);
+  box-shadow: 0 20px 44px var(--glow);
 }
 .litem {
   transition: background 0.15s;
@@ -922,7 +1065,7 @@ svg.ic {
   margin: 0 -8px;
 }
 .litem:hover {
-  background: rgba(255, 255, 255, 0.035);
+  background: var(--fill-1);
 }
 .hero__btn,
 .hero__tool {
@@ -947,7 +1090,7 @@ svg.ic {
     color 0.15s;
 }
 .pill--soft:hover {
-  background: rgba(255, 255, 255, 0.14);
+  background: var(--fill-2);
   color: #fff;
 }
 .circle-btn {
@@ -1051,7 +1194,7 @@ svg.ic {
 .modal {
   position: relative;
   background: linear-gradient(180deg, #26203a 0%, var(--surface) 60%);
-  border: 1px solid rgba(255, 255, 255, 0.1);
+  border: 1px solid var(--fill-2);
   border-radius: 24px;
   width: 100%;
   max-width: 460px;
@@ -1095,12 +1238,12 @@ svg.ic {
   line-height: 1;
   color: var(--text-2);
   border: 1px solid var(--border);
-  background: rgba(255, 255, 255, 0.05);
+  background: var(--fill-1);
   transition:
     background 0.15s,
     color 0.15s;
 }
 .modal__close:hover {
-  background: rgba(255, 255, 255, 0.12);
+  background: var(--fill-2);
   color: #fff;
 }

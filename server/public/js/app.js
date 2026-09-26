@@ -21,6 +21,58 @@ function setLang(code) {
   route();
 }
 
+// ---------- Giao diện (theme) — Theo hệ thống / Sáng / Tối ----------
+// Lưu "ý muốn" (system/light/dark); resolve "system" theo hệ điều hành rồi gán
+// data-theme trên <html> để CSS đảo bảng màu (KHÔNG đảo màu thủ công).
+let themePref = localStorage.getItem('vimart_admin_theme') || 'system';
+const _themeMql = window.matchMedia('(prefers-color-scheme: dark)');
+function applyTheme() {
+  const resolved = themePref === 'system' ? (_themeMql.matches ? 'dark' : 'light') : themePref;
+  document.documentElement.setAttribute('data-theme', resolved);
+}
+function setTheme(pref) {
+  themePref = pref;
+  localStorage.setItem('vimart_admin_theme', pref);
+  applyTheme();
+  route();
+}
+_themeMql.addEventListener('change', () => {
+  if (themePref === 'system') applyTheme();
+});
+applyTheme();
+
+/** Công tắc Giao diện (tái dùng .lang-switch): Theo hệ thống / Sáng / Tối. */
+function themeSwitch() {
+  const opt = (pref, icon, label) =>
+    `<button class="lang-pill lang-pill--icon ${themePref === pref ? 'lang-pill--on' : ''}" data-action="theme-${pref}" title="${label}" aria-label="${label}">${ic(icon, 'i18')}</button>`;
+  return `<div class="lang-switch" role="group" title="${L('Giao diện', 'Appearance')}">
+    ${opt('system', 'monitor', L('Theo hệ thống', 'System'))}
+    ${opt('light', 'sun', L('Sáng', 'Light'))}
+    ${opt('dark', 'moon', L('Tối', 'Dark'))}
+  </div>`;
+}
+
+// ---------- Trạng thái dùng chung (skeleton / empty / error) ----------
+/** Khung xương khi đang tải (thay màn hình đứng im bằng skeleton). */
+function skeletonView(rows = 5) {
+  const line = (w) => `<div class="sk" style="width:${w}"></div>`;
+  const card = `<div class="sk-card"><div class="sk-row">${line('42px')}<div style="flex:1;display:grid;gap:8px">${line('60%')}${line('35%')}</div>${line('72px')}</div></div>`;
+  return `<div aria-busy="true" aria-label="${L('Đang tải', 'Loading')}">${Array.from({ length: rows }, () => card).join('')}</div>`;
+}
+
+/** Trạng thái rỗng / lỗi dùng chung. */
+function stateView({ icon = 'box', title, message, action, error = false }) {
+  const btn = action
+    ? `<button class="btn btn--ghost btn--sm" data-action="${action.do}">${escapeHtml(action.label)}</button>`
+    : '';
+  return `<div class="state ${error ? 'state--error' : ''}">
+    <div class="state__icon">${ic(icon, 'i22')}</div>
+    ${title ? `<div class="state__title">${escapeHtml(title)}</div>` : ''}
+    <div>${escapeHtml(message || '')}</div>
+    ${btn}
+  </div>`;
+}
+
 const NAV = [
   { key: 'dashboard', icon: '📊' },
   { key: 'products', icon: '🛍️' },
@@ -69,6 +121,9 @@ const ICONS = {
   file: '<path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/>',
   box: '<path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/><path d="m3.3 7 8.7 5 8.7-5"/><path d="M12 22V12"/>',
   bag: '<path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"/><path d="M3 6h18"/><path d="M16 10a4 4 0 0 1-8 0"/>',
+  sun: '<circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/>',
+  moon: '<path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8z"/>',
+  monitor: '<rect x="2" y="3" width="20" height="14" rx="2"/><path d="M8 21h8M12 17v4"/>',
 };
 function ic(name, cls = 'i18') {
   return `<svg class="ic ${cls}" viewBox="0 0 24 24">${ICONS[name] || ''}</svg>`;
@@ -178,12 +233,11 @@ function renderShell(activeKey) {
             <button class="lang-pill ${lang === 'vi' ? 'lang-pill--on' : ''}" data-action="lang-vi">VI</button>
             <button class="lang-pill ${lang === 'en' ? 'lang-pill--on' : ''}" data-action="lang-en">EN</button>
           </div>
-          <div class="circle-btn" title="${L('Tìm kiếm', 'Search')}">${ic('search', 'i20')}</div>
-          <div class="circle-btn" title="${L('Thông báo', 'Notifications')}">${ic('bell', 'i20')}</div>
+          ${themeSwitch()}
           <div class="avatar" data-action="logout" title="${L('Đăng xuất', 'Sign out')} (${escapeHtml(state.user.fullName)})">${initial}</div>
         </div>
       </header>
-      <main class="content" id="content"><div class="center-msg">${L('Đang tải...', 'Loading...')}</div></main>
+      <main class="content" id="content">${skeletonView()}</main>
     </div>`;
 }
 
@@ -210,7 +264,13 @@ async function route() {
     else if (key === 'orders') await viewOrders(content);
     else if (key === 'categories') await viewCategories(content);
   } catch (err) {
-    content.innerHTML = `<div class="center-msg">${escapeHtml(err.message)}</div>`;
+    content.innerHTML = stateView({
+      icon: 'bell',
+      title: L('Có lỗi xảy ra', 'Something went wrong'),
+      message: err.message,
+      action: { do: 'reload', label: L('Thử lại', 'Retry') },
+      error: true,
+    });
   }
 }
 
@@ -593,7 +653,11 @@ async function viewUsers(el) {
 async function viewOrders(el) {
   const orders = await Api.get('/admin/orders'); // trả snake_case từ DB
   if (!orders.length)
-    return (el.innerHTML = `<div class="center-msg">${L('Chưa có đơn hàng nào', 'No orders yet')}</div>`);
+    return (el.innerHTML = stateView({
+      icon: 'box',
+      title: L('Chưa có đơn hàng', 'No orders yet'),
+      message: L('Đơn hàng của sàn sẽ hiển thị ở đây.', 'Marketplace orders will appear here.'),
+    }));
   const rows = orders
     .map(
       (o) => `
@@ -700,6 +764,14 @@ document.addEventListener('click', async (e) => {
     if (lang !== 'vi') setLang('vi');
   } else if (action === 'lang-en') {
     if (lang !== 'en') setLang('en');
+  } else if (action === 'theme-system') {
+    setTheme('system');
+  } else if (action === 'theme-light') {
+    setTheme('light');
+  } else if (action === 'theme-dark') {
+    setTheme('dark');
+  } else if (action === 'reload') {
+    route();
   } else if (action === 'logout') {
     e.preventDefault();
     if (!confirm(L('Đăng xuất khỏi trang quản trị?', 'Sign out of the admin panel?'))) return;
