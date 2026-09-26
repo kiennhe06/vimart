@@ -828,9 +828,20 @@ svg.ic {
   width: 100%;
   flex: 1;
   display: flex;
-  align-items: flex-end;
-  justify-content: center;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 6px;
   position: relative;
+}
+.bar-val {
+  font-size: 12px;
+  font-weight: 800;
+  color: var(--text-2);
+  line-height: 1;
+}
+.bar-val--hot {
+  color: var(--brand);
 }
 .bar {
   width: 74%;

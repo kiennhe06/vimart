@@ -350,13 +350,10 @@ function revenueFlowCard(orders) {
   const bars = days
     .map((d, i) => {
       const hot = i === hotIdx && d.count > 0;
-      const tag =
-        hot && totalWeek > 0
-          ? `<div class="bar__tag">${Math.round((d.count / totalWeek) * 100)}%</div>`
-          : '';
       return `<div class="bar-col">
-      <div class="bar-wrap">${tag}
-        <div class="bar ${hot ? 'bar--hot' : ''}" style="height:${d.count > 0 ? Math.max(14, Math.round((d.count / max) * 100)) : 6}%" title="${fmtDay(d.at)} — ${L(`${d.count} đơn`, `${d.count} orders`)}"></div>
+      <div class="bar-wrap">
+        <div class="bar-val ${hot ? 'bar-val--hot' : ''}">${d.count}</div>
+        <div class="bar ${hot ? 'bar--hot' : ''}" style="height:${d.count > 0 ? Math.max(14, Math.round((d.count / max) * 82)) : 6}%" title="${fmtDay(d.at)} — ${L(`${d.count} đơn`, `${d.count} orders`)}"></div>
       </div>
       <div class="bar-lbl">${d.label}</div>
     </div>`;
