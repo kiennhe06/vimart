@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../app/design.dart';
 import '../../app/motion.dart';
 import '../../app/theme.dart';
 import '../../core/i18n/app_strings.dart';
@@ -204,7 +205,7 @@ class _AddressFormSheetState extends ConsumerState<_AddressFormSheet> {
   }) {
     final borderColor = error
         ? AppColors.danger
-        : (enabled ? const Color(0xFFECEFF1) : const Color(0xFFECEFF1));
+        : context.c.border;
     return AnimatedOpacity(
       opacity: enabled ? 1 : 0.55,
       duration: AppMotion.dur(context, AppMotion.base),
@@ -216,13 +217,13 @@ class _AddressFormSheetState extends ConsumerState<_AddressFormSheet> {
           curve: AppMotion.emphasized,
           padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 15),
           decoration: BoxDecoration(
-            color: Colors.white,
+            color: context.c.surface,
             borderRadius: BorderRadius.circular(AppSizes.radius),
             border: Border.all(color: borderColor, width: error ? 1.4 : 1),
           ),
           child: Row(
             children: [
-              Icon(icon, size: 20, color: const Color(0xFF8B93A1)),
+              Icon(icon, size: 20, color: context.c.textSecondary),
               const SizedBox(width: 12),
               Expanded(
                 child: Text(
@@ -231,12 +232,12 @@ class _AddressFormSheetState extends ConsumerState<_AddressFormSheet> {
                   overflow: TextOverflow.ellipsis,
                   style: TextStyle(
                     fontSize: 15,
-                    color: value == null ? const Color(0xFF8B93A1) : Colors.black87,
+                    color: value == null ? context.c.textMuted : context.c.textPrimary,
                     fontWeight: value == null ? FontWeight.w400 : FontWeight.w600,
                   ),
                 ),
               ),
-              const Icon(Icons.expand_more_rounded, color: Color(0xFF8B93A1)),
+              Icon(Icons.expand_more_rounded, color: context.c.textSecondary),
             ],
           ),
         ),
