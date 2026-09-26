@@ -1069,49 +1069,50 @@ svg.ic {
 }
 
 /* Thẻ ViMart (mô phỏng thẻ tín dụng) */
-.vcard {
-  border-radius: var(--radius);
-  padding: 20px;
-  background: var(--surface);
-  border: 1px solid var(--border);
-  box-shadow: var(--shadow-sm);
-}
-.vcard__brand {
-  font-weight: 800;
-  font-size: 15px;
-  color: var(--text);
-  margin-bottom: 16px;
-}
-.vcard__brand span {
-  color: var(--brand);
-}
-.ov__grid {
+/* Thẻ trạng thái đơn hàng (bấm 1 dòng để lọc) */
+.statuslist {
   display: grid;
-  grid-template-columns: 1fr 1fr;
+  gap: 2px;
+}
+.statusrow {
+  display: flex;
+  align-items: center;
   gap: 10px;
+  padding: 10px 8px;
+  margin: 0 -8px;
+  border-radius: 10px;
+  cursor: pointer;
+  transition: background 0.15s;
 }
-.ov__stat {
+.statusrow:hover {
   background: var(--fill-1);
-  border: 1px solid var(--border);
-  border-radius: var(--radius-md);
-  padding: 12px 14px;
 }
-.ov__num {
-  font-size: 24px;
+.statusrow__dot {
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+.statusrow__name {
+  font-size: 14px;
+  color: var(--text);
+}
+.statusrow__val {
+  font-size: 15px;
   font-weight: 800;
   color: var(--text);
-  line-height: 1.1;
 }
-.ov__lbl {
+.statusfoot {
+  margin-top: 12px;
+  padding-top: 12px;
+  border-top: 1px solid var(--border);
   font-size: 12px;
   color: var(--text-2);
-  margin-top: 3px;
 }
 
 /* ---------- Vi tương tác (hover) đồng bộ ---------- */
 .dcard,
-.mini,
-.vcard {
+.mini {
   transition:
     transform 0.2s cubic-bezier(0.2, 0.7, 0.2, 1),
     box-shadow 0.2s,
@@ -1122,11 +1123,6 @@ svg.ic {
   transform: translateY(-3px);
   border-color: var(--fill-2);
   box-shadow: 0 18px 42px rgba(0, 0, 0, 0.5);
-}
-.vcard:hover {
-  transform: translateY(-3px);
-  border-color: var(--fill-2);
-  box-shadow: var(--shadow);
 }
 .litem {
   transition: background 0.15s;

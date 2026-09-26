@@ -333,7 +333,7 @@ async function viewDashboard(el) {
     <div class="dash__col">${miniCard(ic('box', 'i20'), 'rgba(55,214,122,.16)', '#37d67a', L('Tổng đơn hàng', 'Total orders'), s.totalOrders)}
       ${miniCard(ic('bag', 'i20'), 'rgba(244,81,30,.16)', '#ff9a3d', L('Sản phẩm đang bán', 'Active products'), s.totalProducts)}
       ${categoryDonutCard(products, cats)}</div>
-    <div class="dash__col">${vmartCard(s)}${categoryListCard(products, cats)}</div>
+    <div class="dash__col">${orderStatusCard(orders)}${categoryListCard(products, cats)}</div>
   </div>`;
 }
 
@@ -526,18 +526,31 @@ function recentOrdersCard(orders) {
   </div>`;
 }
 
-/** Thẻ tổng quan sàn — số liệu chính, rõ ràng (không mô phỏng thẻ thanh toán). */
-function vmartCard(s) {
-  const stat = (label, value) =>
-    `<div class="ov__stat"><div class="ov__num">${value ?? 0}</div><div class="ov__lbl">${label}</div></div>`;
-  return `<div class="vcard">
-    <div class="vcard__brand">Vi<span>Mart</span> · ${L('Tổng quan sàn', 'Platform overview')}</div>
-    <div class="ov__grid">
-      ${stat(L('Người dùng', 'Users'), s.totalUsers)}
-      ${stat(L('Cửa hàng', 'Shops'), s.totalShops)}
-      ${stat(L('Sản phẩm', 'Products'), s.totalProducts)}
-      ${stat(L('Đơn hàng', 'Orders'), s.totalOrders)}
-    </div>
+/** Thẻ trạng thái đơn hàng — pipeline vận hành; bấm 1 dòng để lọc thẳng sang
+ *  trang Đơn hàng theo trạng thái đó (thay cho thẻ "tổng quan" trùng số liệu). */
+function orderStatusCard(orders) {
+  const s = state.dashStats || {};
+  const seq = ['pending', 'confirmed', 'shipping', 'completed', 'cancelled'];
+  const counts = Object.fromEntries(seq.map((k) => [k, 0]));
+  (orders || []).forEach((o) => {
+    if (counts[o.status] != null) counts[o.status]++;
+  });
+  const rows = seq
+    .map((st) => {
+      const color = STATUS_COLOR[st] || '#888';
+      return `<div class="statusrow" data-action="orders-status" data-status="${st}" title="${L('Lọc đơn theo trạng thái này', 'Filter orders by this status')}">
+      <span class="statusrow__dot" style="background:${color}"></span>
+      <div class="statusrow__name">${statusLabel(st)}</div>
+      <div class="spacer"></div>
+      <div class="statusrow__val">${counts[st]}</div>
+    </div>`;
+    })
+    .join('');
+  return `<div class="dcard">
+    <div class="dcard__head"><h4>${L('Trạng thái đơn hàng', 'Order status')}</h4><div class="spacer"></div>
+      <span class="pill pill--soft" data-nav="orders" style="cursor:pointer">${L('Tất cả', 'All')}</span></div>
+    <div class="statuslist">${rows}</div>
+    <div class="statusfoot">${L(`${s.totalUsers || 0} người dùng · ${s.totalShops || 0} cửa hàng trên sàn`, `${s.totalUsers || 0} users · ${s.totalShops || 0} shops on the platform`)}</div>
   </div>`;
 }
 
@@ -948,6 +961,12 @@ document.addEventListener('click', async (e) => {
     orderFilter.to = '';
     orderFilter.q = '';
     route();
+  } else if (action === 'orders-status') {
+    orderFilter.status = el.getAttribute('data-status') || '';
+    orderFilter.from = '';
+    orderFilter.to = '';
+    orderFilter.q = '';
+    location.hash = '#/orders';
   } else if (action === 'chart-mode-week' || action === 'chart-mode-month') {
     const mode = action === 'chart-mode-month' ? 'month' : 'week';
     if (chartView.mode !== mode) {
