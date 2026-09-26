@@ -128,9 +128,44 @@ const ICONS = {
   chevronR: '<path d="m9 18 6-6-6-6"/>',
 };
 
-// Kỳ đang xem của biểu đồ đơn hàng: chế độ (tuần/tháng) + độ lệch (0 = hiện tại,
-// -1 = kỳ trước...). Cho phép xem lại các tuần/tháng/năm trước.
+// Kỳ đang xem của dashboard: chế độ (tuần/tháng) + độ lệch (0 = hiện tại,
+// -1 = kỳ trước...). Điều khiển CHUNG cho biểu đồ đơn + doanh thu.
 const chartView = { mode: 'week', offset: 0 };
+
+/** Kỳ hiện tại (theo chartView): hàm kiểm tra ngày thuộc kỳ + tiêu đề hiển thị. */
+function currentPeriod() {
+  const now = new Date();
+  const fmtD = (dt) => new Date(dt).toLocaleDateString(lang === 'en' ? 'en-GB' : 'vi-VN');
+  if (chartView.mode === 'month') {
+    const year = now.getFullYear() + chartView.offset;
+    return { inRange: (d) => d.getFullYear() === year, title: `${L('Năm', 'Year')} ${year}` };
+  }
+  const end = new Date(now);
+  end.setHours(0, 0, 0, 0);
+  end.setDate(end.getDate() + chartView.offset * 7);
+  const start = new Date(end);
+  start.setDate(end.getDate() - 6);
+  const endOfDay = new Date(end);
+  endOfDay.setHours(23, 59, 59, 999);
+  return {
+    inRange: (d) => d >= start && d <= endOfDay,
+    title: `${start.getDate()}/${start.getMonth() + 1} – ${fmtD(end)}`,
+  };
+}
+
+/** Doanh thu (đơn hoàn thành) + số đơn trong kỳ hiện tại. */
+function periodRevenue(orders) {
+  const { inRange } = currentPeriod();
+  let rev = 0;
+  let cnt = 0;
+  (orders || []).forEach((o) => {
+    if (!o.created_at) return;
+    if (!inRange(new Date(o.created_at))) return;
+    cnt++;
+    if (o.status === 'completed') rev += Number(o.total) || 0;
+  });
+  return { rev, cnt };
+}
 function ic(name, cls = 'i18') {
   return `<svg class="ic ${cls}" viewBox="0 0 24 24">${ICONS[name] || ''}</svg>`;
 }
@@ -293,7 +328,7 @@ async function viewDashboard(el) {
   state.dashOrders = orders; // để re-render biểu đồ khi đổi kỳ
 
   el.innerHTML = `<div class="dash">
-    <div class="dash__col">${heroCard(s)}${revenueFlowCard(orders)}${recentOrdersCard(orders)}</div>
+    <div class="dash__col">${heroCard()}${revenueFlowCard(orders)}${recentOrdersCard(orders)}</div>
     <div class="dash__col">${miniCard(ic('box', 'i20'), 'rgba(55,214,122,.16)', '#37d67a', L('Tổng đơn hàng', 'Total orders'), s.totalOrders)}
       ${miniCard(ic('bag', 'i20'), 'rgba(244,81,30,.16)', '#ff9a3d', L('Sản phẩm đang bán', 'Active products'), s.totalProducts)}
       ${categoryDonutCard(products, cats)}</div>
@@ -302,11 +337,13 @@ async function viewDashboard(el) {
 }
 
 /** Thẻ số dư lớn = doanh thu. */
-function heroCard(s) {
-  return `<div class="hero">
-    <div class="hero__label">${L('Doanh thu (đơn hoàn thành)', 'Revenue (completed orders)')}</div>
-    <div class="hero__value">${fmtVnd(s.totalRevenue)}</div>
-    <div class="hero__sub">${L(`${s.totalOrders} đơn · ${s.totalUsers} người dùng trên sàn`, `${s.totalOrders} orders · ${s.totalUsers} users on the platform`)}</div>
+function heroCard() {
+  const { title } = currentPeriod();
+  const { rev, cnt } = periodRevenue(state.dashOrders);
+  return `<div class="hero" id="heroCard">
+    <div class="hero__label">${L('Doanh thu (đơn hoàn thành)', 'Revenue (completed orders)')} · ${title}</div>
+    <div class="hero__value">${fmtVnd(rev)}</div>
+    <div class="hero__sub">${L(`${cnt} đơn trong kỳ`, `${cnt} orders in period`)}</div>
     <div class="hero__actions">
       <button class="hero__btn hero__btn--dark" data-nav="orders">${L('Xem đơn hàng', 'View orders')}</button>
       <button class="hero__btn hero__btn--light" data-nav="products">${L('Sản phẩm', 'Products')}</button>
@@ -411,10 +448,12 @@ function revenueFlowCard(orders) {
   </div>`;
 }
 
-/** Vẽ lại riêng thẻ biểu đồ khi đổi kỳ (không tải lại toàn dashboard). */
+/** Vẽ lại thẻ biểu đồ + doanh thu khi đổi kỳ (không tải lại toàn dashboard). */
 function rerenderChart() {
-  const card = document.getElementById('chartCard');
-  if (card) card.outerHTML = revenueFlowCard(state.dashOrders || []);
+  const chart = document.getElementById('chartCard');
+  if (chart) chart.outerHTML = revenueFlowCard(state.dashOrders || []);
+  const hero = document.getElementById('heroCard');
+  if (hero) hero.outerHTML = heroCard();
 }
 
 /** Donut: sản phẩm theo danh mục. */
