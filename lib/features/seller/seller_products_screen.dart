@@ -8,6 +8,7 @@ import '../../core/i18n/app_strings.dart';
 import '../../models/product.dart';
 import '../../widgets/app_dialog.dart';
 import '../../widgets/app_feedback.dart';
+import '../../widgets/app_refresh.dart';
 import '../../widgets/app_skeleton.dart';
 import '../../widgets/async_view.dart';
 import '../../widgets/entrance.dart';
@@ -32,8 +33,7 @@ class SellerProductsScreen extends ConsumerWidget {
         icon: const Icon(Icons.add_rounded),
         label: Text(s.addProduct, style: const TextStyle(fontWeight: FontWeight.w700)),
       ),
-      body: RefreshIndicator(
-        color: AppColors.brand,
+      body: AppRefresh(
         onRefresh: () => ref.refresh(myProductsProvider.future),
         child: AsyncView(
           value: async,

@@ -8,6 +8,7 @@ import '../../app/theme.dart';
 import '../../core/format.dart';
 import '../../core/i18n/app_strings.dart';
 import '../../models/order.dart';
+import '../../widgets/app_refresh.dart';
 import '../../widgets/app_skeleton.dart';
 import '../../widgets/async_view.dart';
 import '../../widgets/entrance.dart';
@@ -54,8 +55,7 @@ class _OrderList extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final async = ref.watch(myOrdersProvider(status));
-    return RefreshIndicator(
-      color: AppColors.brand,
+    return AppRefresh(
       onRefresh: () => ref.refresh(myOrdersProvider(status).future),
       child: AsyncView(
         value: async,

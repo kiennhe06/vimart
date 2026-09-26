@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import '../../app/theme.dart';
 import '../../core/i18n/app_strings.dart';
+import '../../widgets/app_refresh.dart';
 import '../../widgets/app_skeleton.dart';
 import '../../widgets/async_view.dart';
 import '../../widgets/entrance.dart';
@@ -41,8 +41,7 @@ class _ShopOrderList extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final async = ref.watch(shopOrdersProvider(status));
     final s = ref.watch(stringsProvider);
-    return RefreshIndicator(
-      color: AppColors.brand,
+    return AppRefresh(
       onRefresh: () => ref.refresh(shopOrdersProvider(status).future),
       child: AsyncView(
         value: async,
