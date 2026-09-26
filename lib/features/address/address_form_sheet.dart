@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../app/motion.dart';
 import '../../app/theme.dart';
 import '../../core/i18n/app_strings.dart';
 import '../../widgets/app_dialog.dart';
@@ -204,12 +205,15 @@ class _AddressFormSheetState extends ConsumerState<_AddressFormSheet> {
     final borderColor = error
         ? AppColors.danger
         : (enabled ? const Color(0xFFECEFF1) : const Color(0xFFECEFF1));
-    return Opacity(
+    return AnimatedOpacity(
       opacity: enabled ? 1 : 0.55,
+      duration: AppMotion.dur(context, AppMotion.base),
       child: Pressable(
         onTap: enabled ? onTap : null,
         haptic: enabled,
-        child: Container(
+        child: AnimatedContainer(
+          duration: AppMotion.dur(context, AppMotion.base),
+          curve: AppMotion.emphasized,
           padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 15),
           decoration: BoxDecoration(
             color: Colors.white,

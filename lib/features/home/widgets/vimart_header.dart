@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../core/i18n/app_strings.dart';
+import '../../../widgets/pressable.dart';
 import '../home_ui.dart';
 
 /// Header trang chủ kiểu grocery: lời chào + tên app + nút tròn (yêu thích / thông báo).
@@ -57,7 +58,7 @@ class _CircleButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return GestureDetector(
+    return Pressable(
       onTap: onTap,
       child: Container(
         width: 46,
