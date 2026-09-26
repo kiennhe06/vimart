@@ -3,7 +3,9 @@ import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../../app/design.dart';
 import '../../../core/i18n/app_strings.dart';
+import '../../../widgets/pressable.dart';
 import '../home_ui.dart';
 
 /// Header trang chủ kiểu grocery: lời chào + tên app + nút tròn (yêu thích / thông báo).
@@ -21,20 +23,20 @@ class VimartHeader extends ConsumerWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(s.greeting, style: HomeText.greeting),
+                Text(s.greeting, style: AppType.caption.copyWith(color: context.c.textSecondary)),
                 const SizedBox(height: 2),
                 Row(
                   children: [
-                    const Text('ViMart', style: HomeText.logo),
+                    Text('ViMart', style: AppType.h1.copyWith(color: context.c.brand)),
                     const SizedBox(width: 6),
                     Container(
                       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
                       decoration: BoxDecoration(
-                        color: HomeColors.brandSoft,
+                        color: context.c.brandSoft,
                         borderRadius: BorderRadius.circular(20),
                       ),
                       child: Text(s.freshBadge,
-                          style: const TextStyle(color: HomeColors.brand, fontSize: 11, fontWeight: FontWeight.w700)),
+                          style: TextStyle(color: context.c.brand, fontSize: 11, fontWeight: FontWeight.w700)),
                     ),
                   ],
                 ),
@@ -57,17 +59,18 @@ class _CircleButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return GestureDetector(
+    return Pressable(
       onTap: onTap,
       child: Container(
         width: 46,
         height: 46,
         decoration: BoxDecoration(
-          color: HomeColors.surface,
+          color: context.c.surface,
           borderRadius: BorderRadius.circular(15),
-          boxShadow: const [BoxShadow(color: HomeColors.shadow, blurRadius: 10, offset: Offset(0, 4))],
+          border: Border.all(color: context.c.border),
+          boxShadow: AppShadow.soft(context.c.shadow),
         ),
-        child: Icon(icon, size: 22, color: HomeColors.textPrimary),
+        child: Icon(icon, size: 22, color: context.c.textPrimary),
       ),
     );
   }

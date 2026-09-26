@@ -1,11 +1,15 @@
 import 'package:flutter/material.dart';
 
+import '../app/design.dart';
 import '../app/motion.dart';
-import '../app/theme.dart';
 
-/// Nền xám cho skeleton (đồng bộ light).
-const Color _kSkeletonBase = Color(0xFFE9EDEB);
-const Color _kSkeletonHi = Color(0xFFF5F8F7);
+/// Màu khối skeleton theo theme (base tối/sáng + vệt sáng quét).
+({Color base, Color hi}) _skeletonColors(BuildContext context) {
+  final dark = Theme.of(context).brightness == Brightness.dark;
+  return dark
+      ? (base: const Color(0xFF232E29), hi: const Color(0xFF2E3B35))
+      : (base: const Color(0xFFE9EDEB), hi: const Color(0xFFF5F8F7));
+}
 
 /// Một khối skeleton (hộp/đường/tròn) có hiệu ứng quét sáng (shimmer).
 class Skeleton extends StatelessWidget {
@@ -29,7 +33,7 @@ class Skeleton extends StatelessWidget {
         width: width,
         height: shape == BoxShape.circle ? width : height,
         decoration: BoxDecoration(
-          color: _kSkeletonBase,
+          color: _skeletonColors(context).base,
           shape: shape,
           borderRadius: shape == BoxShape.circle ? null : BorderRadius.circular(radius),
         ),
@@ -49,7 +53,7 @@ class _Shimmer extends StatefulWidget {
 
 class _ShimmerState extends State<_Shimmer> with SingleTickerProviderStateMixin {
   late final AnimationController _c =
-      AnimationController(vsync: this, duration: const Duration(milliseconds: 1200))..repeat();
+      AnimationController(vsync: this, duration: AppMotion.ambientLoop)..repeat();
 
   @override
   void dispose() {
@@ -65,12 +69,13 @@ class _ShimmerState extends State<_Shimmer> with SingleTickerProviderStateMixin 
         animation: _c,
         child: widget.child,
         builder: (context, child) {
+          final sk = _skeletonColors(context);
           return ShaderMask(
             blendMode: BlendMode.srcATop,
             shaderCallback: (bounds) => LinearGradient(
               begin: Alignment.centerLeft,
               end: Alignment.centerRight,
-              colors: const [_kSkeletonBase, _kSkeletonHi, _kSkeletonBase],
+              colors: [sk.base, sk.hi, sk.base],
               stops: const [0.35, 0.5, 0.65],
               transform: _SlideGradient(_c.value * 2 - 1),
             ).createShader(bounds),
@@ -106,8 +111,8 @@ class ProductTileSkeleton extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(AppSizes.radius),
+        color: context.c.surface,
+        borderRadius: AppRadius.brLg,
       ),
       padding: const EdgeInsets.all(10),
       child: Column(
@@ -164,8 +169,8 @@ class ListCardSkeleton extends StatelessWidget {
       margin: const EdgeInsets.only(bottom: 12),
       padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(AppSizes.radius),
+        color: context.c.surface,
+        borderRadius: AppRadius.brLg,
       ),
       child: Row(
         children: [

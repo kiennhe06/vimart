@@ -1,21 +1,16 @@
 import 'package:flutter/widgets.dart';
 
-/// Bộ token màu & typography — phong cách "grocery" tươi sáng, xanh lá chủ đạo.
-/// Dùng chung cho phần trang chủ (dựng tay). Các màn khác dùng theme ở app/theme.dart.
+/// Token brand cố định cho phần trang chủ (dựng tay). Bề mặt/nền/chữ/viền dùng
+/// `context.c` (theme-aware) — xem [lib/app/design.dart]. Ở đây chỉ giữ các màu
+/// brand/accent bất biến theo theme + bảng pastel danh mục.
 class HomeColors {
   const HomeColors._();
 
   static const Color brand = Color(0xFF1EA65A); // xanh lá tươi (chủ đạo)
   static const Color brandDark = Color(0xFF158048);
-  static const Color brandSoft = Color(0xFFE7F6EE); // nền xanh nhạt
-  static const Color accent = Color(0xFFFF7A45); // cam nhấn (khuyến mãi/giá sale)
-  static const Color background = Color(0xFFF4F6F5); // nền tổng thể (trắng ngả)
-  static const Color surface = Color(0xFFFFFFFF);
-  static const Color textPrimary = Color(0xFF1B2430);
-  static const Color textSecondary = Color(0xFF8B93A1);
-  static const Color border = Color(0xFFECEFF1);
-  static const Color star = Color(0xFFFFB020);
-  static const Color shadow = Color(0x12000000);
+  /// Pastel sáng dùng làm "giếng ảnh" (media well) — giữ sáng cả ở dark.
+  static const Color brandSoft = Color(0xFFE7F6EE);
+  static const Color star = Color(0xFFF5A524); // vàng đánh giá
 }
 
 /// Màu pastel cho các vòng tròn danh mục (xoay vòng theo thứ tự).
@@ -36,30 +31,7 @@ const List<Color> kCategoryInk = [
   Color(0xFFF0498A),
 ];
 
-class HomeText {
-  const HomeText._();
-
-  static const TextStyle logo = TextStyle(
-    color: HomeColors.brand, fontSize: 24, fontWeight: FontWeight.w800, letterSpacing: -0.5);
-  static const TextStyle greeting = TextStyle(
-    color: HomeColors.textSecondary, fontSize: 13, fontWeight: FontWeight.w500);
-  static const TextStyle sectionTitle = TextStyle(
-    color: HomeColors.textPrimary, fontSize: 18, fontWeight: FontWeight.w800, letterSpacing: -0.3);
-  static const TextStyle searchHint = TextStyle(color: HomeColors.textSecondary, fontSize: 15);
-  static const TextStyle searchInput = TextStyle(color: HomeColors.textPrimary, fontSize: 15);
-  static const TextStyle chip = TextStyle(
-    color: HomeColors.textPrimary, fontSize: 13, fontWeight: FontWeight.w600);
-  static const TextStyle productName = TextStyle(
-    color: HomeColors.textPrimary, fontSize: 14, fontWeight: FontWeight.w700, height: 1.25);
-  static const TextStyle price = TextStyle(
-    color: HomeColors.textPrimary, fontSize: 16, fontWeight: FontWeight.w800);
-  static const TextStyle meta = TextStyle(color: HomeColors.textSecondary, fontSize: 12);
-  static const TextStyle navActive = TextStyle(
-    color: HomeColors.brand, fontSize: 11, fontWeight: FontWeight.w700);
-  static const TextStyle navInactive = TextStyle(
-    color: HomeColors.textSecondary, fontSize: 11, fontWeight: FontWeight.w500);
-}
-
+/// Kích thước dùng chung ở trang chủ — khớp thang [AppSpace]/[AppRadius].
 class HomeDims {
   const HomeDims._();
   static const double pagePadding = 18;

@@ -15,7 +15,7 @@ class AnimatedCheck extends StatefulWidget {
 
 class _AnimatedCheckState extends State<AnimatedCheck> with SingleTickerProviderStateMixin {
   late final AnimationController _c =
-      AnimationController(vsync: this, duration: const Duration(milliseconds: 620));
+      AnimationController(vsync: this, duration: AppMotion.celebrate);
   bool _started = false;
 
   @override

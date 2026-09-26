@@ -1,23 +1,24 @@
 import 'package:flutter/material.dart';
 
+import 'design.dart';
 import 'motion.dart';
 
-/// Bảng màu ViMart — phong cách "grocery" tươi sáng, xanh lá chủ đạo.
-/// Luôn ưu tiên dùng qua Theme.of(context).colorScheme để đồng bộ sáng/tối.
+/// Màu brand cố định (theme-invariant) — tiện dùng ở nơi không cần đổi theo tối/sáng.
+/// Với bề mặt/nền/chữ/viền hãy dùng `context.c` (theme-aware) thay cho lớp này.
 class AppColors {
-  static const Color brand = Color(0xFF1EA65A); // xanh lá tươi
+  static const Color brand = Color(0xFF1EA65A);
   static const Color brandDark = Color(0xFF158048);
   static const Color brandSoft = Color(0xFFE7F6EE);
-  static const Color accent = Color(0xFFFFB020); // vàng (sao đánh giá)
-  static const Color promo = Color(0xFFFF7A45); // cam nhấn khuyến mãi
-  static const Color success = Color(0xFF1EA65A);
+  static const Color accent = Color(0xFFF5A524); // vàng (sao đánh giá)
+  static const Color promo = Color(0xFFF2683C); // cam nhấn khuyến mãi
+  static const Color success = Color(0xFF15A05A);
   static const Color danger = Color(0xFFE5484D);
 }
 
-/// Bo góc & khoảng cách chuẩn (mềm mại, đồng bộ).
+/// Bo góc & khoảng cách chuẩn — giữ tương thích; nội dung khớp [AppRadius]/[AppSpace].
 class AppSizes {
-  static const double radius = 18;
-  static const double radiusSmall = 12;
+  static const double radius = AppRadius.lg;
+  static const double radiusSmall = AppRadius.sm;
   static const double gap = 14;
   static const double pagePadding = 18;
 }
@@ -26,15 +27,18 @@ ThemeData buildLightTheme() => _buildTheme(Brightness.light);
 ThemeData buildDarkTheme() => _buildTheme(Brightness.dark);
 
 ThemeData _buildTheme(Brightness brightness) {
-  final colorScheme = ColorScheme.fromSeed(
-    seedColor: AppColors.brand,
-    brightness: brightness,
-  ).copyWith(
-    primary: AppColors.brand,
-    secondary: AppColors.brandDark,
-  );
-
   final isLight = brightness == Brightness.light;
+  final cx = isLight ? AppCx.light : AppCx.dark;
+
+  final colorScheme =
+      ColorScheme.fromSeed(seedColor: AppColors.brand, brightness: brightness).copyWith(
+    primary: cx.brand,
+    onPrimary: cx.onBrand,
+    secondary: AppColors.brandDark,
+    surface: cx.surface,
+    onSurface: cx.textPrimary,
+    error: cx.danger,
+  );
 
   const pageTransitions = PageTransitionsTheme(
     builders: {
@@ -44,85 +48,101 @@ ThemeData _buildTheme(Brightness brightness) {
     },
   );
 
+  // Typography scale (color kế thừa onSurface) — nguồn: AppType.
+  final baseText = (isLight ? Typography.blackMountainView : Typography.whiteMountainView);
+  final textTheme = baseText.copyWith(
+    displaySmall: AppType.display,
+    headlineMedium: AppType.h1,
+    headlineSmall: AppType.h2,
+    titleLarge: AppType.h3,
+    titleMedium: AppType.title,
+    bodyLarge: AppType.body,
+    bodyMedium: AppType.body,
+    bodySmall: AppType.bodySm,
+    labelLarge: AppType.label,
+    labelSmall: AppType.caption,
+  ).apply(bodyColor: cx.textPrimary, displayColor: cx.textPrimary);
+
   return ThemeData(
     useMaterial3: true,
     colorScheme: colorScheme,
+    extensions: [cx],
+    textTheme: textTheme,
     pageTransitionsTheme: pageTransitions,
-    scaffoldBackgroundColor: isLight ? const Color(0xFFF4F6F5) : null,
+    scaffoldBackgroundColor: cx.background,
     appBarTheme: AppBarTheme(
-      backgroundColor: isLight ? const Color(0xFFF4F6F5) : colorScheme.surface,
-      foregroundColor: colorScheme.onSurface,
+      backgroundColor: cx.background,
+      foregroundColor: cx.textPrimary,
       elevation: 0,
       scrolledUnderElevation: 0,
       centerTitle: true,
-      titleTextStyle: TextStyle(
-        color: colorScheme.onSurface, fontSize: 18, fontWeight: FontWeight.w800, letterSpacing: -0.3),
+      titleTextStyle: AppType.h2.copyWith(color: cx.textPrimary),
     ),
     cardTheme: CardThemeData(
       elevation: 0,
-      color: colorScheme.surface,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(AppSizes.radius)),
+      color: cx.surface,
+      shape: RoundedRectangleBorder(borderRadius: AppRadius.brLg),
       clipBehavior: Clip.antiAlias,
       margin: EdgeInsets.zero,
     ),
     inputDecorationTheme: InputDecorationTheme(
       filled: true,
-      fillColor: isLight ? Colors.white : null,
-      hintStyle: const TextStyle(color: Color(0xFF8B93A1)),
+      fillColor: cx.surface,
+      hintStyle: TextStyle(color: cx.textMuted),
       border: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(AppSizes.radius),
-        borderSide: BorderSide(color: isLight ? const Color(0xFFECEFF1) : Colors.white24),
+        borderRadius: AppRadius.brLg,
+        borderSide: BorderSide(color: cx.border),
       ),
       enabledBorder: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(AppSizes.radius),
-        borderSide: BorderSide(color: isLight ? const Color(0xFFECEFF1) : Colors.white24),
+        borderRadius: AppRadius.brLg,
+        borderSide: BorderSide(color: cx.border),
       ),
       focusedBorder: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(AppSizes.radius),
-        borderSide: const BorderSide(color: AppColors.brand, width: 1.6),
+        borderRadius: AppRadius.brLg,
+        borderSide: BorderSide(color: cx.brand, width: 1.6),
       ),
-      contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 15),
+      contentPadding: const EdgeInsets.symmetric(horizontal: AppSpace.base, vertical: 15),
     ),
     elevatedButtonTheme: ElevatedButtonThemeData(
       style: ElevatedButton.styleFrom(
-        backgroundColor: AppColors.brand,
-        foregroundColor: Colors.white,
+        backgroundColor: cx.brand,
+        foregroundColor: cx.onBrand,
         elevation: 0,
         minimumSize: const Size.fromHeight(54),
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(AppSizes.radius)),
+        shape: RoundedRectangleBorder(borderRadius: AppRadius.brLg),
         textStyle: const TextStyle(fontSize: 16, fontWeight: FontWeight.w700),
       ),
     ),
     filledButtonTheme: FilledButtonThemeData(
       style: FilledButton.styleFrom(
-        backgroundColor: AppColors.brand,
-        foregroundColor: Colors.white,
+        backgroundColor: cx.brand,
+        foregroundColor: cx.onBrand,
         minimumSize: const Size.fromHeight(54),
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(AppSizes.radius)),
+        shape: RoundedRectangleBorder(borderRadius: AppRadius.brLg),
         textStyle: const TextStyle(fontSize: 16, fontWeight: FontWeight.w700),
       ),
     ),
     outlinedButtonTheme: OutlinedButtonThemeData(
       style: OutlinedButton.styleFrom(
-        foregroundColor: AppColors.brand,
+        foregroundColor: cx.brand,
         minimumSize: const Size.fromHeight(52),
-        side: const BorderSide(color: AppColors.brand, width: 1.4),
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(AppSizes.radius)),
+        side: BorderSide(color: cx.brand, width: 1.4),
+        shape: RoundedRectangleBorder(borderRadius: AppRadius.brLg),
         textStyle: const TextStyle(fontSize: 15, fontWeight: FontWeight.w700),
       ),
     ),
     textButtonTheme: TextButtonThemeData(
-      style: TextButton.styleFrom(foregroundColor: AppColors.brand),
+      style: TextButton.styleFrom(foregroundColor: cx.brand),
     ),
     chipTheme: ChipThemeData(
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(30)),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(AppRadius.pill)),
       side: BorderSide.none,
     ),
     snackBarTheme: SnackBarThemeData(
       behavior: SnackBarBehavior.floating,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
     ),
-    dividerTheme: const DividerThemeData(color: Color(0xFFECEFF1), thickness: 1),
+    dividerTheme: DividerThemeData(color: cx.border, thickness: 1),
   );
 }
 
