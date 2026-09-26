@@ -1011,44 +1011,42 @@ svg.ic {
 
 /* Thẻ ViMart (mô phỏng thẻ tín dụng) */
 .vcard {
-  position: relative;
-  overflow: hidden;
-  border-radius: 22px;
-  padding: 24px;
-  color: #fff;
-  background: linear-gradient(135deg, #7c3aed 0%, #4c2a9e 55%, #2a1a4e 100%);
-  box-shadow: var(--shadow);
-}
-.vcard::after {
-  content: '';
-  position: absolute;
-  right: -50px;
-  top: -50px;
-  width: 160px;
-  height: 160px;
-  border-radius: 50%;
-  background: rgba(244, 81, 30, 0.5);
-  filter: blur(6px);
+  border-radius: var(--radius);
+  padding: 20px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  box-shadow: var(--shadow-sm);
 }
 .vcard__brand {
   font-weight: 800;
-  font-size: 18px;
-  position: relative;
+  font-size: 15px;
+  color: var(--text);
+  margin-bottom: 16px;
 }
 .vcard__brand span {
-  color: var(--amber);
+  color: var(--brand);
 }
-.vcard__num {
-  letter-spacing: 4px;
-  font-size: 18px;
-  margin: 26px 0 16px;
-  position: relative;
+.ov__grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
 }
-.vcard__foot {
-  display: flex;
-  justify-content: space-between;
-  font-size: 13px;
-  position: relative;
+.ov__stat {
+  background: var(--fill-1);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  padding: 12px 14px;
+}
+.ov__num {
+  font-size: 24px;
+  font-weight: 800;
+  color: var(--text);
+  line-height: 1.1;
+}
+.ov__lbl {
+  font-size: 12px;
+  color: var(--text-2);
+  margin-top: 3px;
 }
 
 /* ---------- Vi tương tác (hover) đồng bộ ---------- */
@@ -1068,7 +1066,8 @@ svg.ic {
 }
 .vcard:hover {
   transform: translateY(-3px);
-  box-shadow: 0 20px 44px var(--glow);
+  border-color: var(--fill-2);
+  box-shadow: var(--shadow);
 }
 .litem {
   transition: background 0.15s;

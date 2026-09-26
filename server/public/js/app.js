@@ -455,15 +455,17 @@ function recentOrdersCard(orders) {
   </div>`;
 }
 
-/** Thẻ ViMart (mô phỏng thẻ) + số liệu người dùng/shop. */
+/** Thẻ tổng quan sàn — số liệu chính, rõ ràng (không mô phỏng thẻ thanh toán). */
 function vmartCard(s) {
+  const stat = (label, value) =>
+    `<div class="ov__stat"><div class="ov__num">${value ?? 0}</div><div class="ov__lbl">${label}</div></div>`;
   return `<div class="vcard">
-    <div class="vcard__brand">Vi<span>Mart</span> · ${L('Sàn TMĐT', 'Marketplace')}</div>
-    <div class="vcard__num">•••• ${String(s.totalOrders).padStart(4, '0')} ••••</div>
-    <div class="vcard__foot">
-      <div><div style="opacity:.7;font-size:11px">${L('Người dùng', 'Users')}</div><b>${s.totalUsers}</b></div>
-      <div><div style="opacity:.7;font-size:11px">${L('Shop', 'Shops')}</div><b>${s.totalShops}</b></div>
-      <div><div style="opacity:.7;font-size:11px">${L('Sản phẩm', 'Products')}</div><b>${s.totalProducts}</b></div>
+    <div class="vcard__brand">Vi<span>Mart</span> · ${L('Tổng quan sàn', 'Platform overview')}</div>
+    <div class="ov__grid">
+      ${stat(L('Người dùng', 'Users'), s.totalUsers)}
+      ${stat(L('Cửa hàng', 'Shops'), s.totalShops)}
+      ${stat(L('Sản phẩm', 'Products'), s.totalProducts)}
+      ${stat(L('Đơn hàng', 'Orders'), s.totalOrders)}
     </div>
   </div>`;
 }
