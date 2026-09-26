@@ -5,11 +5,11 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../features/cart/cart_provider.dart';
 import '../features/cart/cart_screen.dart';
 import '../features/home/home_screen.dart';
-import '../features/home/home_ui.dart';
 import '../features/home/widgets/vimart_bottom_nav.dart';
 import '../features/order/orders_screen.dart';
 import '../features/profile/profile_screen.dart';
 import '../core/i18n/app_strings.dart';
+import 'design.dart';
 import 'motion.dart';
 import 'nav_provider.dart';
 
@@ -32,7 +32,7 @@ class HomeShell extends ConsumerWidget {
     final s = ref.watch(stringsProvider);
 
     return Material(
-      color: HomeColors.background,
+      color: context.c.background,
       child: Column(
         children: [
           Expanded(child: _SharedAxisTabs(index: index, children: _screens)),

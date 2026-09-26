@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../app/design.dart';
 import '../../app/motion.dart';
 import '../../app/theme.dart';
 import '../../core/i18n/app_strings.dart';
@@ -106,7 +107,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     final showHistory = _searchFocused && _keyword.isEmpty && history.isNotEmpty;
 
     return Container(
-      color: HomeColors.background,
+      color: context.c.background,
       child: SafeArea(
         bottom: false,
         child: Column(
@@ -201,14 +202,14 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
         curve: AppMotion.emphasized,
         padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
         decoration: BoxDecoration(
-          color: sel ? AppColors.brand : HomeColors.surface,
+          color: sel ? AppColors.brand : context.c.surface,
           borderRadius: BorderRadius.circular(20),
-          border: Border.all(color: sel ? AppColors.brand : HomeColors.border),
+          border: Border.all(color: sel ? AppColors.brand : context.c.border),
         ),
         child: Text(
           label,
           style: TextStyle(
-            color: sel ? Colors.white : HomeColors.textSecondary,
+            color: sel ? context.c.onBrand : context.c.textSecondary,
             fontWeight: FontWeight.w600,
             fontSize: 13,
           ),
@@ -228,12 +229,12 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
             width: 40,
             height: 40,
             decoration: BoxDecoration(
-              color: _hasFilters ? AppColors.brand : HomeColors.surface,
+              color: _hasFilters ? AppColors.brand : context.c.surface,
               borderRadius: BorderRadius.circular(14),
-              border: Border.all(color: _hasFilters ? AppColors.brand : HomeColors.border),
+              border: Border.all(color: _hasFilters ? AppColors.brand : context.c.border),
             ),
             child: Icon(Icons.tune_rounded,
-                size: 20, color: _hasFilters ? Colors.white : HomeColors.textSecondary),
+                size: 20, color: _hasFilters ? context.c.onBrand : context.c.textSecondary),
           ),
           if (_hasFilters)
             Positioned(
@@ -245,7 +246,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                 decoration: BoxDecoration(
                   color: AppColors.promo,
                   shape: BoxShape.circle,
-                  border: Border.all(color: HomeColors.background, width: 2),
+                  border: Border.all(color: context.c.background, width: 2),
                 ),
               ),
             ),
@@ -263,7 +264,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
         children: [
           Row(
             children: [
-              Text(s.recentSearches, style: HomeText.sectionTitle),
+              Text(s.recentSearches, style: AppType.h2.copyWith(color: context.c.textPrimary)),
               const Spacer(),
               Pressable(
                 onTap: () => ref.read(searchHistoryProvider.notifier).clear(),
@@ -284,20 +285,20 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                   child: Container(
                     padding: const EdgeInsets.fromLTRB(12, 8, 8, 8),
                     decoration: BoxDecoration(
-                      color: HomeColors.surface,
+                      color: context.c.surface,
                       borderRadius: BorderRadius.circular(20),
-                      border: Border.all(color: HomeColors.border),
+                      border: Border.all(color: context.c.border),
                     ),
                     child: Row(
                       mainAxisSize: MainAxisSize.min,
                       children: [
-                        const Icon(Icons.history_rounded, size: 16, color: HomeColors.textSecondary),
+                        Icon(Icons.history_rounded, size: 16, color: context.c.textSecondary),
                         const SizedBox(width: 6),
                         Text(term, style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w500)),
                         const SizedBox(width: 4),
                         GestureDetector(
                           onTap: () => ref.read(searchHistoryProvider.notifier).remove(term),
-                          child: const Icon(Icons.close_rounded, size: 15, color: HomeColors.textSecondary),
+                          child: Icon(Icons.close_rounded, size: 15, color: context.c.textSecondary),
                         ),
                       ],
                     ),
@@ -321,9 +322,10 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
         crossAxisAlignment: CrossAxisAlignment.baseline,
         textBaseline: TextBaseline.alphabetic,
         children: [
-          Text(_keyword.isEmpty ? s.forYou : '"$_keyword"', style: HomeText.sectionTitle),
+          Text(_keyword.isEmpty ? s.forYou : '"$_keyword"',
+              style: AppType.h2.copyWith(color: context.c.textPrimary)),
           const SizedBox(width: 8),
-          Text(subtitle, style: HomeText.meta),
+          Text(subtitle, style: AppType.caption.copyWith(color: context.c.textSecondary)),
         ],
       ),
     );
@@ -412,7 +414,7 @@ class _FilterSheetState extends ConsumerState<_FilterSheet> {
                 width: 44,
                 height: 4,
                 margin: const EdgeInsets.only(bottom: 16),
-                decoration: BoxDecoration(color: HomeColors.border, borderRadius: BorderRadius.circular(2)),
+                decoration: BoxDecoration(color: context.c.border, borderRadius: BorderRadius.circular(2)),
               ),
             ),
             Text(s.filters, style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w800)),
@@ -494,14 +496,14 @@ class _FilterSheetState extends ConsumerState<_FilterSheet> {
         curve: AppMotion.emphasized,
         padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 9),
         decoration: BoxDecoration(
-          color: sel ? AppColors.brand : HomeColors.surface,
+          color: sel ? AppColors.brand : context.c.surface,
           borderRadius: BorderRadius.circular(20),
-          border: Border.all(color: sel ? AppColors.brand : HomeColors.border),
+          border: Border.all(color: sel ? AppColors.brand : context.c.border),
         ),
         child: Text(
           label,
           style: TextStyle(
-            color: sel ? Colors.white : HomeColors.textSecondary,
+            color: sel ? context.c.onBrand : context.c.textSecondary,
             fontWeight: FontWeight.w600,
             fontSize: 13,
           ),

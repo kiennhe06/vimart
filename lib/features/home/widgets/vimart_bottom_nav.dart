@@ -2,9 +2,9 @@ import 'package:flutter/material.dart' show Icons;
 import 'package:flutter/widgets.dart';
 
 import '../../../app/cart_anchor.dart';
+import '../../../app/design.dart';
 import '../../../app/motion.dart';
 import '../../../widgets/pressable.dart';
-import '../home_ui.dart';
 
 /// Thanh điều hướng dưới cùng dạng "viên thuốc" nổi — mỗi mục là 1 vòng tròn.
 /// Mục đang chọn: vòng tròn tô màu xanh nhạt + viền xanh + icon xanh.
@@ -40,10 +40,10 @@ class VimartBottomNav extends StatelessWidget {
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
         decoration: BoxDecoration(
-          color: HomeColors.surface,
+          color: context.c.surface,
           borderRadius: BorderRadius.circular(36),
-          border: Border.all(color: HomeColors.border),
-          boxShadow: const [BoxShadow(color: Color(0x1A000000), blurRadius: 22, offset: Offset(0, 8))],
+          border: Border.all(color: context.c.border),
+          boxShadow: [BoxShadow(color: context.c.shadow, blurRadius: 22, offset: const Offset(0, 8))],
         ),
         child: Row(
           mainAxisAlignment: MainAxisAlignment.spaceAround,
@@ -105,9 +105,9 @@ class _NavCircle extends StatelessWidget {
               alignment: Alignment.center,
               decoration: BoxDecoration(
                 shape: BoxShape.circle,
-                color: selected ? HomeColors.brandSoft : HomeColors.surface,
+                color: selected ? context.c.brandSoft : context.c.surface,
                 border: Border.all(
-                  color: selected ? HomeColors.brand : HomeColors.border,
+                  color: selected ? context.c.brand : context.c.border,
                   width: selected ? 2 : 1.2,
                 ),
               ),
@@ -116,7 +116,7 @@ class _NavCircle extends StatelessWidget {
                 duration: AppMotion.dur(context, AppMotion.base),
                 curve: AppMotion.pop,
                 child: Icon(icon,
-                    size: 24, color: selected ? HomeColors.brand : HomeColors.textSecondary),
+                    size: 24, color: selected ? context.c.brand : context.c.textSecondary),
               ),
             ),
             // Badge giỏ hàng: hiện/ẩn bằng scale (pop) + số nhảy khi đổi.
@@ -132,9 +132,9 @@ class _NavCircle extends StatelessWidget {
                   constraints: const BoxConstraints(minWidth: 18),
                   alignment: Alignment.center,
                   decoration: BoxDecoration(
-                    color: HomeColors.brand,
+                    color: context.c.brand,
                     borderRadius: BorderRadius.circular(10),
-                    border: Border.all(color: HomeColors.surface, width: 2),
+                    border: Border.all(color: context.c.surface, width: 2),
                   ),
                   child: AnimatedSwitcher(
                     duration: AppMotion.dur(context, AppMotion.fast),
@@ -142,8 +142,8 @@ class _NavCircle extends StatelessWidget {
                     child: Text(
                       badgeCount > 99 ? '99+' : '$badgeCount',
                       key: ValueKey(badgeCount),
-                      style: const TextStyle(
-                          color: Color(0xFFFFFFFF), fontSize: 10, fontWeight: FontWeight.w800),
+                      style: TextStyle(
+                          color: context.c.onBrand, fontSize: 10, fontWeight: FontWeight.w800),
                     ),
                   ),
                 ),

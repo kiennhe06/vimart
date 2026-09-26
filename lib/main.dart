@@ -5,6 +5,7 @@ import 'package:intl/date_symbol_data_local.dart';
 
 import 'app/router.dart';
 import 'app/theme.dart';
+import 'app/theme_mode_provider.dart';
 import 'core/constants.dart';
 import 'core/i18n/locale_provider.dart';
 
@@ -24,12 +25,13 @@ class ViMartApp extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final router = ref.watch(routerProvider);
     final localeCode = ref.watch(localeProvider);
+    final themeMode = ref.watch(themeModeProvider);
     return MaterialApp.router(
       title: kAppName,
       debugShowCheckedModeBanner: false,
       theme: buildLightTheme(),
       darkTheme: buildDarkTheme(),
-      themeMode: ThemeMode.light, // mặc định sáng cho app mua sắm
+      themeMode: themeMode,
       routerConfig: router,
       // Ngôn ngữ theo lựa chọn người dùng (vi / en).
       locale: Locale(localeCode),

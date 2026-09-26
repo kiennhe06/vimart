@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart' show Icons;
 import 'package:flutter/widgets.dart';
 
+import '../../../app/design.dart';
 import '../../../app/motion.dart';
 import '../../../models/category.dart';
 import '../../../widgets/pressable.dart';
@@ -78,11 +79,11 @@ class CategoryCircles extends StatelessWidget {
                 color: tint,
                 shape: BoxShape.circle,
                 border: Border.all(
-                  color: selected ? HomeColors.brand : const Color(0x00000000),
+                  color: selected ? context.c.brand : const Color(0x00000000),
                   width: 2.4,
                 ),
                 boxShadow: selected
-                    ? [BoxShadow(color: HomeColors.brand.withValues(alpha: 0.22), blurRadius: 10, offset: const Offset(0, 3))]
+                    ? [BoxShadow(color: context.c.brand.withValues(alpha: 0.22), blurRadius: 10, offset: const Offset(0, 3))]
                     : null,
               ),
               child: Icon(icon, color: ink, size: 26),
@@ -94,7 +95,7 @@ class CategoryCircles extends StatelessWidget {
               style: TextStyle(
                 fontSize: 12,
                 fontWeight: selected ? FontWeight.w700 : FontWeight.w500,
-                color: selected ? HomeColors.brand : HomeColors.textSecondary,
+                color: selected ? context.c.brand : context.c.textSecondary,
               ),
               child: Text(label, maxLines: 1, overflow: TextOverflow.ellipsis, textAlign: TextAlign.center),
             ),

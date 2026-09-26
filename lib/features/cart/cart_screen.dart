@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../app/design.dart';
 import '../../app/motion.dart';
 import '../../app/theme.dart';
 import '../../core/format.dart';
@@ -77,9 +78,9 @@ class _ShopGroup extends ConsumerWidget {
     return Container(
       margin: const EdgeInsets.only(bottom: 14),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: context.c.surface,
         borderRadius: BorderRadius.circular(20),
-        boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.05), blurRadius: 12, offset: const Offset(0, 4))],
+        boxShadow: [BoxShadow(color: context.c.shadow, blurRadius: 12, offset: const Offset(0, 4))],
       ),
       padding: const EdgeInsets.all(14),
       child: Column(
@@ -227,10 +228,10 @@ class _QtyStepper extends StatelessWidget {
         width: 32, height: 32,
         decoration: BoxDecoration(
           shape: BoxShape.circle,
-          color: filled ? (onTap == null ? Colors.grey.shade200 : AppColors.brand) : Colors.white,
-          border: filled ? null : Border.all(color: const Color(0xFFDDE1E6)),
+          color: filled ? (onTap == null ? context.c.border : AppColors.brand) : context.c.surface,
+          border: filled ? null : Border.all(color: context.c.border),
         ),
-        child: Icon(icon, size: 18, color: filled ? Colors.white : AppColors.brand),
+        child: Icon(icon, size: 18, color: filled ? context.c.onBrand : AppColors.brand),
       ),
     );
   }
@@ -249,9 +250,9 @@ class _Footer extends ConsumerWidget {
       child: Container(
         padding: const EdgeInsets.fromLTRB(16, 14, 16, 14),
         decoration: BoxDecoration(
-          color: Colors.white,
+          color: context.c.surface,
           borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
-          boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.06), blurRadius: 16, offset: const Offset(0, -4))],
+          boxShadow: [BoxShadow(color: context.c.shadow, blurRadius: 16, offset: const Offset(0, -4))],
         ),
         child: Column(
           mainAxisSize: MainAxisSize.min,

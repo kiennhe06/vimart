@@ -2,6 +2,7 @@ import 'package:flutter/material.dart' show Icons;
 import 'package:flutter/services.dart' show TextInputAction;
 import 'package:flutter/widgets.dart';
 
+import '../../../app/design.dart';
 import '../../../app/motion.dart';
 import '../home_ui.dart';
 
@@ -87,20 +88,20 @@ class _VimartSearchBoxState extends State<VimartSearchBox> {
           height: VimartSearchBox.boxHeight,
           padding: const EdgeInsets.symmetric(horizontal: 14),
           decoration: BoxDecoration(
-            color: HomeColors.surface,
+            color: context.c.surface,
             borderRadius: BorderRadius.circular(23),
             border: Border.all(
-              color: focused ? HomeColors.brand : HomeColors.border,
+              color: focused ? context.c.brand : context.c.border,
               width: focused ? 1.4 : 1,
             ),
             // Quầng sáng mềm khi focus -> báo ô đang hoạt động.
             boxShadow: focused
-                ? [BoxShadow(color: HomeColors.brand.withValues(alpha: 0.16), blurRadius: 12, offset: const Offset(0, 3))]
+                ? [BoxShadow(color: context.c.brand.withValues(alpha: 0.16), blurRadius: 12, offset: const Offset(0, 3))]
                 : null,
           ),
           child: Row(
             children: [
-              const Icon(Icons.search, size: 20, color: HomeColors.textSecondary),
+              Icon(Icons.search, size: 20, color: context.c.textSecondary),
               const SizedBox(width: 10),
               Expanded(
                 child: Stack(
@@ -110,14 +111,15 @@ class _VimartSearchBoxState extends State<VimartSearchBox> {
                     AnimatedOpacity(
                       opacity: _hasText ? 0 : 1,
                       duration: AppMotion.dur(context, AppMotion.fast),
-                      child: Text(widget.hint, style: HomeText.searchHint),
+                      child: Text(widget.hint,
+                          style: AppType.body.copyWith(color: context.c.textMuted)),
                     ),
                     EditableText(
                       controller: _controller,
                       focusNode: _focusNode,
-                      style: HomeText.searchInput,
-                      cursorColor: HomeColors.brand,
-                      backgroundCursorColor: HomeColors.border,
+                      style: AppType.body.copyWith(color: context.c.textPrimary),
+                      cursorColor: context.c.brand,
+                      backgroundCursorColor: context.c.border,
                       maxLines: 1,
                       textInputAction: TextInputAction.search,
                       onChanged: widget.onChanged,
@@ -137,9 +139,9 @@ class _VimartSearchBoxState extends State<VimartSearchBox> {
                     ? GestureDetector(
                         key: const ValueKey('clear'),
                         onTap: _clear,
-                        child: const Padding(
-                          padding: EdgeInsets.only(left: 8),
-                          child: Icon(Icons.close, size: 18, color: HomeColors.textSecondary),
+                        child: Padding(
+                          padding: const EdgeInsets.only(left: 8),
+                          child: Icon(Icons.close, size: 18, color: context.c.textSecondary),
                         ),
                       )
                     : const SizedBox(key: ValueKey('empty')),
