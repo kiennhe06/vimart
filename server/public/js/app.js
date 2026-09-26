@@ -21,6 +21,58 @@ function setLang(code) {
   route();
 }
 
+// ---------- Giao diện (theme) — Theo hệ thống / Sáng / Tối ----------
+// Lưu "ý muốn" (system/light/dark); resolve "system" theo hệ điều hành rồi gán
+// data-theme trên <html> để CSS đảo bảng màu (KHÔNG đảo màu thủ công).
+let themePref = localStorage.getItem('vimart_admin_theme') || 'system';
+const _themeMql = window.matchMedia('(prefers-color-scheme: dark)');
+function applyTheme() {
+  const resolved = themePref === 'system' ? (_themeMql.matches ? 'dark' : 'light') : themePref;
+  document.documentElement.setAttribute('data-theme', resolved);
+}
+function setTheme(pref) {
+  themePref = pref;
+  localStorage.setItem('vimart_admin_theme', pref);
+  applyTheme();
+  route();
+}
+_themeMql.addEventListener('change', () => {
+  if (themePref === 'system') applyTheme();
+});
+applyTheme();
+
+/** Công tắc Giao diện (tái dùng .lang-switch): Theo hệ thống / Sáng / Tối. */
+function themeSwitch() {
+  const opt = (pref, icon, label) =>
+    `<button class="lang-pill lang-pill--icon ${themePref === pref ? 'lang-pill--on' : ''}" data-action="theme-${pref}" title="${label}" aria-label="${label}">${ic(icon, 'i18')}</button>`;
+  return `<div class="lang-switch" role="group" title="${L('Giao diện', 'Appearance')}">
+    ${opt('system', 'monitor', L('Theo hệ thống', 'System'))}
+    ${opt('light', 'sun', L('Sáng', 'Light'))}
+    ${opt('dark', 'moon', L('Tối', 'Dark'))}
+  </div>`;
+}
+
+// ---------- Trạng thái dùng chung (skeleton / empty / error) ----------
+/** Khung xương khi đang tải (thay màn hình đứng im bằng skeleton). */
+function skeletonView(rows = 5) {
+  const line = (w) => `<div class="sk" style="width:${w}"></div>`;
+  const card = `<div class="sk-card"><div class="sk-row">${line('42px')}<div style="flex:1;display:grid;gap:8px">${line('60%')}${line('35%')}</div>${line('72px')}</div></div>`;
+  return `<div aria-busy="true" aria-label="${L('Đang tải', 'Loading')}">${Array.from({ length: rows }, () => card).join('')}</div>`;
+}
+
+/** Trạng thái rỗng / lỗi dùng chung. */
+function stateView({ icon = 'box', title, message, action, error = false }) {
+  const btn = action
+    ? `<button class="btn btn--ghost btn--sm" data-action="${action.do}">${escapeHtml(action.label)}</button>`
+    : '';
+  return `<div class="state ${error ? 'state--error' : ''}">
+    <div class="state__icon">${ic(icon, 'i22')}</div>
+    ${title ? `<div class="state__title">${escapeHtml(title)}</div>` : ''}
+    <div>${escapeHtml(message || '')}</div>
+    ${btn}
+  </div>`;
+}
+
 const NAV = [
   { key: 'dashboard', icon: '📊' },
   { key: 'products', icon: '🛍️' },
@@ -69,7 +121,51 @@ const ICONS = {
   file: '<path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/>',
   box: '<path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/><path d="m3.3 7 8.7 5 8.7-5"/><path d="M12 22V12"/>',
   bag: '<path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"/><path d="M3 6h18"/><path d="M16 10a4 4 0 0 1-8 0"/>',
+  sun: '<circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/>',
+  moon: '<path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8z"/>',
+  monitor: '<rect x="2" y="3" width="20" height="14" rx="2"/><path d="M8 21h8M12 17v4"/>',
+  chevronL: '<path d="m15 18-6-6 6-6"/>',
+  chevronR: '<path d="m9 18 6-6-6-6"/>',
 };
+
+// Kỳ đang xem của dashboard: chế độ (tuần/tháng) + độ lệch (0 = hiện tại,
+// -1 = kỳ trước...). Điều khiển CHUNG cho biểu đồ đơn + doanh thu.
+const chartView = { mode: 'week', offset: 0 };
+
+/** Kỳ hiện tại (theo chartView): hàm kiểm tra ngày thuộc kỳ + tiêu đề hiển thị. */
+function currentPeriod() {
+  const now = new Date();
+  const fmtD = (dt) => new Date(dt).toLocaleDateString(lang === 'en' ? 'en-GB' : 'vi-VN');
+  if (chartView.mode === 'month') {
+    const year = now.getFullYear() + chartView.offset;
+    return { inRange: (d) => d.getFullYear() === year, title: `${L('Năm', 'Year')} ${year}` };
+  }
+  const end = new Date(now);
+  end.setHours(0, 0, 0, 0);
+  end.setDate(end.getDate() + chartView.offset * 7);
+  const start = new Date(end);
+  start.setDate(end.getDate() - 6);
+  const endOfDay = new Date(end);
+  endOfDay.setHours(23, 59, 59, 999);
+  return {
+    inRange: (d) => d >= start && d <= endOfDay,
+    title: `${start.getDate()}/${start.getMonth() + 1} – ${fmtD(end)}`,
+  };
+}
+
+/** Doanh thu (đơn hoàn thành) + số đơn trong kỳ hiện tại. */
+function periodRevenue(orders) {
+  const { inRange } = currentPeriod();
+  let rev = 0;
+  let cnt = 0;
+  (orders || []).forEach((o) => {
+    if (!o.created_at) return;
+    if (!inRange(new Date(o.created_at))) return;
+    cnt++;
+    if (o.status === 'completed') rev += Number(o.total) || 0;
+  });
+  return { rev, cnt };
+}
 function ic(name, cls = 'i18') {
   return `<svg class="ic ${cls}" viewBox="0 0 24 24">${ICONS[name] || ''}</svg>`;
 }
@@ -178,12 +274,11 @@ function renderShell(activeKey) {
             <button class="lang-pill ${lang === 'vi' ? 'lang-pill--on' : ''}" data-action="lang-vi">VI</button>
             <button class="lang-pill ${lang === 'en' ? 'lang-pill--on' : ''}" data-action="lang-en">EN</button>
           </div>
-          <div class="circle-btn" title="${L('Tìm kiếm', 'Search')}">${ic('search', 'i20')}</div>
-          <div class="circle-btn" title="${L('Thông báo', 'Notifications')}">${ic('bell', 'i20')}</div>
+          ${themeSwitch()}
           <div class="avatar" data-action="logout" title="${L('Đăng xuất', 'Sign out')} (${escapeHtml(state.user.fullName)})">${initial}</div>
         </div>
       </header>
-      <main class="content" id="content"><div class="center-msg">${L('Đang tải...', 'Loading...')}</div></main>
+      <main class="content" id="content">${skeletonView()}</main>
     </div>`;
 }
 
@@ -210,7 +305,13 @@ async function route() {
     else if (key === 'orders') await viewOrders(content);
     else if (key === 'categories') await viewCategories(content);
   } catch (err) {
-    content.innerHTML = `<div class="center-msg">${escapeHtml(err.message)}</div>`;
+    content.innerHTML = stateView({
+      icon: 'bell',
+      title: L('Có lỗi xảy ra', 'Something went wrong'),
+      message: err.message,
+      action: { do: 'reload', label: L('Thử lại', 'Retry') },
+      error: true,
+    });
   }
 }
 
@@ -224,23 +325,26 @@ async function viewDashboard(el) {
     Api.get('/admin/products'),
     Api.get('/categories'),
   ]);
+  state.dashOrders = orders; // để re-render biểu đồ khi đổi kỳ
+  state.dashStats = s; // giữ số liệu tổng (all-time) cho hero
 
   el.innerHTML = `<div class="dash">
-    <div class="dash__col">${heroCard(s)}${revenueFlowCard(orders)}${recentOrdersCard(orders)}</div>
-    <div class="dash__col">${miniCard(ic('box', 'i20'), 'rgba(55,214,122,.16)', '#37d67a', L('Tổng đơn hàng', 'Total orders'), s.totalOrders, 'up')}
-      ${miniCard(ic('bag', 'i20'), 'rgba(244,81,30,.16)', '#ff9a3d', L('Sản phẩm đang bán', 'Active products'), s.totalProducts, null)}
+    <div class="dash__col">${heroCard()}${revenueFlowCard(orders)}${recentOrdersCard(orders)}</div>
+    <div class="dash__col">${miniCard(ic('box', 'i20'), 'rgba(55,214,122,.16)', '#37d67a', L('Tổng đơn hàng', 'Total orders'), s.totalOrders)}
+      ${miniCard(ic('bag', 'i20'), 'rgba(244,81,30,.16)', '#ff9a3d', L('Sản phẩm đang bán', 'Active products'), s.totalProducts)}
       ${categoryDonutCard(products, cats)}</div>
-    <div class="dash__col">${vmartCard(s)}${categoryListCard(products, cats)}</div>
+    <div class="dash__col">${orderStatusCard(orders)}${categoryListCard(products, cats)}</div>
   </div>`;
 }
 
 /** Thẻ số dư lớn = doanh thu. */
-function heroCard(s) {
-  return `<div class="hero">
-    <div class="hero__tools"><span class="hero__tool">${ic('grid', 'i16')}</span><span class="hero__tool">${ic('file', 'i16')}</span></div>
-    <div class="hero__label">${L('Doanh thu (đơn hoàn thành)', 'Revenue (completed orders)')}</div>
-    <div class="hero__value">${fmtVnd(s.totalRevenue)}</div>
-    <div class="hero__sub">${L(`+${s.totalOrders} đơn · ${s.totalUsers} người dùng trên sàn`, `+${s.totalOrders} orders · ${s.totalUsers} users on the platform`)}</div>
+function heroCard() {
+  const { title } = currentPeriod();
+  const { rev, cnt } = periodRevenue(state.dashOrders);
+  return `<div class="hero" id="heroCard">
+    <div class="hero__label">${L('Doanh thu (đơn hoàn thành)', 'Revenue (completed orders)')} · ${title}</div>
+    <div class="hero__value">${fmtVnd(rev)}</div>
+    <div class="hero__sub">${L(`${cnt} đơn trong kỳ · Tổng: ${fmtVnd(state.dashStats?.totalRevenue || 0)}`, `${cnt} orders in period · All-time: ${fmtVnd(state.dashStats?.totalRevenue || 0)}`)}</div>
     <div class="hero__actions">
       <button class="hero__btn hero__btn--dark" data-nav="orders">${L('Xem đơn hàng', 'View orders')}</button>
       <button class="hero__btn hero__btn--light" data-nav="products">${L('Sản phẩm', 'Products')}</button>
@@ -248,64 +352,109 @@ function heroCard(s) {
   </div>`;
 }
 
-function miniCard(icon, iconBg, iconColor, label, value, trend) {
-  const badge =
-    trend === 'up'
-      ? `<span class="pill pill--up">● ${L('Hoạt động', 'Active')}</span>`
-      : trend === 'down'
-        ? '<span class="pill pill--down">▼</span>'
-        : '';
+function miniCard(icon, iconBg, iconColor, label, value) {
   return `<div class="mini">
     <div class="mini__row">
       <div class="mini__icon" style="background:${iconBg};color:${iconColor}">${icon}</div>
       <div class="mini__label">${label}</div>
-      <div class="spacer" style="flex:1"></div>${badge}
     </div>
     <div class="mini__value">${value}</div>
   </div>`;
 }
 
-/** Biểu đồ cột: số đơn theo 7 ngày gần nhất. */
+/** Biểu đồ cột số đơn theo kỳ — Ngày (7 ngày) hoặc Tháng (12 tháng/năm),
+ *  có điều hướng ◀ ▶ để xem lại các tuần/tháng/năm trước. */
 function revenueFlowCard(orders) {
-  const days = [];
-  for (let i = 6; i >= 0; i--) {
-    const d = new Date();
-    d.setDate(d.getDate() - i);
-    days.push({
-      key: d.toISOString().slice(0, 10),
-      label: `${d.getDate()}/${d.getMonth() + 1}`,
-      count: 0,
-    });
-  }
-  orders.forEach((o) => {
-    const k = (o.created_at || '').slice(0, 10);
-    const day = days.find((x) => x.key === k);
-    if (day) day.count++;
-  });
-  const max = Math.max(1, ...days.map((d) => d.count));
-  const totalWeek = days.reduce((sum, d) => sum + d.count, 0) || 1;
-  const hotIdx = days.reduce((best, d, i, a) => (d.count > a[best].count ? i : best), 0);
+  const now = new Date();
+  const isMonth = chartView.mode === 'month';
+  const fmtD = (dt) => new Date(dt).toLocaleDateString(lang === 'en' ? 'en-GB' : 'vi-VN');
+  const buckets = [];
+  let title;
 
-  const bars = days
-    .map((d, i) => {
-      const hot = i === hotIdx && d.count > 0;
-      const tag = hot
-        ? `<div class="bar__tag">+${Math.round((d.count / totalWeek) * 100)}%</div>`
-        : '';
+  if (isMonth) {
+    // 12 tháng của năm (now.year + offset); offset tính theo NĂM.
+    const year = now.getFullYear() + chartView.offset;
+    for (let m = 0; m < 12; m++) {
+      buckets.push({
+        match: (d) => d.getFullYear() === year && d.getMonth() === m,
+        label: `${m + 1}`,
+        count: 0,
+      });
+    }
+    title = `${L('Năm', 'Year')} ${year}`;
+  } else {
+    // 7 ngày kết thúc tại (hôm nay + offset tuần); offset tính theo TUẦN.
+    const end = new Date(now);
+    end.setHours(0, 0, 0, 0);
+    end.setDate(end.getDate() + chartView.offset * 7);
+    for (let i = 6; i >= 0; i--) {
+      const d = new Date(end);
+      d.setDate(end.getDate() - i);
+      const y = d.getFullYear();
+      const mo = d.getMonth();
+      const da = d.getDate();
+      buckets.push({
+        match: (x) => x.getFullYear() === y && x.getMonth() === mo && x.getDate() === da,
+        label: `${da}/${mo + 1}`,
+        at: new Date(d),
+        count: 0,
+      });
+    }
+    title = `${buckets[0].label} – ${fmtD(buckets[6].at)}`;
+  }
+
+  orders.forEach((o) => {
+    if (!o.created_at) return;
+    const d = new Date(o.created_at);
+    const b = buckets.find((x) => x.match(d));
+    if (b) b.count++;
+  });
+
+  const max = Math.max(1, ...buckets.map((b) => b.count));
+  const total = buckets.reduce((sum, b) => sum + b.count, 0);
+  const hotIdx = buckets.reduce((best, b, i, a) => (b.count > a[best].count ? i : best), 0);
+  const canNext = chartView.offset < 0; // không xem tương lai
+
+  const bars = buckets
+    .map((b, i) => {
+      const hot = i === hotIdx && b.count > 0;
       return `<div class="bar-col">
-      <div class="bar-wrap">${tag}
-        <div class="bar ${hot ? 'bar--hot' : ''}" style="height:${Math.max(8, Math.round((d.count / max) * 100))}%" title="${L(`${d.count} đơn`, `${d.count} orders`)}"></div>
+      <div class="bar-wrap">
+        <div class="bar-val ${hot ? 'bar-val--hot' : ''}">${b.count}</div>
+        <div class="bar ${hot ? 'bar--hot' : ''}" style="height:${b.count > 0 ? Math.max(14, Math.round((b.count / max) * 82)) : 6}%"></div>
       </div>
-      <div class="bar-lbl">${d.label}</div>
+      <div class="bar-lbl">${b.label}</div>
     </div>`;
     })
     .join('');
 
-  return `<div class="dcard">
-    <div class="dcard__head"><h4>${L('Đơn hàng theo ngày', 'Orders by day')}</h4><div class="spacer"></div>
-      <span class="pill pill--soft">${L('7 ngày', '7 days')}</span></div>
+  const modeBtn = (m, label) =>
+    `<button class="lang-pill ${chartView.mode === m ? 'lang-pill--on' : ''}" data-action="chart-mode-${m}">${label}</button>`;
+
+  return `<div class="dcard" id="chartCard">
+    <div class="dcard__head">
+      <div>
+        <h4>${L('Đơn hàng', 'Orders')}</h4>
+        <div class="dcard__sub">${title} · ${L(`${total} đơn`, `${total} orders`)}</div>
+      </div>
+      <div class="spacer"></div>
+      <div class="lang-switch">${modeBtn('week', L('Ngày', 'Day'))}${modeBtn('month', L('Tháng', 'Month'))}</div>
+    </div>
     <div class="bars">${bars}</div>
+    <div class="chart-nav">
+      <button class="chart-navbtn" data-action="chart-prev" title="${L('Kỳ trước', 'Previous')}" aria-label="${L('Kỳ trước', 'Previous')}">${ic('chevronL', 'i18')}</button>
+      ${chartView.offset !== 0 ? `<button class="chart-today" data-action="chart-today">${L('Hiện tại', 'Now')}</button>` : ''}
+      <button class="chart-navbtn" data-action="chart-next" ${canNext ? '' : 'disabled'} title="${L('Kỳ sau', 'Next')}" aria-label="${L('Kỳ sau', 'Next')}">${ic('chevronR', 'i18')}</button>
+    </div>
   </div>`;
+}
+
+/** Vẽ lại thẻ biểu đồ + doanh thu khi đổi kỳ (không tải lại toàn dashboard). */
+function rerenderChart() {
+  const chart = document.getElementById('chartCard');
+  if (chart) chart.outerHTML = revenueFlowCard(state.dashOrders || []);
+  const hero = document.getElementById('heroCard');
+  if (hero) hero.outerHTML = heroCard();
 }
 
 /** Donut: sản phẩm theo danh mục. */
@@ -361,7 +510,7 @@ function recentOrdersCard(orders) {
         return `<div class="litem">
       <div class="litem__icon" style="background:${color}22;color:${color}">${ic('box', 'i18')}</div>
       <div><div class="litem__name">${escapeHtml(o.code)}</div>
-        <div class="litem__sub">${escapeHtml(o.buyer_name || '')} · ${fmtDate(o.created_at).split(' ')[1] || ''}</div></div>
+        <div class="litem__sub">${escapeHtml(o.buyer_name || '')} · ${o.created_at ? new Date(o.created_at).toLocaleDateString(lang === 'en' ? 'en-GB' : 'vi-VN') : ''}</div></div>
       <div class="spacer"></div>
       <span class="status" style="color:${color};background:${color}22">${statusLabel(o.status)}</span>
       <div class="litem__val" style="color:var(--orange)">${fmtVnd(o.total)}</div>
@@ -377,16 +526,31 @@ function recentOrdersCard(orders) {
   </div>`;
 }
 
-/** Thẻ ViMart (mô phỏng thẻ) + số liệu người dùng/shop. */
-function vmartCard(s) {
-  return `<div class="vcard">
-    <div class="vcard__brand">Vi<span>Mart</span> · ${L('Sàn TMĐT', 'Marketplace')}</div>
-    <div class="vcard__num">•••• ${String(s.totalOrders).padStart(4, '0')} ••••</div>
-    <div class="vcard__foot">
-      <div><div style="opacity:.7;font-size:11px">${L('Người dùng', 'Users')}</div><b>${s.totalUsers}</b></div>
-      <div><div style="opacity:.7;font-size:11px">${L('Shop', 'Shops')}</div><b>${s.totalShops}</b></div>
-      <div><div style="opacity:.7;font-size:11px">${L('Sản phẩm', 'Products')}</div><b>${s.totalProducts}</b></div>
-    </div>
+/** Thẻ trạng thái đơn hàng — pipeline vận hành; bấm 1 dòng để lọc thẳng sang
+ *  trang Đơn hàng theo trạng thái đó (thay cho thẻ "tổng quan" trùng số liệu). */
+function orderStatusCard(orders) {
+  const s = state.dashStats || {};
+  const seq = ['pending', 'confirmed', 'shipping', 'completed', 'cancelled'];
+  const counts = Object.fromEntries(seq.map((k) => [k, 0]));
+  (orders || []).forEach((o) => {
+    if (counts[o.status] != null) counts[o.status]++;
+  });
+  const rows = seq
+    .map((st) => {
+      const color = STATUS_COLOR[st] || '#888';
+      return `<div class="statusrow" data-action="orders-status" data-status="${st}" title="${L('Lọc đơn theo trạng thái này', 'Filter orders by this status')}">
+      <span class="statusrow__dot" style="background:${color}"></span>
+      <div class="statusrow__name">${statusLabel(st)}</div>
+      <div class="spacer"></div>
+      <div class="statusrow__val">${counts[st]}</div>
+    </div>`;
+    })
+    .join('');
+  return `<div class="dcard">
+    <div class="dcard__head"><h4>${L('Trạng thái đơn hàng', 'Order status')}</h4><div class="spacer"></div>
+      <span class="pill pill--soft" data-nav="orders" style="cursor:pointer">${L('Tất cả', 'All')}</span></div>
+    <div class="statuslist">${rows}</div>
+    <div class="statusfoot">${L(`${s.totalUsers || 0} người dùng · ${s.totalShops || 0} cửa hàng trên sàn`, `${s.totalUsers || 0} users · ${s.totalShops || 0} shops on the platform`)}</div>
   </div>`;
 }
 
@@ -590,11 +754,34 @@ async function viewUsers(el) {
 }
 
 // ---------- View: Đơn hàng ----------
-async function viewOrders(el) {
-  const orders = await Api.get('/admin/orders'); // trả snake_case từ DB
-  if (!orders.length)
-    return (el.innerHTML = `<div class="center-msg">${L('Chưa có đơn hàng nào', 'No orders yet')}</div>`);
-  const rows = orders
+// Bộ lọc đơn hàng (giữ giữa các lần xem): trạng thái, khoảng ngày, tìm nhanh.
+const orderFilter = { status: '', from: '', to: '', q: '' };
+
+/** Lọc + vẽ lại phần thân bảng đơn hàng theo bộ lọc hiện tại. */
+function renderOrdersTable() {
+  const f = orderFilter;
+  const q = f.q.trim().toLowerCase();
+  const from = f.from ? new Date(f.from + 'T00:00:00') : null;
+  const to = f.to ? new Date(f.to + 'T23:59:59.999') : null;
+  const list = (state.allOrders || []).filter((o) => {
+    if (f.status && o.status !== f.status) return false;
+    const d = o.created_at ? new Date(o.created_at) : null;
+    if (from && (!d || d < from)) return false;
+    if (to && (!d || d > to)) return false;
+    if (q && !`${o.code} ${o.buyer_name || ''} ${o.shop_name || ''}`.toLowerCase().includes(q))
+      return false;
+    return true;
+  });
+
+  const count = document.getElementById('ordersCount');
+  if (count) count.textContent = L(`${list.length} đơn`, `${list.length} orders`);
+  const body = document.getElementById('ordersBody');
+  if (!body) return;
+  if (!list.length) {
+    body.innerHTML = `<tr><td colspan="7" class="muted" style="padding:28px;text-align:center">${L('Không có đơn khớp bộ lọc', 'No orders match the filter')}</td></tr>`;
+    return;
+  }
+  body.innerHTML = list
     .map(
       (o) => `
     <tr>
@@ -609,10 +796,61 @@ async function viewOrders(el) {
     </tr>`
     )
     .join('');
+}
 
-  el.innerHTML = `<div class="panel"><table class="table">
+async function viewOrders(el) {
+  const orders = await Api.get('/admin/orders'); // trả snake_case từ DB
+  state.allOrders = orders;
+  if (!orders.length)
+    return (el.innerHTML = stateView({
+      icon: 'box',
+      title: L('Chưa có đơn hàng', 'No orders yet'),
+      message: L('Đơn hàng của sàn sẽ hiển thị ở đây.', 'Marketplace orders will appear here.'),
+    }));
+
+  const statuses = ['pending', 'confirmed', 'shipping', 'completed', 'cancelled'];
+  const statusOpts = [`<option value="">${L('Tất cả trạng thái', 'All statuses')}</option>`]
+    .concat(
+      statuses.map(
+        (s) =>
+          `<option value="${s}" ${orderFilter.status === s ? 'selected' : ''}>${statusLabel(s)}</option>`
+      )
+    )
+    .join('');
+
+  el.innerHTML = `
+    <div class="toolbar">
+      <select id="fStatus">${statusOpts}</select>
+      <span class="toolbar__lbl">${L('Từ', 'From')}</span>
+      <input id="fFrom" type="date" value="${orderFilter.from}" />
+      <span class="toolbar__lbl">${L('đến', 'to')}</span>
+      <input id="fTo" type="date" value="${orderFilter.to}" />
+      <input id="fQ" type="search" placeholder="${L('Tìm mã / khách / shop', 'Search code / customer / shop')}" value="${escapeHtml(orderFilter.q)}" style="min-width:200px" />
+      <button class="btn btn--ghost btn--sm" data-action="orders-clear">${L('Xóa lọc', 'Clear')}</button>
+      <span class="tb-sep"></span>
+      <span class="toolbar__count" id="ordersCount"></span>
+    </div>
+    <div class="panel"><table class="table">
     <thead><tr><th>${L('Mã đơn', 'Order')}</th><th>${L('Khách', 'Customer')}</th><th>Shop</th><th>${L('Trạng thái', 'Status')}</th><th>${L('Thanh toán', 'Payment')}</th><th>${L('Tổng', 'Total')}</th><th>${L('Ngày', 'Date')}</th></tr></thead>
-    <tbody>${rows}</tbody></table></div>`;
+    <tbody id="ordersBody"></tbody></table></div>`;
+
+  document.getElementById('fStatus').addEventListener('change', (e) => {
+    orderFilter.status = e.target.value;
+    renderOrdersTable();
+  });
+  document.getElementById('fFrom').addEventListener('change', (e) => {
+    orderFilter.from = e.target.value;
+    renderOrdersTable();
+  });
+  document.getElementById('fTo').addEventListener('change', (e) => {
+    orderFilter.to = e.target.value;
+    renderOrdersTable();
+  });
+  document.getElementById('fQ').addEventListener('input', (e) => {
+    orderFilter.q = e.target.value;
+    renderOrdersTable();
+  });
+  renderOrdersTable();
 }
 
 // ---------- View: Danh mục ----------
@@ -700,6 +938,42 @@ document.addEventListener('click', async (e) => {
     if (lang !== 'vi') setLang('vi');
   } else if (action === 'lang-en') {
     if (lang !== 'en') setLang('en');
+  } else if (action === 'theme-system') {
+    setTheme('system');
+  } else if (action === 'theme-light') {
+    setTheme('light');
+  } else if (action === 'theme-dark') {
+    setTheme('dark');
+  } else if (action === 'reload') {
+    route();
+  } else if (action === 'chart-prev') {
+    chartView.offset -= 1;
+    rerenderChart();
+  } else if (action === 'chart-next') {
+    if (chartView.offset < 0) chartView.offset += 1;
+    rerenderChart();
+  } else if (action === 'chart-today') {
+    chartView.offset = 0;
+    rerenderChart();
+  } else if (action === 'orders-clear') {
+    orderFilter.status = '';
+    orderFilter.from = '';
+    orderFilter.to = '';
+    orderFilter.q = '';
+    route();
+  } else if (action === 'orders-status') {
+    orderFilter.status = el.getAttribute('data-status') || '';
+    orderFilter.from = '';
+    orderFilter.to = '';
+    orderFilter.q = '';
+    location.hash = '#/orders';
+  } else if (action === 'chart-mode-week' || action === 'chart-mode-month') {
+    const mode = action === 'chart-mode-month' ? 'month' : 'week';
+    if (chartView.mode !== mode) {
+      chartView.mode = mode;
+      chartView.offset = 0;
+      rerenderChart();
+    }
   } else if (action === 'logout') {
     e.preventDefault();
     if (!confirm(L('Đăng xuất khỏi trang quản trị?', 'Sign out of the admin panel?'))) return;

@@ -2,21 +2,93 @@
    ViMart Admin — DARK dashboard (bố cục theo payment dashboard,
    điểm nhấn màu cam thương hiệu).
    ============================================================ */
+/* ============================================================
+   DESIGN TOKENS — nguồn sự thật duy nhất. Theme-aware qua các
+   biến bên dưới; đổi Sáng/Tối chỉ bằng cách đảo giá trị token,
+   KHÔNG hard-code màu ở component.
+   ============================================================ */
 :root {
-  --orange: #f4511e;
-  --amber: #ff9a3d;
-  --bg: #16121e; /* nền nội dung (tối, ám tím) */
-  --surface: #221b30; /* thẻ */
-  --surface-2: #2b2340; /* hover */
+  /* Brand (cam thương hiệu admin — dùng --brand ở component để đổi 1 nơi) */
+  --brand: #f4511e;
+  --brand-2: #ff9a3d;
+  --brand-ring: rgba(244, 81, 30, 0.16);
+  --brand-shadow: rgba(244, 81, 30, 0.32);
+  /* Alias tương thích tên cũ */
+  --orange: var(--brand);
+  --amber: var(--brand-2);
+
+  /* Bậc bề mặt (background < surface < surface-2/elevated) */
+  --bg: #16121e;
+  --surface: #221b30;
+  --surface-2: #2b2340;
   --sidebar: #120d1a;
+
+  /* Bậc chữ */
   --text: #f3f0f8;
   --text-2: #9b93ab;
+  --text-muted: #6f6880;
+
+  /* Viền & lớp phủ (fill) theo bậc — thay cho rgba(255,255,255,x) rải rác */
   --border: rgba(255, 255, 255, 0.07);
-  --selected: rgba(244, 81, 30, 0.16);
+  --border-strong: rgba(255, 255, 255, 0.16);
+  --fill-1: rgba(255, 255, 255, 0.05);
+  --fill-2: rgba(255, 255, 255, 0.12);
+  --fill-3: rgba(255, 255, 255, 0.22);
+  --field-bg: rgba(255, 255, 255, 0.045);
+
+  --selected: var(--brand-ring);
+  --glow: rgba(244, 81, 30, 0.14); /* quầng nền ấm, đúng brand (tiết chế) */
+
+  /* Ngữ nghĩa */
   --success: #37d67a;
+  --warning: #ff9a3d;
   --danger: #ff5c6c;
+  --info: #4c7cf3;
+
+  /* Bo góc (thang) */
   --radius: 22px;
+  --radius-md: 16px;
+  --radius-sm: 14px;
+  --radius-xs: 11px;
+  --radius-pill: 999px;
+
+  /* Bóng đổ */
   --shadow: 0 12px 30px rgba(0, 0, 0, 0.35);
+  --shadow-sm: 0 8px 20px rgba(0, 0, 0, 0.28);
+
+  /* Spacing (thang 4pt) */
+  --sp-1: 4px;
+  --sp-2: 8px;
+  --sp-3: 12px;
+  --sp-4: 16px;
+  --sp-5: 20px;
+  --sp-6: 24px;
+  --sp-8: 32px;
+  --sp-10: 40px;
+
+  color-scheme: dark;
+}
+
+/* LIGHT theme — bảng riêng (không đảo màu): dùng khi chọn Sáng, hoặc khi hệ
+   thống Sáng và người dùng chưa chọn Tối. */
+:root[data-theme='light'] {
+  --bg: #f3f4f8;
+  --surface: #ffffff;
+  --surface-2: #f2f3f7;
+  --sidebar: #ffffff;
+  --text: #1a1622;
+  --text-2: #6a6478;
+  --text-muted: #9a94a8;
+  --border: rgba(20, 16, 32, 0.1);
+  --border-strong: rgba(20, 16, 32, 0.2);
+  --fill-1: rgba(20, 16, 32, 0.04);
+  --fill-2: rgba(20, 16, 32, 0.07);
+  --fill-3: rgba(20, 16, 32, 0.12);
+  --field-bg: #ffffff;
+  --glow: rgba(244, 81, 30, 0.06);
+  --shadow: 0 14px 34px rgba(20, 16, 40, 0.1);
+  --shadow-sm: 0 8px 20px rgba(20, 16, 40, 0.07);
+  color-scheme: light;
 }
 * {
   box-sizing: border-box;
@@ -52,7 +124,7 @@ a {
   height: 8px;
 }
 ::-webkit-scrollbar-thumb {
-  background: rgba(255, 255, 255, 0.12);
+  background: var(--fill-2);
   border-radius: 8px;
 }
 
@@ -187,12 +259,12 @@ svg.ic {
   background: rgba(55, 214, 122, 0.22);
 }
 .btn--ghost {
-  background: rgba(255, 255, 255, 0.06);
+  background: var(--fill-1);
   color: var(--text);
   border-color: var(--border);
 }
 .btn--ghost:hover {
-  background: rgba(255, 255, 255, 0.12);
+  background: var(--fill-2);
 }
 
 /* ---------- Màn đăng nhập ---------- */
@@ -202,8 +274,7 @@ svg.ic {
   align-items: center;
   justify-content: center;
   padding: 16px;
-  background:
-    radial-gradient(900px 500px at 50% -10%, rgba(124, 58, 237, 0.35), transparent), var(--bg);
+  background: radial-gradient(900px 500px at 50% -10%, var(--glow), transparent), var(--bg);
 }
 .login-card {
   background: var(--surface);
@@ -243,7 +314,7 @@ svg.ic {
 .field textarea {
   width: 100%;
   padding: 13px 16px;
-  background: rgba(255, 255, 255, 0.045);
+  background: var(--field-bg);
   border: 1px solid var(--border);
   border-radius: 14px;
   font-size: 15px;
@@ -257,12 +328,12 @@ svg.ic {
 }
 .field input::placeholder,
 .field textarea::placeholder {
-  color: rgba(155, 147, 171, 0.65);
+  color: var(--text-muted);
 }
 .field input:hover,
 .field select:hover,
 .field textarea:hover {
-  border-color: rgba(255, 255, 255, 0.16);
+  border-color: var(--border-strong);
 }
 .field input:focus,
 .field select:focus,
@@ -282,7 +353,7 @@ svg.ic {
 /* ---------- Bố cục: thanh điều hướng TRÊN cùng ---------- */
 .appwrap {
   min-height: 100vh;
-  background: radial-gradient(1200px 480px at 60% -12%, rgba(124, 58, 237, 0.28), transparent);
+  background: radial-gradient(1200px 480px at 60% -12%, var(--glow), transparent);
 }
 .topnav {
   display: flex;
@@ -307,7 +378,7 @@ svg.ic {
   margin: 0 auto;
   display: flex;
   gap: 4px;
-  background: rgba(255, 255, 255, 0.05);
+  background: var(--fill-1);
   border: 1px solid var(--border);
   border-radius: 34px;
   padding: 7px;
@@ -331,7 +402,7 @@ svg.ic {
 }
 .tab--active {
   color: #fff;
-  background: rgba(255, 255, 255, 0.08);
+  background: var(--fill-2);
 }
 .tab--active::after {
   content: '';
@@ -352,28 +423,13 @@ svg.ic {
   flex-shrink: 0;
   margin-left: auto;
 }
-.circle-btn {
-  width: 44px;
-  height: 44px;
-  border-radius: 50%;
-  background: rgba(255, 255, 255, 0.06);
-  border: 1px solid var(--border);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  cursor: pointer;
-  font-size: 16px;
-}
-.circle-btn:hover {
-  background: rgba(255, 255, 255, 0.12);
-}
 /* Language switch (VI / EN) */
 .lang-switch {
   display: flex;
   gap: 2px;
   padding: 3px;
   border-radius: 999px;
-  background: rgba(255, 255, 255, 0.06);
+  background: var(--fill-1);
   border: 1px solid var(--border);
 }
 .lang-pill {
@@ -391,12 +447,21 @@ svg.ic {
     background 0.15s;
 }
 .lang-pill:hover {
-  color: #fff;
+  color: var(--text);
 }
 .lang-pill--on {
   color: #fff;
   background: linear-gradient(135deg, var(--amber), var(--orange));
   box-shadow: 0 4px 12px rgba(244, 81, 30, 0.4);
+}
+/* Biến thể pill chỉ có icon — tái dùng cho công tắc Giao diện (System/Sáng/Tối) */
+.lang-pill--icon {
+  padding: 6px 9px;
+  display: inline-flex;
+  align-items: center;
+}
+.lang-pill--icon.lang-pill--on svg {
+  color: #fff;
 }
 .login-lang {
   display: flex;
@@ -432,6 +497,45 @@ svg.ic {
   box-shadow: var(--shadow);
   overflow: hidden;
 }
+/* Thanh lọc dùng chung (bảng dữ liệu) */
+.toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 16px;
+}
+.toolbar select,
+.toolbar input {
+  padding: 9px 12px;
+  background: var(--field-bg);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  color: var(--text);
+  font-size: 13px;
+  font-family: inherit;
+  outline: none;
+  transition:
+    border-color 0.15s,
+    box-shadow 0.15s;
+}
+.toolbar select:focus,
+.toolbar input:focus {
+  border-color: var(--brand);
+  box-shadow: 0 0 0 3px var(--brand-ring);
+}
+.toolbar__lbl {
+  font-size: 12px;
+  color: var(--text-2);
+}
+.toolbar__count {
+  font-size: 13px;
+  color: var(--text-2);
+  font-weight: 700;
+}
+.tb-sep {
+  flex: 1;
+}
 .table {
   width: 100%;
   border-collapse: collapse;
@@ -444,7 +548,7 @@ svg.ic {
   border-bottom: 1px solid var(--border);
 }
 .table th {
-  background: rgba(255, 255, 255, 0.03);
+  background: var(--fill-1);
   color: var(--text-2);
   font-weight: 600;
   font-size: 13px;
@@ -453,7 +557,7 @@ svg.ic {
   border-bottom: none;
 }
 .table tr:hover td {
-  background: rgba(255, 255, 255, 0.03);
+  background: var(--fill-1);
 }
 
 .tag {
@@ -469,7 +573,7 @@ svg.ic {
 }
 .tag--user {
   color: var(--text-2);
-  background: rgba(255, 255, 255, 0.07);
+  background: var(--border);
 }
 .tag--on {
   color: var(--success);
@@ -492,14 +596,14 @@ svg.ic {
   height: 42px;
   border-radius: 10px;
   object-fit: cover;
-  background: rgba(255, 255, 255, 0.06);
+  background: var(--fill-1);
 }
 .thumb-lg {
   width: 76px;
   height: 76px;
   border-radius: 12px;
   object-fit: cover;
-  background: rgba(255, 255, 255, 0.06);
+  background: var(--fill-1);
   flex-shrink: 0;
 }
 .var-row {
@@ -511,7 +615,7 @@ svg.ic {
 .var-row input {
   width: 100%;
   padding: 10px 12px;
-  background: rgba(255, 255, 255, 0.04);
+  background: var(--fill-1);
   border: 1px solid var(--border);
   border-radius: 9px;
   font-size: 14px;
@@ -540,6 +644,69 @@ svg.ic {
   text-align: center;
   color: var(--text-2);
   padding: 60px;
+}
+
+/* ---------- Trạng thái: skeleton / empty / error (Design System) ---------- */
+@keyframes skShimmer {
+  100% {
+    transform: translateX(100%);
+  }
+}
+.sk {
+  position: relative;
+  overflow: hidden;
+  background: var(--fill-1);
+  border-radius: 8px;
+  height: 14px;
+}
+.sk::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  transform: translateX(-100%);
+  background: linear-gradient(90deg, transparent, var(--fill-2), transparent);
+  animation: skShimmer 1.2s infinite;
+}
+.sk-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  padding: var(--sp-4);
+  display: grid;
+  gap: var(--sp-3);
+  margin-bottom: var(--sp-3);
+}
+.sk-row {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-3);
+}
+/* Trạng thái rỗng / lỗi — dùng chung, có icon + thông điệp + hành động */
+.state {
+  text-align: center;
+  padding: 56px var(--sp-5);
+  color: var(--text-2);
+  display: grid;
+  justify-items: center;
+  gap: var(--sp-3);
+}
+.state__icon {
+  width: 56px;
+  height: 56px;
+  border-radius: var(--radius-md);
+  display: grid;
+  place-items: center;
+  background: var(--fill-1);
+  color: var(--text-2);
+}
+.state--error .state__icon {
+  background: rgba(255, 92, 108, 0.14);
+  color: var(--danger);
+}
+.state__title {
+  color: var(--text);
+  font-weight: 700;
+  font-size: 15px;
 }
 
 /* ============================================================
@@ -572,6 +739,11 @@ svg.ic {
   margin: 0;
   font-size: 15px;
 }
+.dcard__sub {
+  margin-top: 3px;
+  font-size: 12px;
+  color: var(--text-2);
+}
 .dcard__head .spacer {
   flex: 1;
 }
@@ -582,20 +754,11 @@ svg.ic {
   border-radius: 20px;
 }
 .pill--soft {
-  background: rgba(255, 255, 255, 0.07);
+  background: var(--border);
   color: var(--text-2);
   cursor: pointer;
 }
-.pill--up {
-  background: rgba(55, 214, 122, 0.18);
-  color: var(--success);
-}
-.pill--down {
-  background: rgba(255, 92, 108, 0.18);
-  color: var(--danger);
-}
-
-/* Thẻ số dư lớn (hero) — gradient cam bóng */
+/* Thẻ doanh thu (hero) — gradient cam thương hiệu */
 .hero {
   position: relative;
   overflow: hidden;
@@ -609,25 +772,8 @@ svg.ic {
   content: '';
   position: absolute;
   inset: 0;
-  background: linear-gradient(160deg, rgba(255, 255, 255, 0.35), transparent 45%);
+  background: linear-gradient(160deg, var(--fill-3), transparent 45%);
   pointer-events: none;
-}
-.hero__tools {
-  position: absolute;
-  top: 20px;
-  right: 20px;
-  display: flex;
-  gap: 8px;
-}
-.hero__tool {
-  width: 34px;
-  height: 34px;
-  border-radius: 11px;
-  background: rgba(0, 0, 0, 0.16);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 15px;
 }
 .hero__label {
   font-size: 14px;
@@ -721,17 +867,36 @@ svg.ic {
   width: 100%;
   flex: 1;
   display: flex;
-  align-items: flex-end;
-  justify-content: center;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 6px;
   position: relative;
+}
+.bar-val {
+  font-size: 12px;
+  font-weight: 800;
+  color: var(--text-2);
+  line-height: 1;
+}
+.bar-val--hot {
+  color: var(--brand);
 }
 .bar {
   width: 74%;
   min-height: 8px;
   border-radius: 12px;
-  background: rgba(255, 255, 255, 0.06);
+  background: linear-gradient(180deg, var(--brand-2), var(--brand));
+  opacity: 0.3; /* các ngày thường: mờ để cột đỉnh nổi bật */
+  transition:
+    opacity 0.15s,
+    filter 0.15s;
+}
+.bar:hover {
+  opacity: 0.55;
 }
 .bar--hot {
+  opacity: 1;
   background: linear-gradient(180deg, #ffc078, var(--orange));
   box-shadow: 0 8px 20px rgba(244, 81, 30, 0.5);
 }
@@ -751,6 +916,56 @@ svg.ic {
 .bar-lbl {
   font-size: 11px;
   color: var(--text-2);
+}
+
+/* Điều hướng kỳ của biểu đồ (◀ Hiện tại ▶) */
+.chart-nav {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  margin-top: 14px;
+}
+.chart-navbtn {
+  width: 32px;
+  height: 32px;
+  border-radius: 10px;
+  border: 1px solid var(--border);
+  background: var(--fill-1);
+  color: var(--text-2);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition:
+    background 0.15s,
+    color 0.15s;
+}
+.chart-navbtn:hover:not(:disabled) {
+  background: var(--fill-2);
+  color: var(--text);
+}
+.chart-navbtn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+.chart-today {
+  border: 1px solid var(--border);
+  background: var(--fill-1);
+  color: var(--text-2);
+  border-radius: 10px;
+  padding: 6px 14px;
+  font-size: 12px;
+  font-weight: 700;
+  font-family: inherit;
+  cursor: pointer;
+  transition:
+    background 0.15s,
+    color 0.15s;
+}
+.chart-today:hover {
+  background: var(--fill-2);
+  color: var(--text);
 }
 
 /* Donut + chú thích */
@@ -854,51 +1069,50 @@ svg.ic {
 }
 
 /* Thẻ ViMart (mô phỏng thẻ tín dụng) */
-.vcard {
-  position: relative;
-  overflow: hidden;
-  border-radius: 22px;
-  padding: 24px;
-  color: #fff;
-  background: linear-gradient(135deg, #7c3aed 0%, #4c2a9e 55%, #2a1a4e 100%);
-  box-shadow: var(--shadow);
+/* Thẻ trạng thái đơn hàng (bấm 1 dòng để lọc) */
+.statuslist {
+  display: grid;
+  gap: 2px;
 }
-.vcard::after {
-  content: '';
-  position: absolute;
-  right: -50px;
-  top: -50px;
-  width: 160px;
-  height: 160px;
-  border-radius: 50%;
-  background: rgba(244, 81, 30, 0.5);
-  filter: blur(6px);
-}
-.vcard__brand {
-  font-weight: 800;
-  font-size: 18px;
-  position: relative;
-}
-.vcard__brand span {
-  color: var(--amber);
-}
-.vcard__num {
-  letter-spacing: 4px;
-  font-size: 18px;
-  margin: 26px 0 16px;
-  position: relative;
-}
-.vcard__foot {
+.statusrow {
   display: flex;
-  justify-content: space-between;
-  font-size: 13px;
-  position: relative;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 8px;
+  margin: 0 -8px;
+  border-radius: 10px;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+.statusrow:hover {
+  background: var(--fill-1);
+}
+.statusrow__dot {
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+.statusrow__name {
+  font-size: 14px;
+  color: var(--text);
+}
+.statusrow__val {
+  font-size: 15px;
+  font-weight: 800;
+  color: var(--text);
+}
+.statusfoot {
+  margin-top: 12px;
+  padding-top: 12px;
+  border-top: 1px solid var(--border);
+  font-size: 12px;
+  color: var(--text-2);
 }
 
 /* ---------- Vi tương tác (hover) đồng bộ ---------- */
 .dcard,
-.mini,
-.vcard {
+.mini {
   transition:
     transform 0.2s cubic-bezier(0.2, 0.7, 0.2, 1),
     box-shadow 0.2s,
@@ -907,12 +1121,8 @@ svg.ic {
 .dcard:hover,
 .mini:hover {
   transform: translateY(-3px);
-  border-color: rgba(255, 255, 255, 0.14);
+  border-color: var(--fill-2);
   box-shadow: 0 18px 42px rgba(0, 0, 0, 0.5);
-}
-.vcard:hover {
-  transform: translateY(-3px);
-  box-shadow: 0 20px 44px rgba(124, 58, 237, 0.4);
 }
 .litem {
   transition: background 0.15s;
@@ -922,10 +1132,9 @@ svg.ic {
   margin: 0 -8px;
 }
 .litem:hover {
-  background: rgba(255, 255, 255, 0.035);
+  background: var(--fill-1);
 }
-.hero__btn,
-.hero__tool {
+.hero__btn {
   transition:
     transform 0.18s cubic-bezier(0.2, 0.7, 0.2, 1),
     background 0.18s,
@@ -935,28 +1144,14 @@ svg.ic {
   transform: translateY(-2px);
   box-shadow: 0 10px 22px rgba(0, 0, 0, 0.25);
 }
-.hero__tool {
-  cursor: pointer;
-}
-.hero__tool:hover {
-  background: rgba(0, 0, 0, 0.28);
-}
 .pill {
   transition:
     background 0.15s,
     color 0.15s;
 }
 .pill--soft:hover {
-  background: rgba(255, 255, 255, 0.14);
-  color: #fff;
-}
-.circle-btn {
-  transition:
-    background 0.15s,
-    transform 0.18s;
-}
-.circle-btn:hover {
-  transform: translateY(-2px);
+  background: var(--fill-2);
+  color: var(--text);
 }
 .avatar {
   transition:
@@ -970,10 +1165,8 @@ svg.ic {
 .navlink,
 .tab,
 .btn,
-.circle-btn,
 .avatar,
 .hero__btn,
-.hero__tool,
 .pill--soft,
 .litem {
   -webkit-tap-highlight-color: transparent;
@@ -1051,7 +1244,7 @@ svg.ic {
 .modal {
   position: relative;
   background: linear-gradient(180deg, #26203a 0%, var(--surface) 60%);
-  border: 1px solid rgba(255, 255, 255, 0.1);
+  border: 1px solid var(--fill-2);
   border-radius: 24px;
   width: 100%;
   max-width: 460px;
@@ -1095,12 +1288,12 @@ svg.ic {
   line-height: 1;
   color: var(--text-2);
   border: 1px solid var(--border);
-  background: rgba(255, 255, 255, 0.05);
+  background: var(--fill-1);
   transition:
     background 0.15s,
     color 0.15s;
 }
 .modal__close:hover {
-  background: rgba(255, 255, 255, 0.12);
+  background: var(--fill-2);
   color: #fff;
 }
