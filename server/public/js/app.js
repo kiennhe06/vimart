@@ -124,7 +124,13 @@ const ICONS = {
   sun: '<circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/>',
   moon: '<path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8z"/>',
   monitor: '<rect x="2" y="3" width="20" height="14" rx="2"/><path d="M8 21h8M12 17v4"/>',
+  chevronL: '<path d="m15 18-6-6 6-6"/>',
+  chevronR: '<path d="m9 18 6-6-6-6"/>',
 };
+
+// Kỳ đang xem của biểu đồ đơn hàng: chế độ (tuần/tháng) + độ lệch (0 = hiện tại,
+// -1 = kỳ trước...). Cho phép xem lại các tuần/tháng/năm trước.
+const chartView = { mode: 'week', offset: 0 };
 function ic(name, cls = 'i18') {
   return `<svg class="ic ${cls}" viewBox="0 0 24 24">${ICONS[name] || ''}</svg>`;
 }
@@ -284,6 +290,7 @@ async function viewDashboard(el) {
     Api.get('/admin/products'),
     Api.get('/categories'),
   ]);
+  state.dashOrders = orders; // để re-render biểu đồ khi đổi kỳ
 
   el.innerHTML = `<div class="dash">
     <div class="dash__col">${heroCard(s)}${revenueFlowCard(orders)}${recentOrdersCard(orders)}</div>
@@ -317,62 +324,97 @@ function miniCard(icon, iconBg, iconColor, label, value) {
   </div>`;
 }
 
-/** Biểu đồ cột: số đơn theo 7 ngày gần nhất. */
+/** Biểu đồ cột số đơn theo kỳ — Ngày (7 ngày) hoặc Tháng (12 tháng/năm),
+ *  có điều hướng ◀ ▶ để xem lại các tuần/tháng/năm trước. */
 function revenueFlowCard(orders) {
-  // Gom nhóm theo NGÀY ĐỊA PHƯƠNG (khớp với ngày hiển thị ở bảng đơn), tránh
-  // lệch múi giờ do dùng toISOString() (UTC).
-  const dayKey = (dt) => {
-    const x = new Date(dt);
-    if (Number.isNaN(x.getTime())) return '';
-    return `${x.getFullYear()}-${String(x.getMonth() + 1).padStart(2, '0')}-${String(x.getDate()).padStart(2, '0')}`;
-  };
-  const days = [];
-  for (let i = 6; i >= 0; i--) {
-    const d = new Date();
-    d.setHours(0, 0, 0, 0);
-    d.setDate(d.getDate() - i);
-    days.push({
-      key: dayKey(d),
-      at: new Date(d),
-      label: `${d.getDate()}/${d.getMonth() + 1}`,
-      count: 0,
-    });
-  }
-  orders.forEach((o) => {
-    const day = days.find((x) => x.key === dayKey(o.created_at));
-    if (day) day.count++;
-  });
-  const max = Math.max(1, ...days.map((d) => d.count));
-  const totalWeek = days.reduce((sum, d) => sum + d.count, 0);
-  const hotIdx = days.reduce((best, d, i, a) => (d.count > a[best].count ? i : best), 0);
-  const fmtDay = (dt) => new Date(dt).toLocaleDateString(lang === 'en' ? 'en-GB' : 'vi-VN');
+  const now = new Date();
+  const isMonth = chartView.mode === 'month';
+  const fmtD = (dt) => new Date(dt).toLocaleDateString(lang === 'en' ? 'en-GB' : 'vi-VN');
+  const buckets = [];
+  let title;
 
-  const bars = days
-    .map((d, i) => {
-      const hot = i === hotIdx && d.count > 0;
+  if (isMonth) {
+    // 12 tháng của năm (now.year + offset); offset tính theo NĂM.
+    const year = now.getFullYear() + chartView.offset;
+    for (let m = 0; m < 12; m++) {
+      buckets.push({
+        match: (d) => d.getFullYear() === year && d.getMonth() === m,
+        label: `${m + 1}`,
+        count: 0,
+      });
+    }
+    title = `${L('Năm', 'Year')} ${year}`;
+  } else {
+    // 7 ngày kết thúc tại (hôm nay + offset tuần); offset tính theo TUẦN.
+    const end = new Date(now);
+    end.setHours(0, 0, 0, 0);
+    end.setDate(end.getDate() + chartView.offset * 7);
+    for (let i = 6; i >= 0; i--) {
+      const d = new Date(end);
+      d.setDate(end.getDate() - i);
+      const y = d.getFullYear();
+      const mo = d.getMonth();
+      const da = d.getDate();
+      buckets.push({
+        match: (x) => x.getFullYear() === y && x.getMonth() === mo && x.getDate() === da,
+        label: `${da}/${mo + 1}`,
+        at: new Date(d),
+        count: 0,
+      });
+    }
+    title = `${buckets[0].label} – ${fmtD(buckets[6].at)}`;
+  }
+
+  orders.forEach((o) => {
+    if (!o.created_at) return;
+    const d = new Date(o.created_at);
+    const b = buckets.find((x) => x.match(d));
+    if (b) b.count++;
+  });
+
+  const max = Math.max(1, ...buckets.map((b) => b.count));
+  const total = buckets.reduce((sum, b) => sum + b.count, 0);
+  const hotIdx = buckets.reduce((best, b, i, a) => (b.count > a[best].count ? i : best), 0);
+  const canNext = chartView.offset < 0; // không xem tương lai
+
+  const bars = buckets
+    .map((b, i) => {
+      const hot = i === hotIdx && b.count > 0;
       return `<div class="bar-col">
       <div class="bar-wrap">
-        <div class="bar-val ${hot ? 'bar-val--hot' : ''}">${d.count}</div>
-        <div class="bar ${hot ? 'bar--hot' : ''}" style="height:${d.count > 0 ? Math.max(14, Math.round((d.count / max) * 82)) : 6}%" title="${fmtDay(d.at)} — ${L(`${d.count} đơn`, `${d.count} orders`)}"></div>
+        <div class="bar-val ${hot ? 'bar-val--hot' : ''}">${b.count}</div>
+        <div class="bar ${hot ? 'bar--hot' : ''}" style="height:${b.count > 0 ? Math.max(14, Math.round((b.count / max) * 82)) : 6}%"></div>
       </div>
-      <div class="bar-lbl">${d.label}</div>
+      <div class="bar-lbl">${b.label}</div>
     </div>`;
     })
     .join('');
 
-  // Khoảng ngày kèm năm để biết rõ đang xem tuần nào.
-  const range = `${days[0].label} – ${fmtDay(days[6].at)}`;
-  return `<div class="dcard">
+  const modeBtn = (m, label) =>
+    `<button class="lang-pill ${chartView.mode === m ? 'lang-pill--on' : ''}" data-action="chart-mode-${m}">${label}</button>`;
+
+  return `<div class="dcard" id="chartCard">
     <div class="dcard__head">
       <div>
-        <h4>${L('Đơn hàng theo ngày', 'Orders by day')}</h4>
-        <div class="dcard__sub">${range} · ${L(`${totalWeek} đơn`, `${totalWeek} orders`)}</div>
+        <h4>${L('Đơn hàng', 'Orders')}</h4>
+        <div class="dcard__sub">${title} · ${L(`${total} đơn`, `${total} orders`)}</div>
       </div>
       <div class="spacer"></div>
-      <span class="pill pill--soft">${L('7 ngày', '7 days')}</span>
+      <div class="lang-switch">${modeBtn('week', L('Ngày', 'Day'))}${modeBtn('month', L('Tháng', 'Month'))}</div>
     </div>
     <div class="bars">${bars}</div>
+    <div class="chart-nav">
+      <button class="chart-navbtn" data-action="chart-prev" title="${L('Kỳ trước', 'Previous')}" aria-label="${L('Kỳ trước', 'Previous')}">${ic('chevronL', 'i18')}</button>
+      ${chartView.offset !== 0 ? `<button class="chart-today" data-action="chart-today">${L('Hiện tại', 'Now')}</button>` : ''}
+      <button class="chart-navbtn" data-action="chart-next" ${canNext ? '' : 'disabled'} title="${L('Kỳ sau', 'Next')}" aria-label="${L('Kỳ sau', 'Next')}">${ic('chevronR', 'i18')}</button>
+    </div>
   </div>`;
+}
+
+/** Vẽ lại riêng thẻ biểu đồ khi đổi kỳ (không tải lại toàn dashboard). */
+function rerenderChart() {
+  const card = document.getElementById('chartCard');
+  if (card) card.outerHTML = revenueFlowCard(state.dashOrders || []);
 }
 
 /** Donut: sản phẩm theo danh mục. */
@@ -781,6 +823,22 @@ document.addEventListener('click', async (e) => {
     setTheme('dark');
   } else if (action === 'reload') {
     route();
+  } else if (action === 'chart-prev') {
+    chartView.offset -= 1;
+    rerenderChart();
+  } else if (action === 'chart-next') {
+    if (chartView.offset < 0) chartView.offset += 1;
+    rerenderChart();
+  } else if (action === 'chart-today') {
+    chartView.offset = 0;
+    rerenderChart();
+  } else if (action === 'chart-mode-week' || action === 'chart-mode-month') {
+    const mode = action === 'chart-mode-month' ? 'month' : 'week';
+    if (chartView.mode !== mode) {
+      chartView.mode = mode;
+      chartView.offset = 0;
+      rerenderChart();
+    }
   } else if (action === 'logout') {
     e.preventDefault();
     if (!confirm(L('Đăng xuất khỏi trang quản trị?', 'Sign out of the admin panel?'))) return;

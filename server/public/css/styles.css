@@ -879,6 +879,56 @@ svg.ic {
   color: var(--text-2);
 }
 
+/* Điều hướng kỳ của biểu đồ (◀ Hiện tại ▶) */
+.chart-nav {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  margin-top: 14px;
+}
+.chart-navbtn {
+  width: 32px;
+  height: 32px;
+  border-radius: 10px;
+  border: 1px solid var(--border);
+  background: var(--fill-1);
+  color: var(--text-2);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition:
+    background 0.15s,
+    color 0.15s;
+}
+.chart-navbtn:hover:not(:disabled) {
+  background: var(--fill-2);
+  color: var(--text);
+}
+.chart-navbtn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+.chart-today {
+  border: 1px solid var(--border);
+  background: var(--fill-1);
+  color: var(--text-2);
+  border-radius: 10px;
+  padding: 6px 14px;
+  font-size: 12px;
+  font-weight: 700;
+  font-family: inherit;
+  cursor: pointer;
+  transition:
+    background 0.15s,
+    color 0.15s;
+}
+.chart-today:hover {
+  background: var(--fill-2);
+  color: var(--text);
+}
+
 /* Donut + chú thích */
 .donut-wrap {
   display: flex;
