@@ -96,6 +96,36 @@ Haptic đi cùng động tác **primary**, không rải khắp nơi.
 
 ---
 
-## 7. Bản đồ áp dụng
+## 7. Bản đồ áp dụng (đã triển khai)
 
-_(Cập nhật khi hoàn tất triển khai — liệt kê từng interaction moment và mẫu chuyển động tương ứng.)_
+**Nền tảng dùng chung** ([`lib/widgets/`](../lib/widgets/)):
+- `spring.dart` — `Springy`/`SpringScale`: engine lò xo (mang vận tốc).
+- `pressable.dart` — nhấn-lún spring (`snappy`), có ở mọi phần tử bấm được.
+- `rolling_number.dart` — số cuộn theo spring khi giá trị đổi.
+- `app_busy.dart` — `AppSpinner` + `BusySwitch` (nút "đang gửi" thống nhất).
+- `app_refresh.dart` — pull-to-refresh thương hiệu + haptic.
+- `fly_to_cart.dart` — ảnh bay vào giỏ (đường Bézier).
+- `burst.dart` — `burstAt` (chùm hạt tim) + `ConfettiBurst` (pháo giấy thành công).
+- `app_skeleton.dart`, `entrance.dart`, `app_feedback.dart`, `animated_checkmark.dart`,
+  `app_dialog.dart`, `async_view.dart`, `network_image_box.dart` — có sẵn, đã đưa về token.
+
+**Theo màn:**
+| Vùng | Chuyển động |
+|------|-------------|
+| Chuyển tab (bottom nav) | Shared-axis (trượt ngang theo hướng + mờ vào), giữ state |
+| Thẻ sản phẩm | Hero ảnh, quick-add `+`→✓, **ảnh bay vào giỏ** |
+| Chi tiết SP | Hero, giá slide-replace, số lượng pop, **fly-to-cart**, **tim nở + chùm hạt** |
+| Giỏ hàng | Vuốt-xóa, **tổng tiền cuộn** (RollingNumber), qty pop |
+| Thanh toán | Nút→spinner (BusySwitch), dialog ✓ vẽ nét + **pháo giấy** |
+| Đơn hàng | Status chip đổi màu/nhãn mượt, busy-bar & action-bar co giãn, sao review pop |
+| Tìm kiếm (home) | Ô focus viền+quầng, placeholder mờ, nút xóa spring; category ring/label animate |
+| Địa chỉ (form) | Select field animate enable/disable + viền lỗi |
+| Seller form | Variant rows co giãn (AnimatedSize), nút lưu BusySwitch |
+| Auth | Nút BusySwitch, toggle ẩn/hiện mật khẩu cross-fade |
+| Toàn cục | Page transition fade-through, skeleton shimmer, `showAppSnack`, pull-to-refresh |
+
+**Quy ước "đổi giá trị":** *tích lũy* (tổng tiền, số lượng) → **cuộn** (`RollingNumber`);
+*thay thế* (giá theo phân loại) → **slide-replace** (`AnimatedSwitcher` trượt).
+
+**Kiểm thử:** `test/motion_test.dart` phủ `AppMotion.dur`, `Pressable` (không đổi layout),
+`Springy` (nhảy đích khi giảm chuyển động), `RollingNumber`.
