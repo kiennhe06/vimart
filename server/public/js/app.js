@@ -773,7 +773,7 @@ function orderActions(o) {
     case 'shipping':
       return btn('received', L('Hoàn thành', 'Complete'), 'btn--ok');
     default:
-      return '<span class="muted">—</span>';
+      return '';
   }
 }
 
@@ -797,7 +797,7 @@ function renderOrdersTable() {
   const body = document.getElementById('ordersBody');
   if (!body) return;
   if (!list.length) {
-    body.innerHTML = `<tr><td colspan="8" class="muted" style="padding:28px;text-align:center">${L('Không có đơn khớp bộ lọc', 'No orders match the filter')}</td></tr>`;
+    body.innerHTML = `<tr><td colspan="7" class="muted" style="padding:28px;text-align:center">${L('Không có đơn khớp bộ lọc', 'No orders match the filter')}</td></tr>`;
     return;
   }
   body.innerHTML = list
@@ -807,12 +807,11 @@ function renderOrdersTable() {
       <td><b>${escapeHtml(o.code)}</b></td>
       <td>${escapeHtml(o.buyer_name)}</td>
       <td>${escapeHtml(o.shop_name)}</td>
-      <td>${statusChip(o.status)}</td>
+      <td>${statusChip(o.status)}${orderActions(o) ? `<div class="row-actions">${orderActions(o)}</div>` : ''}</td>
       <td>${o.payment_method === 'cod' ? 'COD' : 'VNPay'}
         ${o.payment_status === 'paid' ? `<span class="tag tag--on">${L('Đã trả', 'Paid')}</span>` : `<span class="muted">${L('Chưa trả', 'Unpaid')}</span>`}</td>
       <td><b style="color:var(--orange)">${fmtVnd(o.total)}</b></td>
       <td class="muted">${fmtDate(o.created_at)}</td>
-      <td><div class="row-actions">${orderActions(o)}</div></td>
     </tr>`
     )
     .join('');
@@ -851,7 +850,7 @@ async function viewOrders(el) {
       <span class="toolbar__count" id="ordersCount"></span>
     </div>
     <div class="panel"><table class="table">
-    <thead><tr><th>${L('Mã đơn', 'Order')}</th><th>${L('Khách', 'Customer')}</th><th>Shop</th><th>${L('Trạng thái', 'Status')}</th><th>${L('Thanh toán', 'Payment')}</th><th>${L('Tổng', 'Total')}</th><th>${L('Ngày', 'Date')}</th><th>${L('Thao tác', 'Actions')}</th></tr></thead>
+    <thead><tr><th>${L('Mã đơn', 'Order')}</th><th>${L('Khách', 'Customer')}</th><th>Shop</th><th>${L('Trạng thái', 'Status')}</th><th>${L('Thanh toán', 'Payment')}</th><th>${L('Tổng', 'Total')}</th><th>${L('Ngày', 'Date')}</th></tr></thead>
     <tbody id="ordersBody"></tbody></table></div>`;
 
   document.getElementById('fStatus').addEventListener('change', (e) => {

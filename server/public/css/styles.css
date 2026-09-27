@@ -540,6 +540,7 @@ svg.ic {
   display: flex;
   gap: 6px;
   flex-wrap: wrap;
+  margin-top: 8px;
 }
 .row-actions .btn {
   white-space: nowrap;
