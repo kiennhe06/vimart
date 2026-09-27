@@ -79,6 +79,7 @@ const NAV = [
   { key: 'users', icon: '👥' },
   { key: 'orders', icon: '📦' },
   { key: 'reviews', icon: '⭐' },
+  { key: 'vouchers', icon: '🎟️' },
   { key: 'categories', icon: '🏷️' },
 ];
 // Nhãn menu theo ngôn ngữ.
@@ -90,6 +91,7 @@ function navLabel(key) {
       users: L('Người dùng', 'Users'),
       orders: L('Đơn hàng', 'Orders'),
       reviews: L('Đánh giá', 'Reviews'),
+      vouchers: L('Mã giảm giá', 'Vouchers'),
       categories: L('Danh mục', 'Categories'),
     }[key] || key
   );
@@ -307,6 +309,7 @@ async function route() {
     else if (key === 'users') await viewUsers(content);
     else if (key === 'orders') await viewOrders(content);
     else if (key === 'reviews') await viewReviews(content);
+    else if (key === 'vouchers') await viewVouchers(content);
     else if (key === 'categories') await viewCategories(content);
   } catch (err) {
     content.innerHTML = stateView({
@@ -1103,6 +1106,135 @@ async function userDetailModal(id) {
   `);
 }
 
+// ---------- View: Mã giảm giá (voucher) ----------
+
+/** Nhãn giá trị mã: 10% (tối đa 50.000đ) hoặc 50.000đ. */
+function voucherValueLabel(v) {
+  if (v.type === 'percent') {
+    return `${v.value}%${v.maxDiscount ? ` · ${L('tối đa', 'max')} ${fmtVnd(v.maxDiscount)}` : ''}`;
+  }
+  return fmtVnd(v.value);
+}
+
+async function viewVouchers(el) {
+  const vouchers = await Api.get('/admin/vouchers');
+
+  const head = `<div class="section-head">
+    <h3>${L('Mã giảm giá', 'Vouchers')} (${vouchers.length})</h3><div class="spacer"></div>
+    <button class="btn btn--primary btn--sm" data-action="add-voucher">+ ${L('Tạo mã', 'New voucher')}</button>
+  </div>`;
+
+  if (!vouchers.length) {
+    el.innerHTML =
+      head +
+      `<div class="panel">${stateView({
+        icon: 'file',
+        title: L('Chưa có mã giảm giá', 'No vouchers yet'),
+        message: L('Tạo mã để khách nhập ở màn thanh toán.', 'Create a code customers can enter at checkout.'),
+      })}</div>`;
+    return;
+  }
+
+  const rows = vouchers
+    .map((v) => {
+      const expired = v.expiresAt && new Date(v.expiresAt) < new Date();
+      const usedUp = v.usageLimit != null && v.usedCount >= v.usageLimit;
+      const live = v.isActive && !expired && !usedUp;
+      return `<tr>
+      <td><b>${escapeHtml(v.code)}</b>${v.description ? `<div class="muted">${escapeHtml(v.description)}</div>` : ''}</td>
+      <td>${voucherValueLabel(v)}</td>
+      <td>${v.minOrder ? fmtVnd(v.minOrder) : '<span class="muted">—</span>'}</td>
+      <td>${v.usedCount}${v.usageLimit != null ? ` / ${v.usageLimit}` : ''}</td>
+      <td class="muted">${v.expiresAt ? new Date(v.expiresAt).toLocaleDateString(lang === 'en' ? 'en-GB' : 'vi-VN') : '—'}</td>
+      <td><span class="tag ${live ? 'tag--on' : 'tag--off'}">${
+        !v.isActive
+          ? L('Đã tắt', 'Off')
+          : expired
+            ? L('Hết hạn', 'Expired')
+            : usedUp
+              ? L('Hết lượt', 'Used up')
+              : L('Đang chạy', 'Live')
+      }</span></td>
+      <td style="white-space:nowrap">
+        <button class="btn btn--sm ${v.isActive ? 'btn--ghost' : 'btn--ok'}" data-action="toggle-voucher" data-id="${v.id}" data-active="${v.isActive ? 0 : 1}">${v.isActive ? L('Tắt', 'Disable') : L('Bật', 'Enable')}</button>
+        <button class="btn btn--sm btn--danger" data-action="del-voucher" data-id="${v.id}" data-code="${escapeHtml(v.code)}">${L('Xóa', 'Delete')}</button>
+      </td>
+    </tr>`;
+    })
+    .join('');
+
+  el.innerHTML =
+    head +
+    `<div class="panel"><table class="table">
+      <thead><tr>
+        <th>${L('Mã', 'Code')}</th><th>${L('Giảm', 'Discount')}</th><th>${L('Đơn tối thiểu', 'Min order')}</th>
+        <th>${L('Đã dùng', 'Used')}</th><th>${L('Hạn', 'Expiry')}</th><th>${L('Trạng thái', 'Status')}</th><th></th>
+      </tr></thead>
+      <tbody>${rows}</tbody></table></div>`;
+}
+
+/** Modal tạo mã giảm giá. */
+function voucherFormModal() {
+  openModal(`
+    <button class="modal__close" data-action="close">×</button>
+    <h2>${L('Tạo mã giảm giá', 'New voucher')}</h2>
+    <p class="modal__sub">${L('Mã áp cho tổng đơn ở màn thanh toán.', 'Applied to the whole order at checkout.')}</p>
+    <form id="voucherForm">
+      <div class="field"><label>${L('Mã (VD: SALE20)', 'Code (e.g. SALE20)')}</label><input name="code" required autofocus/></div>
+      <div class="field"><label>${L('Mô tả (không bắt buộc)', 'Description (optional)')}</label><input name="description" placeholder="${L('VD: Giảm 20% cuối tuần', 'e.g. 20% weekend sale')}"/></div>
+      <div class="field"><label>${L('Loại', 'Type')}</label>
+        <select name="type" id="vType">
+          <option value="percent">${L('Giảm phần trăm (%)', 'Percent (%)')}</option>
+          <option value="fixed">${L('Giảm số tiền (đ)', 'Fixed amount (đ)')}</option>
+        </select></div>
+      <div class="field"><label id="vValueLabel">${L('Phần trăm giảm (1–100)', 'Percent off (1–100)')}</label><input name="value" type="number" min="1" required/></div>
+      <div class="field" id="vCapWrap"><label>${L('Giảm tối đa (đ, không bắt buộc)', 'Max discount (đ, optional)')}</label><input name="maxDiscount" type="number" min="0"/></div>
+      <div class="field"><label>${L('Đơn tối thiểu (đ)', 'Min order (đ)')}</label><input name="minOrder" type="number" min="0" value="0"/></div>
+      <div class="field"><label>${L('Giới hạn lượt dùng (không bắt buộc)', 'Usage limit (optional)')}</label><input name="usageLimit" type="number" min="1"/></div>
+      <div class="field"><label>${L('Hết hạn (không bắt buộc)', 'Expiry (optional)')}</label><input name="expiresAt" type="date"/></div>
+      <button class="btn btn--primary btn--block" type="submit">${L('Tạo mã', 'Create voucher')}</button>
+    </form>`);
+
+  const form = document.getElementById('voucherForm');
+  const typeSel = document.getElementById('vType');
+  const syncType = () => {
+    const percent = typeSel.value === 'percent';
+    document.getElementById('vCapWrap').style.display = percent ? '' : 'none';
+    document.getElementById('vValueLabel').textContent = percent
+      ? L('Phần trăm giảm (1–100)', 'Percent off (1–100)')
+      : L('Số tiền giảm (đ)', 'Amount off (đ)');
+  };
+  typeSel.addEventListener('change', syncType);
+  syncType();
+
+  form.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const f = e.target;
+    const num = (name) => (f[name].value === '' ? null : Number(f[name].value));
+    const body = {
+      code: f.code.value.trim(),
+      description: f.description.value.trim() || null,
+      type: f.type.value,
+      value: num('value'),
+      maxDiscount: f.type.value === 'percent' ? num('maxDiscount') : null,
+      minOrder: num('minOrder') ?? 0,
+      usageLimit: num('usageLimit'),
+      expiresAt: f.expiresAt.value ? new Date(f.expiresAt.value + 'T23:59:59').toISOString() : null,
+    };
+    const btn = f.querySelector('button[type=submit]');
+    btn.disabled = true;
+    try {
+      await Api.post('/admin/vouchers', body);
+      closeModal();
+      toast(L('Đã tạo mã giảm giá', 'Voucher created'));
+      route();
+    } catch (err) {
+      btn.disabled = false;
+      toast(err.message);
+    }
+  });
+}
+
 async function viewCategories(el) {
   const cats = await Api.get('/categories');
   const rows = cats
@@ -1261,6 +1393,35 @@ document.addEventListener('click', async (e) => {
       route();
     } catch (err) {
       toast(err.message);
+    }
+  } else if (action === 'add-voucher') {
+    voucherFormModal();
+  } else if (action === 'toggle-voucher') {
+    try {
+      await Api.put(`/admin/vouchers/${el.getAttribute('data-id')}/status`, {
+        isActive: el.getAttribute('data-active') === '1',
+      });
+      toast(L('Đã cập nhật mã', 'Voucher updated'));
+      route();
+    } catch (err) {
+      toast(err.message);
+    }
+  } else if (action === 'del-voucher') {
+    if (
+      confirm(
+        L(
+          `Xóa mã "${el.getAttribute('data-code')}"?`,
+          `Delete voucher "${el.getAttribute('data-code')}"?`
+        )
+      )
+    ) {
+      try {
+        await Api.del('/admin/vouchers/' + el.getAttribute('data-id'));
+        toast(L('Đã xóa mã giảm giá', 'Voucher deleted'));
+        route();
+      } catch (err) {
+        toast(err.message);
+      }
     }
   } else if (action === 'add-cat') {
     addCategoryModal();
