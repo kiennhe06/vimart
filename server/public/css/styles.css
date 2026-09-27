@@ -718,6 +718,25 @@ svg.ic {
   flex: 1;
   min-width: 0;
 }
+/* Hàng khóa–giá trị trong modal chi tiết */
+.kv {
+  display: flex;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 7px 0;
+  border-bottom: 1px solid var(--border);
+  font-size: 14px;
+}
+.kv:last-child {
+  border-bottom: none;
+}
+.kv__k {
+  color: var(--text-2);
+  flex-shrink: 0;
+}
+.kv__v {
+  text-align: right;
+}
 .muted {
   color: var(--text-2);
 }

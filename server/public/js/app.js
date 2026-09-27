@@ -737,18 +737,20 @@ async function viewUsers(el) {
       (u) => `
     <tr>
       <td>${u.id}</td>
-      <td>${escapeHtml(u.fullName)}</td>
+      <td><a class="link" data-action="user-detail" data-id="${u.id}">${escapeHtml(u.fullName)}</a></td>
       <td>${escapeHtml(u.email)}</td>
       <td><span class="tag ${u.role === 'admin' ? 'tag--admin' : 'tag--user'}">${u.role}</span></td>
       <td>${u.shop ? escapeHtml(u.shop.name) : '<span class="muted">—</span>'}</td>
       <td><span class="tag ${u.isActive ? 'tag--on' : 'tag--off'}">${u.isActive ? L('Hoạt động', 'Active') : L('Đã khóa', 'Locked')}</span></td>
-      <td>${
-        u.role === 'admin'
-          ? ''
-          : `<button class="btn btn--sm ${u.isActive ? 'btn--danger' : 'btn--ok'}"
+      <td style="white-space:nowrap">
+        <button class="btn btn--sm btn--ghost" data-action="user-detail" data-id="${u.id}">${L('Chi tiết', 'Details')}</button>
+        ${
+          u.role === 'admin'
+            ? ''
+            : `<button class="btn btn--sm ${u.isActive ? 'btn--danger' : 'btn--ok'}"
         data-action="toggle-user" data-id="${u.id}" data-active="${u.isActive ? 0 : 1}">
         ${u.isActive ? L('Khóa', 'Lock') : L('Mở khóa', 'Unlock')}</button>`
-      }</td>
+        }</td>
     </tr>`
     )
     .join('');
@@ -809,7 +811,7 @@ function renderOrdersTable() {
     .map(
       (o) => `
     <tr>
-      <td><b>${escapeHtml(o.code)}</b></td>
+      <td><a class="link" data-action="order-detail" data-id="${o.id}">${escapeHtml(o.code)}</a></td>
       <td>${escapeHtml(o.buyer_name)}</td>
       <td>${escapeHtml(o.shop_name)}</td>
       <td>${statusChip(o.status)}${orderActions(o) ? `<div class="row-actions">${orderActions(o)}</div>` : ''}</td>
@@ -1021,6 +1023,88 @@ async function productDetailModal(id) {
   `);
 }
 
+/** Modal chi tiết 1 đơn hàng (admin). */
+async function orderDetailModal(id) {
+  openModal(`<button class="modal__close" data-action="close">×</button>${skeletonView(3)}`);
+  let o;
+  try {
+    o = await Api.get(`/admin/orders/${id}`);
+  } catch (err) {
+    toast(err.message);
+    closeModal();
+    return;
+  }
+
+  const items = (o.items || [])
+    .map(
+      (it) => `<div class="litem">
+      <img class="thumb" src="${escapeHtml(it.imageUrl || '')}" onerror="this.style.visibility='hidden'"/>
+      <div class="litem__body"><div class="litem__name">${escapeHtml(it.productName)}</div>
+        <div class="litem__sub">${escapeHtml(it.variantName || '')} · ${L('SL', 'Qty')} ${it.quantity}</div></div>
+      <div class="litem__val">${fmtVnd(it.price * it.quantity)}</div></div>`
+    )
+    .join('');
+
+  const row = (label, value) =>
+    `<div class="kv"><span class="kv__k">${label}</span><span class="kv__v">${value}</span></div>`;
+
+  openModal(`
+    <button class="modal__close" data-action="close">×</button>
+    <div class="section-head"><h2>${L('Đơn', 'Order')} ${escapeHtml(o.code)}</h2><div class="spacer"></div>${statusChip(o.status)}</div>
+    <h3 class="pd__section">${L('Sản phẩm', 'Items')}</h3>
+    ${items || `<div class="muted">—</div>`}
+    <h3 class="pd__section">${L('Người nhận', 'Recipient')}</h3>
+    ${row(L('Người mua', 'Buyer'), `${escapeHtml(o.buyerName || '')} <span class="muted">${escapeHtml(o.buyerEmail || '')}</span>`)}
+    ${row(L('Nhận hàng', 'Recipient'), `${escapeHtml(o.recipientName || '')} · ${escapeHtml(o.recipientPhone || '')}`)}
+    ${row(L('Địa chỉ', 'Address'), escapeHtml(o.addressText || '—'))}
+    ${o.note ? row(L('Ghi chú', 'Note'), escapeHtml(o.note)) : ''}
+    <h3 class="pd__section">${L('Thanh toán', 'Payment')}</h3>
+    ${row(L('Phương thức', 'Method'), `${o.paymentMethod === 'cod' ? 'COD' : 'VNPay'} · ${o.paymentStatus === 'paid' ? L('Đã trả', 'Paid') : L('Chưa trả', 'Unpaid')}`)}
+    ${row(L('Tạm tính', 'Subtotal'), fmtVnd(o.subtotal))}
+    ${row(L('Phí vận chuyển', 'Shipping'), fmtVnd(o.shippingFee))}
+    ${o.discount ? row(L('Giảm giá', 'Discount'), '-' + fmtVnd(o.discount)) : ''}
+    ${row(`<b>${L('Tổng cộng', 'Total')}</b>`, `<b style="color:var(--orange)">${fmtVnd(o.total)}</b>`)}
+  `);
+}
+
+/** Modal chi tiết 1 người dùng (admin). */
+async function userDetailModal(id) {
+  openModal(`<button class="modal__close" data-action="close">×</button>${skeletonView(3)}`);
+  let u;
+  try {
+    u = await Api.get(`/admin/users/${id}`);
+  } catch (err) {
+    toast(err.message);
+    closeModal();
+    return;
+  }
+
+  const orders = (u.orders || [])
+    .map(
+      (o) => `<div class="litem">
+      <div class="litem__body"><div class="litem__name">${escapeHtml(o.code)} · ${escapeHtml(o.shopName || '')}</div>
+        <div class="litem__sub">${statusLabel(o.status)} · ${fmtDate(o.createdAt)}</div></div>
+      <div class="litem__val">${fmtVnd(o.total)}</div></div>`
+    )
+    .join('');
+
+  const row = (label, value) =>
+    `<div class="kv"><span class="kv__k">${label}</span><span class="kv__v">${value}</span></div>`;
+
+  openModal(`
+    <button class="modal__close" data-action="close">×</button>
+    <div class="section-head"><h2>${escapeHtml(u.fullName)}</h2><div class="spacer"></div>
+      <span class="tag ${u.role === 'admin' ? 'tag--admin' : 'tag--user'}">${u.role}</span>
+      <span class="tag ${u.isActive ? 'tag--on' : 'tag--off'}" style="margin-left:6px">${u.isActive ? L('Hoạt động', 'Active') : L('Đã khóa', 'Locked')}</span></div>
+    ${row('Email', escapeHtml(u.email))}
+    ${row(L('Điện thoại', 'Phone'), escapeHtml(u.phone || '—'))}
+    ${row(L('Tham gia', 'Joined'), fmtDate(u.createdAt))}
+    ${u.shop ? row('Shop', `${escapeHtml(u.shop.name)} <span class="muted">(${escapeHtml(u.shop.status)})</span>`) : ''}
+    <h3 class="pd__section">${L('Đơn đã mua', 'Purchases')} (${u.orders.length})</h3>
+    ${orders || `<div class="muted">${L('Chưa có đơn nào.', 'No orders yet.')}</div>`}
+  `);
+}
+
 async function viewCategories(el) {
   const cats = await Api.get('/categories');
   const rows = cats
@@ -1186,6 +1270,10 @@ document.addEventListener('click', async (e) => {
     productFormModal();
   } else if (action === 'product-detail') {
     productDetailModal(el.getAttribute('data-id'));
+  } else if (action === 'order-detail') {
+    orderDetailModal(el.getAttribute('data-id'));
+  } else if (action === 'user-detail') {
+    userDetailModal(el.getAttribute('data-id'));
   } else if (action === 'reply-review') {
     reviewReplyModal(el.getAttribute('data-id'));
   } else if (action === 'edit-product') {
