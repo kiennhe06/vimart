@@ -2,11 +2,15 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../app/design.dart';
 import '../../app/theme.dart';
 import '../../core/format.dart';
 import '../../core/i18n/app_strings.dart';
 import '../../models/product.dart';
+import '../../widgets/app_card.dart';
+import '../../widgets/app_dialog.dart';
 import '../../widgets/app_feedback.dart';
+import '../../widgets/app_refresh.dart';
 import '../../widgets/app_skeleton.dart';
 import '../../widgets/async_view.dart';
 import '../../widgets/entrance.dart';
@@ -31,8 +35,7 @@ class SellerProductsScreen extends ConsumerWidget {
         icon: const Icon(Icons.add_rounded),
         label: Text(s.addProduct, style: const TextStyle(fontWeight: FontWeight.w700)),
       ),
-      body: RefreshIndicator(
-        color: AppColors.brand,
+      body: AppRefresh(
         onRefresh: () => ref.refresh(myProductsProvider.future),
         child: AsyncView(
           value: async,
@@ -64,14 +67,9 @@ class _ProductRow extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final s = ref.watch(stringsProvider);
-    return Container(
+    return AppCard(
       margin: const EdgeInsets.only(bottom: 12),
       padding: const EdgeInsets.all(12),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(18),
-        boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.05), blurRadius: 12, offset: const Offset(0, 4))],
-      ),
       child: Row(
         children: [
           ClipRRect(
@@ -90,7 +88,7 @@ class _ProductRow extends ConsumerWidget {
                     style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 14)),
                 const SizedBox(height: 4),
                 Text('${formatVnd(product.minPrice)} • ${s.sold(product.soldCount)}',
-                    style: const TextStyle(color: Colors.grey, fontSize: 12)),
+                    style: TextStyle(color: context.c.textSecondary, fontSize: 12)),
               ],
             ),
           ),
@@ -118,8 +116,8 @@ class _ProductRow extends ConsumerWidget {
 
   Future<void> _confirmDelete(BuildContext context, WidgetRef ref) async {
     final s = ref.read(stringsProvider);
-    final ok = await showDialog<bool>(
-      context: context,
+    final ok = await showAppDialog<bool>(
+      context,
       builder: (ctx) => AlertDialog(
         title: Text(s.deleteProduct),
         content: Text(s.deleteProductConfirm(product.name)),
@@ -137,6 +135,9 @@ class _ProductRow extends ConsumerWidget {
       try {
         await ref.read(sellerRepositoryProvider).deleteProduct(product.id);
         ref.invalidate(myProductsProvider);
+        if (context.mounted) {
+          showAppSnack(context, s.deleted, type: AppSnackType.success);
+        }
       } catch (e) {
         if (context.mounted) {
           showAppSnack(context, e.toString(), type: AppSnackType.error);

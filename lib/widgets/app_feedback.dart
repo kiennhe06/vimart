@@ -33,7 +33,9 @@ void showAppSnack(
   };
 
   final messenger = ScaffoldMessenger.of(context);
-  messenger.hideCurrentSnackBar();
+  // Gỡ ngay (không animation) để 2 snackbar liên tiếp không chồng nhau
+  // -> tránh lỗi "multiple heroes share the same tag".
+  messenger.removeCurrentSnackBar();
   messenger.showSnackBar(
     SnackBar(
       content: Row(

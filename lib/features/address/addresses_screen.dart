@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../app/design.dart';
 import '../../app/theme.dart';
 import '../../core/i18n/app_strings.dart';
+import '../../widgets/app_card.dart';
 import '../../widgets/app_feedback.dart';
 import '../../widgets/app_skeleton.dart';
 import '../../widgets/async_view.dart';
@@ -43,14 +45,9 @@ class AddressesScreen extends ConsumerWidget {
               final a = addresses[i];
               return FadeSlideIn(
                 index: i,
-                child: Container(
+                child: AppCard(
                 margin: const EdgeInsets.only(bottom: 12),
                 padding: const EdgeInsets.all(14),
-                decoration: BoxDecoration(
-                  color: Colors.white,
-                  borderRadius: BorderRadius.circular(18),
-                  boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.05), blurRadius: 12, offset: const Offset(0, 4))],
-                ),
                 child: Row(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
@@ -78,7 +75,7 @@ class AddressesScreen extends ConsumerWidget {
                             ],
                           ),
                           const SizedBox(height: 2),
-                          Text(a.phone, style: const TextStyle(color: Colors.grey, fontSize: 13)),
+                          Text(a.phone, style: TextStyle(color: context.c.textSecondary, fontSize: 13)),
                           const SizedBox(height: 2),
                           Text(a.fullAddress, style: const TextStyle(fontSize: 13, height: 1.35)),
                         ],

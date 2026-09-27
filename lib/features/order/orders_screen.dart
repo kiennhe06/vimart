@@ -2,17 +2,20 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../app/design.dart';
+import '../../app/motion.dart';
 import '../../app/nav_provider.dart';
 import '../../app/theme.dart';
 import '../../core/format.dart';
 import '../../core/i18n/app_strings.dart';
 import '../../models/order.dart';
+import '../../widgets/app_card.dart';
+import '../../widgets/app_refresh.dart';
 import '../../widgets/app_skeleton.dart';
 import '../../widgets/async_view.dart';
 import '../../widgets/entrance.dart';
 import '../../widgets/login_required_view.dart';
 import '../../widgets/pill_tab_bar.dart';
-import '../../widgets/pressable.dart';
 import '../auth/auth_provider.dart';
 import 'order_providers.dart';
 
@@ -53,8 +56,7 @@ class _OrderList extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final async = ref.watch(myOrdersProvider(status));
-    return RefreshIndicator(
-      color: AppColors.brand,
+    return AppRefresh(
       onRefresh: () => ref.refresh(myOrdersProvider(status).future),
       child: AsyncView(
         value: async,
@@ -95,7 +97,7 @@ class _EmptyOrders extends ConsumerWidget {
                 const SizedBox(height: 16),
                 Text(s.noOrders, style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w700)),
                 const SizedBox(height: 6),
-                Text(s.shopAndReturn, style: const TextStyle(color: Colors.grey)),
+                Text(s.shopAndReturn, style: TextStyle(color: context.c.textSecondary)),
                 const SizedBox(height: 18),
                 SizedBox(
                   width: 200,
@@ -122,18 +124,11 @@ class OrderCard extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final s = ref.watch(stringsProvider);
-    return Pressable(
+    return AppCard(
       onTap: () => context.push('/order/${order.id}'),
-      scale: 0.98,
-      child: Container(
-        margin: const EdgeInsets.only(bottom: 12),
-        padding: const EdgeInsets.all(14),
-        decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(18),
-          boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.05), blurRadius: 12, offset: const Offset(0, 4))],
-        ),
-        child: Column(
+      margin: const EdgeInsets.only(bottom: 12),
+      padding: const EdgeInsets.all(14),
+      child: Column(
           children: [
             Row(
               children: [
@@ -150,7 +145,7 @@ class OrderCard extends ConsumerWidget {
                       Text(s.orderCode(order.code), style: const TextStyle(fontWeight: FontWeight.w800)),
                       const SizedBox(height: 2),
                       Text(showBuyer ? s.customer(order.buyerName ?? '-') : (order.shopName ?? ''),
-                          style: const TextStyle(color: Colors.grey, fontSize: 12)),
+                          style: TextStyle(color: context.c.textSecondary, fontSize: 12)),
                     ],
                   ),
                 ),
@@ -161,9 +156,9 @@ class OrderCard extends ConsumerWidget {
             Row(
               children: [
                 Icon(order.paymentMethod == 'cod' ? Icons.payments_outlined : Icons.account_balance_wallet_outlined,
-                    size: 16, color: Colors.grey),
+                    size: 16, color: context.c.textSecondary),
                 const SizedBox(width: 6),
-                Text(order.paymentMethod == 'cod' ? 'COD' : 'VNPay', style: const TextStyle(color: Colors.grey, fontSize: 13)),
+                Text(order.paymentMethod == 'cod' ? 'COD' : 'VNPay', style: TextStyle(color: context.c.textSecondary, fontSize: 13)),
                 if (order.isPaid)
                   Padding(
                     padding: const EdgeInsets.only(left: 8),
@@ -176,7 +171,6 @@ class OrderCard extends ConsumerWidget {
             ),
           ],
         ),
-      ),
     );
   }
 }
@@ -197,11 +191,19 @@ class OrderStatusChip extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    return Container(
+    // Đổi trạng thái (sau khi xác nhận/giao/hủy) -> màu nền chuyển mượt, nhãn cross-fade.
+    return AnimatedContainer(
+      duration: AppMotion.dur(context, AppMotion.base),
+      curve: AppMotion.emphasized,
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
       decoration: BoxDecoration(color: _color.withValues(alpha: 0.14), borderRadius: BorderRadius.circular(20)),
-      child: Text(ref.watch(stringsProvider).orderStatus(status),
-          style: TextStyle(color: _color, fontSize: 12, fontWeight: FontWeight.w700)),
+      child: AnimatedSwitcher(
+        duration: AppMotion.dur(context, AppMotion.base),
+        transitionBuilder: (c, a) => FadeTransition(opacity: a, child: c),
+        child: Text(ref.watch(stringsProvider).orderStatus(status),
+            key: ValueKey(status),
+            style: TextStyle(color: _color, fontSize: 12, fontWeight: FontWeight.w700)),
+      ),
     );
   }
 }

@@ -1,10 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../app/design.dart';
 import '../../app/motion.dart';
 import '../../app/theme.dart';
 import '../../core/format.dart';
 import '../../core/i18n/app_strings.dart';
+import '../../widgets/app_busy.dart';
+import '../../widgets/app_dialog.dart';
 import '../../widgets/app_feedback.dart';
 import '../../models/order.dart';
 import '../../widgets/async_view.dart';
@@ -56,8 +59,8 @@ class _OrderDetailBodyState extends ConsumerState<_OrderDetailBody> {
   Future<void> _doAction(String action, {String? confirmText}) async {
     if (confirmText != null) {
       final str = ref.read(stringsProvider);
-      final ok = await showDialog<bool>(
-        context: context,
+      final ok = await showAppDialog<bool>(
+        context,
         builder: (ctx) => AlertDialog(
           title: Text(str.confirm),
           content: Text(confirmText),
@@ -108,7 +111,7 @@ class _OrderDetailBodyState extends ConsumerState<_OrderDetailBody> {
               _card(str.recipient, [
                 Text('${order.recipientName} • ${order.recipientPhone}'),
                 const SizedBox(height: 4),
-                Text(order.addressText, style: const TextStyle(color: Colors.grey)),
+                Text(order.addressText, style: TextStyle(color: context.c.textSecondary)),
               ]),
               // Sản phẩm
               _card(s.shopName ?? str.productsLabel, [
@@ -128,8 +131,18 @@ class _OrderDetailBodyState extends ConsumerState<_OrderDetailBody> {
             ],
           ),
         ),
-        if (_busy) const LinearProgressIndicator(),
-        _actions(),
+        AnimatedSwitcher(
+          duration: AppMotion.dur(context, AppMotion.fast),
+          child: _busy
+              ? const LinearProgressIndicator(key: ValueKey('busy'))
+              : const SizedBox(width: double.infinity, key: ValueKey('idle')),
+        ),
+        // Bộ nút hành động đổi theo trạng thái -> co giãn mượt khi buttons thay đổi.
+        AnimatedSize(
+          duration: AppMotion.dur(context, AppMotion.base),
+          curve: AppMotion.emphasized,
+          child: _actions(),
+        ),
       ],
     );
   }
@@ -169,8 +182,8 @@ class _OrderDetailBodyState extends ConsumerState<_OrderDetailBody> {
   }
 
   Future<void> _openReview(OrderItem item) async {
-    final done = await showDialog<bool>(
-      context: context,
+    final done = await showAppDialog<bool>(
+      context,
       builder: (_) => _ReviewDialog(orderItemId: item.id, productId: item.productId!),
     );
     if (done == true) _refresh();
@@ -297,9 +310,7 @@ class _ReviewDialogState extends ConsumerState<_ReviewDialog> {
         TextButton(onPressed: () => Navigator.pop(context, false), child: Text(str.cancel)),
         FilledButton(
           onPressed: _saving ? null : _submit,
-          child: _saving
-              ? const SizedBox(height: 20, width: 20, child: CircularProgressIndicator(strokeWidth: 2))
-              : Text(str.send),
+          child: BusySwitch(busy: _saving, spinnerSize: 20, child: Text(str.send)),
         ),
       ],
     );

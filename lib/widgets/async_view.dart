@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../app/design.dart';
 import '../app/motion.dart';
 import '../core/i18n/app_strings.dart';
 
@@ -90,7 +91,7 @@ class EmptyView extends StatelessWidget {
             children: [
               Icon(icon, size: 56, color: Colors.grey.shade400),
               const SizedBox(height: 12),
-              Text(message, textAlign: TextAlign.center, style: const TextStyle(color: Colors.grey)),
+              Text(message, textAlign: TextAlign.center, style: TextStyle(color: context.c.textSecondary)),
             ],
           ),
         ),
@@ -119,6 +120,9 @@ class AsyncView<T> extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final child = value.when(
+      // Khi TẢI LẠI (đã có dữ liệu cũ) -> giữ nội dung, cập nhật im lặng, KHÔNG
+      // nháy skeleton. Chỉ hiện loading ở lần tải đầu.
+      skipLoadingOnReload: true,
       data: data,
       loading: () => loading ?? const LoadingView(),
       error: (err, _) => ErrorView(message: err.toString(), onRetry: onRetry),

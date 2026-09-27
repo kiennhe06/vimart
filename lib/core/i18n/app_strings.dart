@@ -47,6 +47,7 @@ class AppStrings {
   String get noDescription => _('Chưa có mô tả.', 'No description.');
   String get noReviewYet => _('Chưa có đánh giá nào.', 'No reviews yet.');
   String get user => _('Người dùng', 'User');
+  String get shopReply => _('Phản hồi từ ViMart', 'Reply from ViMart');
   String addToCartWith(String price) => _('Thêm vào giỏ • $price', 'Add to cart • $price');
   String get outOfStock => _('Hết hàng', 'Out of stock');
   String get addedFavorite => _('Đã thêm vào yêu thích', 'Added to favorites');
@@ -167,6 +168,11 @@ class AppStrings {
   String get province => _('Tỉnh/Thành phố', 'Province/City');
   String get saveAddress => _('Lưu địa chỉ', 'Save address');
   String get addressSaved => _('Đã lưu địa chỉ', 'Address saved');
+  String get deleted => _('Đã xóa', 'Deleted');
+  String get appearance => _('Giao diện', 'Appearance');
+  String get themeSystem => _('Theo hệ thống', 'System');
+  String get themeLight => _('Sáng', 'Light');
+  String get themeDark => _('Tối', 'Dark');
   String get newAddress => _('Địa chỉ mới', 'New address');
   String get chooseProvince => _('Chọn Tỉnh/Thành phố', 'Select province/city');
   String get chooseWard => _('Chọn Phường/Xã', 'Select ward/commune');

@@ -1,14 +1,15 @@
-import 'package:flutter/material.dart'
-    show Icons, CircularProgressIndicator, SnackBarAction, Colors;
+import 'package:flutter/material.dart' show Icons, CircularProgressIndicator, SnackBarAction;
 import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../../app/design.dart';
 import '../../../app/motion.dart';
 import '../../../core/format.dart';
 import '../../../core/i18n/app_strings.dart';
 import '../../../models/product.dart';
 import '../../../widgets/app_feedback.dart';
+import '../../../widgets/fly_to_cart.dart';
 import '../../../widgets/network_image_box.dart';
 import '../../../widgets/pressable.dart';
 import '../../auth/auth_provider.dart';
@@ -29,6 +30,20 @@ class ProductTile extends ConsumerStatefulWidget {
 class _ProductTileState extends ConsumerState<ProductTile> {
   bool _adding = false;
   bool _justAdded = false;
+  final GlobalKey _imgKey = GlobalKey();
+
+  /// Bắn ảnh "bay vào giỏ" từ vị trí ảnh hiện tại của thẻ.
+  void _launchFly() {
+    final box = _imgKey.currentContext?.findRenderObject() as RenderBox?;
+    if (box == null || !box.attached) return;
+    final origin = box.localToGlobal(Offset.zero);
+    flyToCart(
+      context,
+      from: origin & box.size,
+      imageUrl: widget.product.imageUrl,
+      color: widget.tint ?? HomeColors.brandSoft,
+    );
+  }
 
   /// Thêm nhanh: lấy phân loại đầu tiên còn hàng rồi bỏ vào giỏ.
   Future<void> _quickAdd() async {
@@ -55,6 +70,7 @@ class _ProductTileState extends ConsumerState<ProductTile> {
       await ref.read(cartProvider.notifier).add(variant.id, 1);
       if (mounted) {
         setState(() => _justAdded = true);
+        _launchFly(); // ảnh bay vào giỏ
         showAppSnack(context, s.addedToCart, type: AppSnackType.success);
         Future.delayed(const Duration(milliseconds: 1100), () {
           if (mounted) setState(() => _justAdded = false);
@@ -76,9 +92,10 @@ class _ProductTileState extends ConsumerState<ProductTile> {
       onTap: () => context.push('/product/${p.id}'),
       child: Container(
         decoration: BoxDecoration(
-          color: HomeColors.surface,
+          color: context.c.surface,
           borderRadius: BorderRadius.circular(HomeDims.radiusCard),
-          boxShadow: const [BoxShadow(color: HomeColors.shadow, blurRadius: 14, offset: Offset(0, 6))],
+          border: Border.all(color: context.c.border),
+          boxShadow: AppShadow.card(context.c.shadow),
         ),
         padding: const EdgeInsets.all(10),
         child: Column(
@@ -91,24 +108,31 @@ class _ProductTileState extends ConsumerState<ProductTile> {
                 decoration: BoxDecoration(color: tint, borderRadius: BorderRadius.circular(16)),
                 clipBehavior: Clip.antiAlias,
                 child: Hero(
+                  key: _imgKey,
                   tag: 'product-image-${p.id}',
                   child: NetworkImageBox(url: p.imageUrl),
                 ),
               ),
             ),
             const SizedBox(height: 10),
-            Text(p.name, maxLines: 1, overflow: TextOverflow.ellipsis, style: HomeText.productName),
+            Text(p.name,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: AppType.title.copyWith(color: context.c.textPrimary)),
             const SizedBox(height: 2),
             Row(
               children: [
                 const Icon(Icons.star_rounded, size: 14, color: HomeColors.star),
                 const SizedBox(width: 2),
-                Text(p.ratingCount > 0 ? p.ratingAvg.toStringAsFixed(1) : s.newLabel, style: HomeText.meta),
-                Text('  •  ${s.sold(p.soldCount)}', style: HomeText.meta),
+                Text(p.ratingCount > 0 ? p.ratingAvg.toStringAsFixed(1) : s.newLabel,
+                    style: AppType.caption.copyWith(color: context.c.textSecondary)),
+                Text('  •  ${s.sold(p.soldCount)}',
+                    style: AppType.caption.copyWith(color: context.c.textSecondary)),
               ],
             ),
             const SizedBox(height: 6),
-            Text(formatVnd(p.minPrice), style: HomeText.price),
+            Text(formatVnd(p.minPrice),
+                style: AppType.price.copyWith(color: context.c.textPrimary)),
             const SizedBox(height: 8),
             _addBar(),
           ],
@@ -130,22 +154,22 @@ class _ProductTileState extends ConsumerState<ProductTile> {
         height: 36,
         alignment: Alignment.center,
         decoration: BoxDecoration(
-          color: _justAdded ? HomeColors.brand : HomeColors.brandSoft,
+          color: _justAdded ? context.c.brand : context.c.brandSoft,
           borderRadius: BorderRadius.circular(12),
         ),
         child: AnimatedSwitcher(
           duration: AppMotion.dur(context, AppMotion.fast),
           transitionBuilder: (c, a) => ScaleTransition(scale: a, child: c),
           child: busy
-              ? const SizedBox(
-                  key: ValueKey('load'),
+              ? SizedBox(
+                  key: const ValueKey('load'),
                   height: 16,
                   width: 16,
-                  child: CircularProgressIndicator(strokeWidth: 2, color: HomeColors.brand),
+                  child: CircularProgressIndicator(strokeWidth: 2, color: context.c.brand),
                 )
               : _justAdded
-                  ? const Icon(Icons.check_rounded, key: ValueKey('ok'), color: Colors.white, size: 22)
-                  : const Icon(Icons.add_rounded, key: ValueKey('add'), color: HomeColors.brand, size: 22),
+                  ? Icon(Icons.check_rounded, key: const ValueKey('ok'), color: context.c.onBrand, size: 22)
+                  : Icon(Icons.add_rounded, key: const ValueKey('add'), color: context.c.brand, size: 22),
         ),
       ),
     );

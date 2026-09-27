@@ -2,11 +2,16 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../app/design.dart';
 import '../../app/motion.dart';
 import '../../app/theme.dart';
+import '../../app/theme_mode_provider.dart';
 import '../../core/i18n/app_strings.dart';
 import '../../core/i18n/locale_provider.dart';
+import '../../widgets/app_dialog.dart';
+import '../../widgets/app_sheet_option.dart';
 import '../../widgets/app_feedback.dart';
+import '../../widgets/entrance.dart';
 import '../../widgets/login_required_view.dart';
 import '../auth/auth_provider.dart';
 import '../seller/seller_repository.dart';
@@ -28,6 +33,7 @@ class ProfileScreen extends ConsumerWidget {
     }
     final user = auth.user!;
     final localeCode = ref.watch(localeProvider);
+    final themeMode = ref.watch(themeModeProvider);
 
     return Scaffold(
       appBar: AppBar(title: Text(s.account)),
@@ -35,9 +41,11 @@ class ProfileScreen extends ConsumerWidget {
         padding: const EdgeInsets.fromLTRB(16, 8, 16, 24),
         children: [
           // Thẻ hồ sơ
-          Container(
+          FadeSlideIn(
+            index: 0,
+            child: Container(
             padding: const EdgeInsets.all(18),
-            decoration: _cardDecoration(),
+            decoration: _cardDecoration(context),
             child: Row(
               children: [
                 Container(
@@ -56,7 +64,7 @@ class ProfileScreen extends ConsumerWidget {
                     children: [
                       Text(user.fullName, style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w800)),
                       const SizedBox(height: 2),
-                      Text(user.email, style: const TextStyle(color: Colors.grey, fontSize: 13)),
+                      Text(user.email, style: TextStyle(color: context.c.textSecondary, fontSize: 13)),
                       const SizedBox(height: 8),
                       _badge(user.isAdmin ? s.roleAdmin : (user.hasShop ? s.roleSeller : s.roleBuyer)),
                     ],
@@ -65,10 +73,13 @@ class ProfileScreen extends ConsumerWidget {
               ],
             ),
           ),
+          ),
           const SizedBox(height: 16),
 
           // Nhóm: tiện ích cá nhân
-          _menuCard([
+          FadeSlideIn(
+            index: 1,
+            child: _menuCard(context, [
             _MenuRow(Icons.favorite_rounded, const Color(0xFFFFEDE2), const Color(0xFFFF7A45),
                 s.favoriteProducts, () => context.push('/favorites')),
             _MenuRow(Icons.location_on_rounded, const Color(0xFFE2F0FF), const Color(0xFF2B8AF0),
@@ -77,11 +88,18 @@ class ProfileScreen extends ConsumerWidget {
             _MenuRow(Icons.language_rounded, const Color(0xFFEDE9FE), const Color(0xFF7C5CFC),
                 s.language, () => ref.read(localeProvider.notifier).toggle(),
                 trailingText: localeCode == 'en' ? 'English' : 'Tiếng Việt'),
+            // Giao diện: System / Sáng / Tối
+            _MenuRow(Icons.dark_mode_rounded, const Color(0xFFE7EAF3), const Color(0xFF475569),
+                s.appearance, () => _pickTheme(context, ref),
+                trailingText: _themeLabel(themeMode, s)),
           ]),
+          ),
 
           const SizedBox(height: 14),
           _sectionLabel(s.sellerChannel),
-          _menuCard(
+          FadeSlideIn(
+            index: 2,
+            child: _menuCard(context,
             user.hasShop
                 ? [
                     _MenuRow(Icons.inventory_2_rounded, AppColors.brandSoft, AppColors.brand,
@@ -94,21 +112,77 @@ class ProfileScreen extends ConsumerWidget {
                         s.openShop, () => _openShopDialog(context, ref)),
                   ],
           ),
+          ),
 
           const SizedBox(height: 14),
-          _menuCard([
+          FadeSlideIn(
+            index: 3,
+            child: _menuCard(context, [
             _MenuRow(Icons.logout_rounded, const Color(0xFFFDECEC), AppColors.danger,
                 s.logout, () => _confirmLogout(context, ref), danger: true),
           ]),
+          ),
         ],
       ),
     );
   }
 
-  BoxDecoration _cardDecoration() => BoxDecoration(
-        color: Colors.white,
+  String _themeLabel(ThemeMode mode, AppStrings s) => switch (mode) {
+        ThemeMode.system => s.themeSystem,
+        ThemeMode.light => s.themeLight,
+        ThemeMode.dark => s.themeDark,
+      };
+
+  /// Bottom sheet chọn giao diện: Theo hệ thống / Sáng / Tối.
+  Future<void> _pickTheme(BuildContext context, WidgetRef ref) async {
+    final s = ref.read(stringsProvider);
+    final current = ref.read(themeModeProvider);
+    void choose(ThemeMode m) {
+      ref.read(themeModeProvider.notifier).set(m);
+      Navigator.pop(context);
+    }
+
+    await showAppSheet(
+      context,
+      builder: (ctx) => SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(AppSpace.base, AppSpace.lg, AppSpace.base, AppSpace.base),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(s.appearance, style: AppType.h2.copyWith(color: ctx.c.textPrimary)),
+              const SizedBox(height: AppSpace.base),
+              AppSheetOption(
+                icon: Icons.smartphone_rounded,
+                label: s.themeSystem,
+                selected: current == ThemeMode.system,
+                onTap: () => choose(ThemeMode.system),
+              ),
+              AppSheetOption(
+                icon: Icons.light_mode_rounded,
+                label: s.themeLight,
+                selected: current == ThemeMode.light,
+                onTap: () => choose(ThemeMode.light),
+              ),
+              AppSheetOption(
+                icon: Icons.dark_mode_rounded,
+                label: s.themeDark,
+                selected: current == ThemeMode.dark,
+                onTap: () => choose(ThemeMode.dark),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  BoxDecoration _cardDecoration(BuildContext context) => BoxDecoration(
+        color: context.c.surface,
         borderRadius: BorderRadius.circular(20),
-        boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.05), blurRadius: 12, offset: const Offset(0, 4))],
+        border: Border.all(color: context.c.border),
+        boxShadow: AppShadow.soft(context.c.shadow),
       );
 
   Widget _badge(String text) => Container(
@@ -122,9 +196,9 @@ class ProfileScreen extends ConsumerWidget {
         child: Text(text, style: const TextStyle(fontWeight: FontWeight.w800, color: Colors.grey, fontSize: 13)),
       );
 
-  Widget _menuCard(List<_MenuRow> rows) {
+  Widget _menuCard(BuildContext context, List<_MenuRow> rows) {
     return Container(
-      decoration: _cardDecoration(),
+      decoration: _cardDecoration(context),
       clipBehavior: Clip.antiAlias,
       child: Column(
         children: [
@@ -140,8 +214,8 @@ class ProfileScreen extends ConsumerWidget {
 
   Future<void> _confirmLogout(BuildContext context, WidgetRef ref) async {
     final s = ref.read(stringsProvider);
-    final ok = await showDialog<bool>(
-      context: context,
+    final ok = await showAppDialog<bool>(
+      context,
       builder: (ctx) => AlertDialog(
         title: Text(s.logout),
         content: Text(s.logoutConfirm),
@@ -161,8 +235,8 @@ class ProfileScreen extends ConsumerWidget {
     final s = ref.read(stringsProvider);
     final nameCtrl = TextEditingController();
     final descCtrl = TextEditingController();
-    final created = await showDialog<bool>(
-      context: context,
+    final created = await showAppDialog<bool>(
+      context,
       builder: (ctx) => AlertDialog(
         title: Text(s.openShop),
         content: Column(

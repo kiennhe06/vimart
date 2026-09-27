@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../app/design.dart';
 import '../../app/motion.dart';
 import '../../app/theme.dart';
 import '../../core/format.dart';
@@ -14,6 +15,7 @@ import '../../widgets/entrance.dart';
 import '../../widgets/login_required_view.dart';
 import '../../widgets/network_image_box.dart';
 import '../../widgets/pressable.dart';
+import '../../widgets/rolling_number.dart';
 import '../auth/auth_provider.dart';
 import 'cart_provider.dart';
 
@@ -76,9 +78,9 @@ class _ShopGroup extends ConsumerWidget {
     return Container(
       margin: const EdgeInsets.only(bottom: 14),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: context.c.surface,
         borderRadius: BorderRadius.circular(20),
-        boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.05), blurRadius: 12, offset: const Offset(0, 4))],
+        boxShadow: [BoxShadow(color: context.c.shadow, blurRadius: 12, offset: const Offset(0, 4))],
       ),
       padding: const EdgeInsets.all(14),
       child: Column(
@@ -94,7 +96,7 @@ class _ShopGroup extends ConsumerWidget {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(shop.shopName, style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 15)),
-                    Text(s.deliveryIn15, style: const TextStyle(color: Colors.grey, fontSize: 12)),
+                    Text(s.deliveryIn15, style: TextStyle(color: context.c.textSecondary, fontSize: 12)),
                   ],
                 ),
               ),
@@ -163,7 +165,7 @@ class _CartItemRow extends ConsumerWidget {
               children: [
                 Text(item.productName, maxLines: 1, overflow: TextOverflow.ellipsis,
                     style: const TextStyle(fontWeight: FontWeight.w700)),
-                Text(item.variantName, style: const TextStyle(color: Colors.grey, fontSize: 12)),
+                Text(item.variantName, style: TextStyle(color: context.c.textSecondary, fontSize: 12)),
                 const SizedBox(height: 4),
                 Text(formatVnd(item.price),
                     style: const TextStyle(color: AppColors.brand, fontWeight: FontWeight.w800, fontSize: 15)),
@@ -226,10 +228,10 @@ class _QtyStepper extends StatelessWidget {
         width: 32, height: 32,
         decoration: BoxDecoration(
           shape: BoxShape.circle,
-          color: filled ? (onTap == null ? Colors.grey.shade200 : AppColors.brand) : Colors.white,
-          border: filled ? null : Border.all(color: const Color(0xFFDDE1E6)),
+          color: filled ? (onTap == null ? context.c.border : AppColors.brand) : context.c.surface,
+          border: filled ? null : Border.all(color: context.c.border),
         ),
-        child: Icon(icon, size: 18, color: filled ? Colors.white : AppColors.brand),
+        child: Icon(icon, size: 18, color: filled ? context.c.onBrand : AppColors.brand),
       ),
     );
   }
@@ -248,9 +250,9 @@ class _Footer extends ConsumerWidget {
       child: Container(
         padding: const EdgeInsets.fromLTRB(16, 14, 16, 14),
         decoration: BoxDecoration(
-          color: Colors.white,
+          color: context.c.surface,
           borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
-          boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.06), blurRadius: 16, offset: const Offset(0, -4))],
+          boxShadow: [BoxShadow(color: context.c.shadow, blurRadius: 16, offset: const Offset(0, -4))],
         ),
         child: Column(
           mainAxisSize: MainAxisSize.min,
@@ -263,14 +265,11 @@ class _Footer extends ConsumerWidget {
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
                 Text(s.total, style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 16)),
-                TweenAnimationBuilder<int>(
-                  tween: IntTween(begin: 0, end: total),
-                  duration: AppMotion.dur(context, AppMotion.slow),
-                  curve: AppMotion.enter,
-                  builder: (context, value, _) => Text(
-                    formatVnd(value),
-                    style: const TextStyle(color: AppColors.brand, fontWeight: FontWeight.w800, fontSize: 18),
-                  ),
+                // Tổng tiền "cuộn" tới giá trị mới khi đổi số lượng (secondary motion).
+                RollingNumber(
+                  value: total,
+                  format: formatVnd,
+                  style: const TextStyle(color: AppColors.brand, fontWeight: FontWeight.w800, fontSize: 18),
                 ),
               ],
             ),

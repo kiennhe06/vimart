@@ -1,7 +1,10 @@
 import 'package:flutter/material.dart' show Icons;
 import 'package:flutter/widgets.dart';
 
+import '../../../app/design.dart';
+import '../../../app/motion.dart';
 import '../../../models/category.dart';
+import '../../../widgets/pressable.dart';
 import '../home_ui.dart';
 
 /// Hàng danh mục dạng vòng tròn nhiều màu (cuộn ngang) — phong cách grocery.
@@ -39,9 +42,10 @@ class CategoryCircles extends StatelessWidget {
         scrollDirection: Axis.horizontal,
         padding: const EdgeInsets.symmetric(horizontal: HomeDims.pagePadding - 4),
         children: [
-          _item(index: 0, id: null, label: allLabel, icon: Icons.grid_view_rounded),
+          _item(context, index: 0, id: null, label: allLabel, icon: Icons.grid_view_rounded),
           for (int i = 0; i < categories.length; i++)
             _item(
+              context,
               index: i + 1,
               id: categories[i].id,
               label: categories[i].name,
@@ -52,38 +56,48 @@ class CategoryCircles extends StatelessWidget {
     );
   }
 
-  Widget _item({required int index, required int? id, required String label, required IconData icon}) {
+  Widget _item(BuildContext context, {required int index, required int? id, required String label, required IconData icon}) {
     final selected = selectedId == id;
     final tint = kCategoryTints[index % kCategoryTints.length];
     final ink = kCategoryInk[index % kCategoryInk.length];
-    return GestureDetector(
+    return Pressable(
       onTap: () => onSelect(id),
+      scale: 0.9,
       child: Container(
         width: 74,
         margin: const EdgeInsets.symmetric(horizontal: 4),
         child: Column(
           children: [
-            Container(
+            // Vòng tròn: viền xanh + quầng nhẹ chạy vào khi được chọn.
+            AnimatedContainer(
+              duration: AppMotion.dur(context, AppMotion.base),
+              curve: AppMotion.emphasized,
               width: 60,
               height: 60,
+              alignment: Alignment.center,
               decoration: BoxDecoration(
                 color: tint,
                 shape: BoxShape.circle,
-                border: selected ? Border.all(color: HomeColors.brand, width: 2.4) : null,
+                border: Border.all(
+                  color: selected ? context.c.brand : const Color(0x00000000),
+                  width: 2.4,
+                ),
+                boxShadow: selected
+                    ? [BoxShadow(color: context.c.brand.withValues(alpha: 0.22), blurRadius: 10, offset: const Offset(0, 3))]
+                    : null,
               ),
               child: Icon(icon, color: ink, size: 26),
             ),
             const SizedBox(height: 7),
-            Text(
-              label,
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-              textAlign: TextAlign.center,
+            AnimatedDefaultTextStyle(
+              duration: AppMotion.dur(context, AppMotion.base),
+              curve: AppMotion.emphasized,
               style: TextStyle(
                 fontSize: 12,
                 fontWeight: selected ? FontWeight.w700 : FontWeight.w500,
-                color: selected ? HomeColors.brand : HomeColors.textSecondary,
+                color: selected ? context.c.brand : context.c.textSecondary,
               ),
+              child: Text(label, maxLines: 1, overflow: TextOverflow.ellipsis, textAlign: TextAlign.center),
             ),
           ],
         ),

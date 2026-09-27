@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:vimart/app/motion.dart';
 import 'package:vimart/widgets/pressable.dart';
+import 'package:vimart/widgets/rolling_number.dart';
+import 'package:vimart/widgets/spring.dart';
 
 void main() {
   testWidgets(
@@ -62,10 +64,51 @@ void main() {
       ),
     );
     final before = tester.getSize(find.byKey(const Key('box')));
-    await tester.tap(find.byKey(const Key('box')));
+    await tester.tap(find.byKey(const Key('box')), warnIfMissed: false);
     await tester.pumpAndSettle();
     final after = tester.getSize(find.byKey(const Key('box')));
     expect(taps, 1);
     expect(after, before, reason: 'press feedback không được đẩy/đổi layout');
+  });
+
+  testWidgets('Springy nhảy thẳng tới đích khi giảm chuyển động', (
+    tester,
+  ) async {
+    double seen = -1;
+    Widget build(double v) => MediaQuery(
+      data: const MediaQueryData(disableAnimations: true),
+      child: Directionality(
+        textDirection: TextDirection.ltr,
+        child: Springy(
+          value: v,
+          builder: (_, val, _) {
+            seen = val;
+            return const SizedBox();
+          },
+        ),
+      ),
+    );
+    await tester.pumpWidget(build(0));
+    expect(seen, 0);
+    await tester.pumpWidget(build(1));
+    await tester.pump();
+    expect(
+      seen,
+      1,
+      reason: 'giảm chuyển động -> tới đích tức thì, không mô phỏng',
+    );
+  });
+
+  testWidgets('RollingNumber hiển thị giá trị đã định dạng', (tester) async {
+    await tester.pumpWidget(
+      MediaQuery(
+        data: const MediaQueryData(disableAnimations: true),
+        child: Directionality(
+          textDirection: TextDirection.ltr,
+          child: RollingNumber(value: 1000, format: (v) => '$v đ'),
+        ),
+      ),
+    );
+    expect(find.text('1000 đ'), findsOneWidget);
   });
 }
