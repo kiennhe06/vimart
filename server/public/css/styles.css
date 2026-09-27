@@ -646,6 +646,17 @@ svg.ic {
 .spacer {
   flex: 1;
 }
+/* Số sao đánh giá */
+.stars {
+  color: var(--amber);
+  letter-spacing: 2px;
+  font-size: 15px;
+  white-space: nowrap;
+}
+.stars__off {
+  color: var(--text-2);
+  opacity: 0.4;
+}
 .muted {
   color: var(--text-2);
 }

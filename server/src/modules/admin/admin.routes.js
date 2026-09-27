@@ -83,6 +83,36 @@ router.post(
   })
 );
 
+/** GET /api/admin/reviews — tất cả đánh giá sản phẩm trên sàn (mới nhất trước). */
+router.get(
+  '/reviews',
+  asyncHandler(async (req, res) => {
+    const result = await query(
+      `SELECT r.id, r.rating, r.comment, r.created_at,
+              p.id AS product_id, p.name AS product_name,
+              s.name AS shop_name, u.full_name AS user_name
+       FROM reviews r
+       JOIN products p ON p.id = r.product_id
+       JOIN shops s ON s.id = p.shop_id
+       JOIN users u ON u.id = r.user_id
+       ORDER BY r.created_at DESC LIMIT 200`
+    );
+    return ok(
+      res,
+      result.rows.map((r) => ({
+        id: r.id,
+        rating: r.rating,
+        comment: r.comment,
+        createdAt: r.created_at,
+        productId: r.product_id,
+        productName: r.product_name,
+        shopName: r.shop_name,
+        userName: r.user_name,
+      }))
+    );
+  })
+);
+
 /** GET /api/admin/stats — thống kê tổng quan cho dashboard admin. */
 router.get(
   '/stats',

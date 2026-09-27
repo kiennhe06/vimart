@@ -78,6 +78,7 @@ const NAV = [
   { key: 'products', icon: '🛍️' },
   { key: 'users', icon: '👥' },
   { key: 'orders', icon: '📦' },
+  { key: 'reviews', icon: '⭐' },
   { key: 'categories', icon: '🏷️' },
 ];
 // Nhãn menu theo ngôn ngữ.
@@ -88,6 +89,7 @@ function navLabel(key) {
       products: L('Sản phẩm', 'Products'),
       users: L('Người dùng', 'Users'),
       orders: L('Đơn hàng', 'Orders'),
+      reviews: L('Đánh giá', 'Reviews'),
       categories: L('Danh mục', 'Categories'),
     }[key] || key
   );
@@ -126,6 +128,7 @@ const ICONS = {
   monitor: '<rect x="2" y="3" width="20" height="14" rx="2"/><path d="M8 21h8M12 17v4"/>',
   chevronL: '<path d="m15 18-6-6 6-6"/>',
   chevronR: '<path d="m9 18 6-6-6-6"/>',
+  star: '<path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14l-5-4.87 6.91-1.01L12 2z"/>',
 };
 
 // Kỳ đang xem của dashboard: chế độ (tuần/tháng) + độ lệch (0 = hiện tại,
@@ -303,6 +306,7 @@ async function route() {
     else if (key === 'products') await viewProducts(content);
     else if (key === 'users') await viewUsers(content);
     else if (key === 'orders') await viewOrders(content);
+    else if (key === 'reviews') await viewReviews(content);
     else if (key === 'categories') await viewCategories(content);
   } catch (err) {
     content.innerHTML = stateView({
@@ -873,6 +877,57 @@ async function viewOrders(el) {
 }
 
 // ---------- View: Danh mục ----------
+// ---------- View: Đánh giá sản phẩm (toàn sàn) ----------
+
+/** Vẽ số sao dạng ★ đặc / ☆ rỗng theo điểm 1..5. */
+function stars(rating) {
+  const n = Math.max(0, Math.min(5, Number(rating) || 0));
+  return `<span class="stars" aria-label="${n}/5">${'★'.repeat(n)}<span class="stars__off">${'★'.repeat(5 - n)}</span></span>`;
+}
+
+async function viewReviews(el) {
+  const reviews = await Api.get('/admin/reviews');
+
+  if (!reviews.length) {
+    el.innerHTML = `<div class="panel">${stateView({
+      icon: 'star',
+      title: L('Chưa có đánh giá nào', 'No reviews yet'),
+      message: L(
+        'Đánh giá xuất hiện sau khi khách nhận hàng và đánh giá đơn đã hoàn thành.',
+        'Reviews appear after customers receive their orders and rate completed purchases.'
+      ),
+    })}</div>`;
+    return;
+  }
+
+  const rows = reviews
+    .map(
+      (r) => `<tr>
+      <td>${escapeHtml(r.productName)}<div class="muted">${escapeHtml(r.shopName || '')}</div></td>
+      <td>${escapeHtml(r.userName || '')}</td>
+      <td>${stars(r.rating)}</td>
+      <td>${r.comment ? escapeHtml(r.comment) : '<span class="muted">—</span>'}</td>
+      <td class="muted">${fmtDate(r.createdAt)}</td>
+    </tr>`
+    )
+    .join('');
+
+  el.innerHTML = `
+    <div class="section-head">
+      <h3>${L('Đánh giá sản phẩm', 'Product reviews')}</h3><div class="spacer"></div>
+      <span class="pill pill--soft">${reviews.length} ${L('đánh giá', 'reviews')}</span>
+    </div>
+    <div class="panel"><table class="table">
+      <thead><tr>
+        <th>${L('Sản phẩm', 'Product')}</th>
+        <th>${L('Người đánh giá', 'Reviewer')}</th>
+        <th>${L('Số sao', 'Rating')}</th>
+        <th>${L('Nhận xét', 'Comment')}</th>
+        <th>${L('Ngày', 'Date')}</th>
+      </tr></thead>
+      <tbody>${rows}</tbody></table></div>`;
+}
+
 async function viewCategories(el) {
   const cats = await Api.get('/categories');
   const rows = cats
