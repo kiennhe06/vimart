@@ -5,4 +5,5 @@ export const checkoutSchema = z.object({
   addressId: z.number().int('Thiếu địa chỉ nhận hàng'),
   paymentMethod: z.enum(['cod', 'vnpay']).default('cod'),
   note: z.string().max(500).optional().nullable(),
+  voucherCode: z.string().max(40).optional().nullable(),
 });

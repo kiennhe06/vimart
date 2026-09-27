@@ -400,4 +400,102 @@ router.delete(
   })
 );
 
+// ---------- Mã giảm giá (voucher) ----------
+
+/** GET /api/admin/vouchers — danh sách mã giảm giá. */
+router.get(
+  '/vouchers',
+  asyncHandler(async (req, res) => {
+    const result = await query('SELECT * FROM vouchers ORDER BY created_at DESC');
+    return ok(
+      res,
+      result.rows.map((v) => ({
+        id: v.id,
+        code: v.code,
+        description: v.description,
+        type: v.type,
+        value: v.value,
+        maxDiscount: v.max_discount,
+        minOrder: v.min_order,
+        usageLimit: v.usage_limit,
+        usedCount: v.used_count,
+        startsAt: v.starts_at,
+        expiresAt: v.expires_at,
+        isActive: v.is_active,
+        createdAt: v.created_at,
+      }))
+    );
+  })
+);
+
+const voucherSchema = z.object({
+  code: z
+    .string()
+    .trim()
+    .min(2, 'Mã tối thiểu 2 ký tự')
+    .max(40)
+    .regex(/^[A-Za-z0-9_-]+$/, 'Mã chỉ gồm chữ, số, gạch ngang/dưới'),
+  description: z.string().max(255).optional().nullable(),
+  type: z.enum(['percent', 'fixed']),
+  value: z.number().int().positive('Giá trị phải lớn hơn 0'),
+  maxDiscount: z.number().int().nonnegative().optional().nullable(),
+  minOrder: z.number().int().nonnegative().default(0),
+  usageLimit: z.number().int().positive().optional().nullable(),
+  expiresAt: z.string().datetime().optional().nullable(),
+});
+
+/** POST /api/admin/vouchers — tạo mã giảm giá. */
+router.post(
+  '/vouchers',
+  validate(voucherSchema),
+  asyncHandler(async (req, res) => {
+    const d = req.body;
+    if (d.type === 'percent' && d.value > 100)
+      throw new AppError(400, 'Mã phần trăm không được vượt 100%');
+    const exists = await query('SELECT id FROM vouchers WHERE UPPER(code) = UPPER($1)', [d.code]);
+    if (exists.rows.length > 0) throw new AppError(409, 'Mã này đã tồn tại');
+
+    const result = await query(
+      `INSERT INTO vouchers (code, description, type, value, max_discount, min_order, usage_limit, expires_at)
+       VALUES ($1,$2,$3,$4,$5,$6,$7,$8) RETURNING id`,
+      [
+        d.code.toUpperCase(),
+        d.description ?? null,
+        d.type,
+        d.value,
+        d.type === 'percent' ? (d.maxDiscount ?? null) : null,
+        d.minOrder ?? 0,
+        d.usageLimit ?? null,
+        d.expiresAt ?? null,
+      ]
+    );
+    return created(res, { id: result.rows[0].id });
+  })
+);
+
+/** PUT /api/admin/vouchers/:id/status — bật/tắt mã. Body: { isActive } */
+router.put(
+  '/vouchers/:id/status',
+  asyncHandler(async (req, res) => {
+    const result = await query('UPDATE vouchers SET is_active = $1 WHERE id = $2 RETURNING id', [
+      Boolean(req.body.isActive),
+      Number(req.params.id),
+    ]);
+    if (result.rows.length === 0) throw new AppError(404, 'Không tìm thấy mã giảm giá');
+    return ok(res, { id: result.rows[0].id, isActive: Boolean(req.body.isActive) });
+  })
+);
+
+/** DELETE /api/admin/vouchers/:id — xóa mã. */
+router.delete(
+  '/vouchers/:id',
+  asyncHandler(async (req, res) => {
+    const result = await query('DELETE FROM vouchers WHERE id = $1 RETURNING id', [
+      Number(req.params.id),
+    ]);
+    if (result.rows.length === 0) throw new AppError(404, 'Không tìm thấy mã giảm giá');
+    return ok(res, { message: 'Đã xóa mã giảm giá' });
+  })
+);
+
 export default router;
