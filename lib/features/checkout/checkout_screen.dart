@@ -233,25 +233,30 @@ class _CheckoutScreenState extends ConsumerState<CheckoutScreen> {
                       child: Padding(
                         padding: const EdgeInsets.all(12),
                         child: _voucher == null
-                            ? Row(
+                            ? Column(
+                                crossAxisAlignment: CrossAxisAlignment.stretch,
                                 children: [
-                                  Expanded(
-                                    child: TextField(
-                                      controller: _voucherCtrl,
-                                      textCapitalization: TextCapitalization.characters,
-                                      decoration: InputDecoration(
-                                        hintText: s.enterVoucherHint,
-                                        prefixIcon: const Icon(Icons.local_offer_outlined),
-                                        border: const OutlineInputBorder(),
-                                        isDense: true,
-                                      ),
-                                      onSubmitted: (_) => _applyVoucher(),
+                                  TextField(
+                                    controller: _voucherCtrl,
+                                    textCapitalization: TextCapitalization.characters,
+                                    decoration: InputDecoration(
+                                      hintText: s.enterVoucherHint,
+                                      prefixIcon: const Icon(Icons.local_offer_outlined),
+                                      border: const OutlineInputBorder(),
+                                      isDense: true,
                                     ),
+                                    onSubmitted: (_) => _applyVoucher(),
                                   ),
-                                  const SizedBox(width: 8),
+                                  const SizedBox(height: 10),
                                   FilledButton.tonal(
                                     onPressed: _applyingVoucher ? null : _applyVoucher,
-                                    child: BusySwitch(busy: _applyingVoucher, child: Text(s.applyVoucher)),
+                                    child: _applyingVoucher
+                                        ? const SizedBox(
+                                            width: 18,
+                                            height: 18,
+                                            child: CircularProgressIndicator(strokeWidth: 2),
+                                          )
+                                        : Text(s.applyVoucher),
                                   ),
                                 ],
                               )
@@ -270,7 +275,15 @@ class _CheckoutScreenState extends ConsumerState<CheckoutScreen> {
                                       ],
                                     ),
                                   ),
-                                  TextButton(onPressed: _removeVoucher, child: Text(s.removeVoucher)),
+                                  GestureDetector(
+                                    onTap: _removeVoucher,
+                                    child: Padding(
+                                      padding: const EdgeInsets.all(8),
+                                      child: Text(s.removeVoucher,
+                                          style: const TextStyle(
+                                              color: AppColors.accent, fontWeight: FontWeight.w600)),
+                                    ),
+                                  ),
                                 ],
                               ),
                       ),
