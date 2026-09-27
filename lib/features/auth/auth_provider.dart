@@ -4,7 +4,6 @@ import '../../core/providers.dart';
 import '../../models/user.dart';
 import '../address/address_provider.dart';
 import '../cart/cart_provider.dart';
-import '../catalog/search_history.dart';
 import '../favorite/favorite_provider.dart';
 import '../order/order_providers.dart';
 import '../seller/seller_repository.dart';
@@ -113,8 +112,8 @@ class AuthNotifier extends Notifier<AuthState> {
     // Provider family KHÔNG theo dõi đăng nhập -> phải invalidate thủ công.
     ref.invalidate(shopOrdersProvider);
     ref.invalidate(orderDetailProvider);
-    // Dữ liệu cục bộ lưu trên máy theo người dùng -> xóa hẳn.
-    ref.read(searchHistoryProvider.notifier).clear();
+    // Lịch sử tìm kiếm tự tách theo user (search_history_<userId>) nhờ watch
+    // authProvider, nên không cần xóa ở đây — quay lại tài khoản cũ vẫn còn.
   }
 }
 
