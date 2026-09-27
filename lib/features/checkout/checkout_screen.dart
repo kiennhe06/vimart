@@ -37,6 +37,43 @@ class _CheckoutScreenState extends ConsumerState<CheckoutScreen> {
   String _paymentMethod = 'cod';
   bool _placing = false;
 
+  final _voucherCtrl = TextEditingController();
+  AppliedVoucher? _voucher;
+  bool _applyingVoucher = false;
+
+  @override
+  void dispose() {
+    _voucherCtrl.dispose();
+    super.dispose();
+  }
+
+  Future<void> _applyVoucher() async {
+    final code = _voucherCtrl.text.trim();
+    if (code.isEmpty) return;
+    FocusScope.of(context).unfocus();
+    setState(() => _applyingVoucher = true);
+    try {
+      final voucher = await ref.read(orderRepositoryProvider).applyVoucher(code);
+      setState(() => _voucher = voucher);
+      if (mounted) {
+        showAppSnack(context, ref.read(stringsProvider).voucherApplied(voucher.code),
+            type: AppSnackType.success);
+      }
+    } catch (e) {
+      setState(() => _voucher = null);
+      if (mounted) showAppSnack(context, e.toString(), type: AppSnackType.error);
+    } finally {
+      if (mounted) setState(() => _applyingVoucher = false);
+    }
+  }
+
+  void _removeVoucher() {
+    setState(() {
+      _voucher = null;
+      _voucherCtrl.clear();
+    });
+  }
+
   Future<void> _placeOrder() async {
     if (_addressId == null) {
       showAppSnack(context, ref.read(stringsProvider).selectAddress, type: AppSnackType.warning);
@@ -45,7 +82,12 @@ class _CheckoutScreenState extends ConsumerState<CheckoutScreen> {
     setState(() => _placing = true);
     try {
       final repo = ref.read(orderRepositoryProvider);
-      final result = await repo.checkout(addressId: _addressId!, paymentMethod: _paymentMethod);
+      final result = await repo.checkout(
+        addressId: _addressId!,
+        paymentMethod: _paymentMethod,
+        voucherCode: _voucher?.code,
+      );
+      _voucher = null;
       await ref.read(cartProvider.notifier).reload();
       ref.invalidate(myOrdersProvider);
 
@@ -137,7 +179,8 @@ class _CheckoutScreenState extends ConsumerState<CheckoutScreen> {
         loading: const SkeletonList(count: 4),
         data: (cart) {
           final shippingTotal = cart.shops.length * _shippingPerShop;
-          final total = cart.subtotal + shippingTotal;
+          final discount = (_voucher?.discount ?? 0).clamp(0, cart.subtotal);
+          final total = cart.subtotal + shippingTotal - discount;
 
           return Column(
             children: [
@@ -184,6 +227,55 @@ class _CheckoutScreenState extends ConsumerState<CheckoutScreen> {
                         ),
                       ),
                     const SizedBox(height: 8),
+                    // Mã giảm giá
+                    _section(s.discountCode),
+                    Card(
+                      child: Padding(
+                        padding: const EdgeInsets.all(12),
+                        child: _voucher == null
+                            ? Row(
+                                children: [
+                                  Expanded(
+                                    child: TextField(
+                                      controller: _voucherCtrl,
+                                      textCapitalization: TextCapitalization.characters,
+                                      decoration: InputDecoration(
+                                        hintText: s.enterVoucherHint,
+                                        prefixIcon: const Icon(Icons.local_offer_outlined),
+                                        border: const OutlineInputBorder(),
+                                        isDense: true,
+                                      ),
+                                      onSubmitted: (_) => _applyVoucher(),
+                                    ),
+                                  ),
+                                  const SizedBox(width: 8),
+                                  FilledButton.tonal(
+                                    onPressed: _applyingVoucher ? null : _applyVoucher,
+                                    child: BusySwitch(busy: _applyingVoucher, child: Text(s.applyVoucher)),
+                                  ),
+                                ],
+                              )
+                            : Row(
+                                children: [
+                                  const Icon(Icons.check_circle, color: AppColors.accent),
+                                  const SizedBox(width: 8),
+                                  Expanded(
+                                    child: Column(
+                                      crossAxisAlignment: CrossAxisAlignment.start,
+                                      children: [
+                                        Text(_voucher!.code,
+                                            style: const TextStyle(fontWeight: FontWeight.bold)),
+                                        Text('-${formatVnd(_voucher!.discount)}',
+                                            style: const TextStyle(color: AppColors.accent)),
+                                      ],
+                                    ),
+                                  ),
+                                  TextButton(onPressed: _removeVoucher, child: Text(s.removeVoucher)),
+                                ],
+                              ),
+                      ),
+                    ),
+                    const SizedBox(height: 8),
                     // Phương thức thanh toán
                     _section(s.paymentMethod),
                     Card(
@@ -215,6 +307,7 @@ class _CheckoutScreenState extends ConsumerState<CheckoutScreen> {
                           children: [
                             _summaryRow(s.subtotal, cart.subtotal),
                             _summaryRow(s.shippingFee, shippingTotal),
+                            if (discount > 0) _summaryRow(s.discount, -discount),
                             const Divider(),
                             _summaryRow(s.total, total, highlight: true),
                           ],
