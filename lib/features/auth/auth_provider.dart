@@ -2,6 +2,12 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../core/providers.dart';
 import '../../models/user.dart';
+import '../address/address_provider.dart';
+import '../cart/cart_provider.dart';
+import '../catalog/search_history.dart';
+import '../favorite/favorite_provider.dart';
+import '../order/order_providers.dart';
+import '../seller/seller_repository.dart';
 import 'auth_repository.dart';
 
 /// Trạng thái đăng nhập của app.
@@ -74,11 +80,15 @@ class AuthNotifier extends Notifier<AuthState> {
     await ref.read(tokenStorageProvider).clear();
     ref.read(apiClientProvider).token = null;
     state = const AuthState(loading: false, user: null);
+    _resetUserScopedData();
   }
 
   Future<void> _persist(User user, String token) async {
     await ref.read(tokenStorageProvider).save(token);
     ref.read(apiClientProvider).token = token;
+    // Đổi tài khoản (đăng nhập/đăng ký) -> dọn sạch dữ liệu tài khoản trước
+    // trong bộ nhớ trước khi tải dữ liệu tài khoản mới.
+    _resetUserScopedData();
     // /auth/login chỉ trả thông tin cơ bản (không kèm shop). Gọi /auth/me để lấy
     // đầy đủ (biết người dùng đã có shop hay chưa) rồi mới cập nhật trạng thái.
     try {
@@ -86,6 +96,25 @@ class AuthNotifier extends Notifier<AuthState> {
     } catch (_) {
       state = AuthState(loading: false, user: user);
     }
+  }
+
+  /// Xóa mọi dữ liệu gắn với người dùng khỏi bộ nhớ khi đổi tài khoản
+  /// (đăng nhập tài khoản khác, đăng ký mới, hoặc đăng xuất) — để tài khoản
+  /// mới không thấy dữ liệu của tài khoản trước (giỏ hàng, yêu thích, đơn,
+  /// địa chỉ, lịch sử tìm kiếm...).
+  void _resetUserScopedData() {
+    // Các provider tự tải lại theo authProvider vẫn được invalidate để chắc
+    // chắn không dùng lại cache của tài khoản cũ.
+    ref.invalidate(cartProvider);
+    ref.invalidate(favoritesProvider);
+    ref.invalidate(myOrdersProvider);
+    ref.invalidate(addressesProvider);
+    ref.invalidate(myProductsProvider);
+    // Provider family KHÔNG theo dõi đăng nhập -> phải invalidate thủ công.
+    ref.invalidate(shopOrdersProvider);
+    ref.invalidate(orderDetailProvider);
+    // Dữ liệu cục bộ lưu trên máy theo người dùng -> xóa hẳn.
+    ref.read(searchHistoryProvider.notifier).clear();
   }
 }
 
