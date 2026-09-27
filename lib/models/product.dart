@@ -61,7 +61,14 @@ class Variant {
 
 /// Đánh giá của người mua.
 class Review {
-  Review({required this.id, required this.rating, this.comment, this.userName, this.createdAt});
+  Review({
+    required this.id,
+    required this.rating,
+    this.comment,
+    this.userName,
+    this.createdAt,
+    this.reply,
+  });
 
   final int id;
   final int rating;
@@ -69,12 +76,16 @@ class Review {
   final String? userName;
   final DateTime? createdAt;
 
+  /// Phản hồi của admin cho đánh giá này (null nếu chưa có).
+  final String? reply;
+
   factory Review.fromJson(Map<String, dynamic> json) => Review(
         id: (json['id'] as num).toInt(),
         rating: (json['rating'] as num?)?.toInt() ?? 0,
         comment: json['comment'] as String?,
         userName: json['userName'] as String?,
         createdAt: DateTime.tryParse(json['createdAt']?.toString() ?? ''),
+        reply: json['reply'] as String?,
       );
 }
 

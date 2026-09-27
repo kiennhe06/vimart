@@ -47,6 +47,7 @@ class AppStrings {
   String get noDescription => _('Chưa có mô tả.', 'No description.');
   String get noReviewYet => _('Chưa có đánh giá nào.', 'No reviews yet.');
   String get user => _('Người dùng', 'User');
+  String get shopReply => _('Phản hồi từ ViMart', 'Reply from ViMart');
   String addToCartWith(String price) => _('Thêm vào giỏ • $price', 'Add to cart • $price');
   String get outOfStock => _('Hết hàng', 'Out of stock');
   String get addedFavorite => _('Đã thêm vào yêu thích', 'Added to favorites');

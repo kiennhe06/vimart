@@ -418,6 +418,26 @@ class _ReviewTile extends ConsumerWidget {
           ),
           if (review.comment != null && review.comment!.isNotEmpty)
             Padding(padding: const EdgeInsets.only(top: 4), child: Text(review.comment!)),
+          if (review.reply != null && review.reply!.isNotEmpty)
+            Container(
+              margin: const EdgeInsets.only(top: 8),
+              padding: const EdgeInsets.all(10),
+              decoration: BoxDecoration(
+                color: AppColors.accent.withValues(alpha: 0.08),
+                borderRadius: BorderRadius.circular(10),
+                border: Border(left: BorderSide(color: AppColors.accent, width: 2)),
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(ref.watch(stringsProvider).shopReply,
+                      style: const TextStyle(
+                          color: AppColors.accent, fontWeight: FontWeight.w700, fontSize: 12)),
+                  const SizedBox(height: 2),
+                  Text(review.reply!, style: TextStyle(color: context.c.textSecondary)),
+                ],
+              ),
+            ),
         ],
       ),
     );
