@@ -176,6 +176,8 @@ CREATE TABLE reviews (
   user_id       INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
   rating        INTEGER NOT NULL CHECK (rating BETWEEN 1 AND 5),
   comment       TEXT,
+  reply         TEXT,                    -- phản hồi của admin cho đánh giá
+  reply_at      TIMESTAMPTZ,             -- thời điểm admin phản hồi
   created_at    TIMESTAMPTZ NOT NULL DEFAULT now()
 );
 CREATE INDEX idx_reviews_product ON reviews(product_id);

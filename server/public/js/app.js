@@ -599,6 +599,7 @@ async function viewProducts(el) {
           : `<span class="tag tag--off">${L('Đang ẩn', 'Hidden')}</span>`
       }</td>
       <td style="white-space:nowrap">
+        <button class="btn btn--sm btn--ghost" data-action="product-detail" data-id="${p.id}">${L('Chi tiết', 'Details')}</button>
         <button class="btn btn--sm" data-action="edit-product" data-id="${p.id}">${L('Sửa', 'Edit')}</button>
         <button class="btn btn--sm btn--danger" data-action="del-product" data-id="${p.id}" data-name="${escapeHtml(p.name)}">${L('Xóa', 'Delete')}</button>
       </td>
@@ -900,14 +901,25 @@ async function viewReviews(el) {
     return;
   }
 
+  // Lưu để modal trả lời đọc lại (điền sẵn nội dung cũ khi sửa).
+  state.reviews = reviews;
+
+  const replyBlock = (r) => {
+    if (r.reply) {
+      return `<div class="reply"><div class="reply__label">${L('Phản hồi từ ViMart', 'Reply from ViMart')} · ${fmtDate(r.replyAt)}</div>${escapeHtml(r.reply)}</div>`;
+    }
+    return '';
+  };
+
   const rows = reviews
     .map(
       (r) => `<tr>
-      <td>${escapeHtml(r.productName)}<div class="muted">${escapeHtml(r.shopName || '')}</div></td>
+      <td><a data-action="product-detail" data-id="${r.productId}" class="link">${escapeHtml(r.productName)}</a><div class="muted">${escapeHtml(r.shopName || '')}</div></td>
       <td>${escapeHtml(r.userName || '')}</td>
       <td>${stars(r.rating)}</td>
-      <td>${r.comment ? escapeHtml(r.comment) : '<span class="muted">—</span>'}</td>
+      <td>${r.comment ? escapeHtml(r.comment) : '<span class="muted">—</span>'}${replyBlock(r)}</td>
       <td class="muted">${fmtDate(r.createdAt)}</td>
+      <td><button class="btn btn--sm" data-action="reply-review" data-id="${r.id}">${r.reply ? L('Sửa phản hồi', 'Edit reply') : L('Trả lời', 'Reply')}</button></td>
     </tr>`
     )
     .join('');
@@ -922,10 +934,91 @@ async function viewReviews(el) {
         <th>${L('Sản phẩm', 'Product')}</th>
         <th>${L('Người đánh giá', 'Reviewer')}</th>
         <th>${L('Số sao', 'Rating')}</th>
-        <th>${L('Nhận xét', 'Comment')}</th>
+        <th>${L('Nhận xét & phản hồi', 'Comment & reply')}</th>
         <th>${L('Ngày', 'Date')}</th>
+        <th></th>
       </tr></thead>
       <tbody>${rows}</tbody></table></div>`;
+}
+
+/** Modal admin phản hồi 1 đánh giá. */
+function reviewReplyModal(id) {
+  const r = (state.reviews || []).find((x) => String(x.id) === String(id));
+  const existing = r && r.reply ? r.reply : '';
+  openModal(`
+    <button class="modal__close" data-action="close">×</button>
+    <h2>${L('Phản hồi đánh giá', 'Reply to review')}</h2>
+    <p class="modal__sub">${r ? `${stars(r.rating)} · ${escapeHtml(r.comment || '')}` : ''}</p>
+    <form id="replyForm">
+      <div class="field"><label>${L('Nội dung phản hồi', 'Reply content')}</label>
+        <textarea name="reply" rows="4" maxlength="1000" placeholder="${L('Cảm ơn bạn đã đánh giá...', 'Thanks for your feedback...')}" required autofocus>${escapeHtml(existing)}</textarea></div>
+      <button class="btn btn--primary btn--block" type="submit">${L('Gửi phản hồi', 'Send reply')}</button>
+    </form>`);
+
+  document.getElementById('replyForm').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const reply = e.target.reply.value.trim();
+    if (!reply) return;
+    const btn = e.target.querySelector('button[type=submit]');
+    btn.disabled = true;
+    try {
+      await Api.post(`/admin/reviews/${id}/reply`, { reply });
+      closeModal();
+      toast(L('Đã gửi phản hồi', 'Reply sent'));
+      route();
+    } catch (err) {
+      btn.disabled = false;
+      toast(err.message);
+    }
+  });
+}
+
+/** Modal xem chi tiết đầy đủ 1 sản phẩm (admin). */
+async function productDetailModal(id) {
+  openModal(`<button class="modal__close" data-action="close">×</button>${skeletonView(3)}`);
+  let p;
+  try {
+    p = await Api.get(`/admin/products/${id}`);
+  } catch (err) {
+    toast(err.message);
+    closeModal();
+    return;
+  }
+
+  const variants = (p.variants || [])
+    .map(
+      (v) =>
+        `<tr><td>${escapeHtml(v.name)}</td><td><b style="color:var(--orange)">${fmtVnd(v.price)}</b></td><td>${v.stock}</td></tr>`
+    )
+    .join('');
+
+  const reviews = (p.reviews || [])
+    .map(
+      (r) =>
+        `<div class="litem"><div class="litem__body"><div>${stars(r.rating)} <span class="muted">${escapeHtml(r.userName || '')}</span></div><div class="litem__sub">${escapeHtml(r.comment || '')}</div></div></div>`
+    )
+    .join('');
+
+  const statusTag =
+    p.status === 'active'
+      ? `<span class="tag tag--on">${L('Đang bán', 'Active')}</span>`
+      : `<span class="tag tag--off">${L('Đang ẩn', 'Hidden')}</span>`;
+
+  openModal(`
+    <button class="modal__close" data-action="close">×</button>
+    <div class="pd">
+      <img class="pd__img" src="${escapeHtml(p.imageUrl || '')}" onerror="this.style.visibility='hidden'"/>
+      <div class="pd__head">
+        <h2>${escapeHtml(p.name)}</h2>
+        <div class="pd__meta">${statusTag} · ${escapeHtml(p.shop?.name || '')} · ${stars(Math.round(p.ratingAvg || 0))} <span class="muted">(${p.ratingCount || 0})</span> · ${L('Đã bán', 'Sold')} ${p.soldCount || 0}</div>
+      </div>
+    </div>
+    ${p.description ? `<p class="pd__desc">${escapeHtml(p.description)}</p>` : ''}
+    <h3 class="pd__section">${L('Phân loại', 'Variants')}</h3>
+    <table class="table"><thead><tr><th>${L('Tên', 'Name')}</th><th>${L('Giá', 'Price')}</th><th>${L('Kho', 'Stock')}</th></tr></thead><tbody>${variants || `<tr><td colspan="3" class="muted">—</td></tr>`}</tbody></table>
+    <h3 class="pd__section">${L('Đánh giá gần đây', 'Recent reviews')}</h3>
+    ${reviews || `<div class="muted">${L('Chưa có đánh giá.', 'No reviews yet.')}</div>`}
+  `);
 }
 
 async function viewCategories(el) {
@@ -1091,6 +1184,10 @@ document.addEventListener('click', async (e) => {
     addCategoryModal();
   } else if (action === 'add-product') {
     productFormModal();
+  } else if (action === 'product-detail') {
+    productDetailModal(el.getAttribute('data-id'));
+  } else if (action === 'reply-review') {
+    reviewReplyModal(el.getAttribute('data-id'));
   } else if (action === 'edit-product') {
     productFormModal(el.getAttribute('data-id'));
   } else if (action === 'del-product') {

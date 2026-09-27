@@ -657,6 +657,67 @@ svg.ic {
   color: var(--text-2);
   opacity: 0.4;
 }
+/* Liên kết bấm được trong bảng (mở chi tiết sản phẩm) */
+.link {
+  color: var(--orange);
+  cursor: pointer;
+  font-weight: 600;
+}
+.link:hover {
+  text-decoration: underline;
+}
+/* Khối phản hồi của admin dưới mỗi đánh giá */
+.reply {
+  margin-top: 8px;
+  padding: 8px 12px;
+  background: rgba(244, 81, 30, 0.08);
+  border-left: 2px solid var(--orange);
+  border-radius: 8px;
+  font-size: 13px;
+}
+.reply__label {
+  color: var(--orange);
+  font-weight: 600;
+  font-size: 11px;
+  margin-bottom: 3px;
+}
+/* Modal chi tiết sản phẩm */
+.pd {
+  display: flex;
+  gap: 16px;
+  align-items: center;
+  margin-bottom: 12px;
+}
+.pd__img {
+  width: 84px;
+  height: 84px;
+  border-radius: 14px;
+  object-fit: cover;
+  background: var(--surface-2);
+  flex-shrink: 0;
+}
+.pd__head h2 {
+  margin: 0 0 6px;
+}
+.pd__meta {
+  color: var(--text-2);
+  font-size: 13px;
+}
+.pd__desc {
+  color: var(--text-2);
+  font-size: 14px;
+  line-height: 1.55;
+  white-space: pre-wrap;
+  margin: 0 0 8px;
+}
+.pd__section {
+  margin: 18px 0 8px;
+  font-size: 15px;
+}
+.litem__body {
+  flex: 1;
+  min-width: 0;
+}
 .muted {
   color: var(--text-2);
 }

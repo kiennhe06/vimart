@@ -8,6 +8,7 @@ import { validate } from '../../middlewares/validate.middleware.js';
 import { ok, created } from '../../utils/response.js';
 import { AppError } from '../../utils/AppError.js';
 import { changeStatus } from '../order/order.service.js';
+import { getProductDetail } from '../product/product.service.js';
 
 const router = Router();
 router.use(authRequired, adminOnly);
@@ -88,7 +89,7 @@ router.get(
   '/reviews',
   asyncHandler(async (req, res) => {
     const result = await query(
-      `SELECT r.id, r.rating, r.comment, r.created_at,
+      `SELECT r.id, r.rating, r.comment, r.reply, r.reply_at, r.created_at,
               p.id AS product_id, p.name AS product_name,
               s.name AS shop_name, u.full_name AS user_name
        FROM reviews r
@@ -103,6 +104,8 @@ router.get(
         id: r.id,
         rating: r.rating,
         comment: r.comment,
+        reply: r.reply,
+        replyAt: r.reply_at,
         createdAt: r.created_at,
         productId: r.product_id,
         productName: r.product_name,
@@ -110,6 +113,34 @@ router.get(
         userName: r.user_name,
       }))
     );
+  })
+);
+
+/** POST /api/admin/reviews/:id/reply — admin phản hồi 1 đánh giá. Body: { reply } */
+const adminReviewReplySchema = z.object({
+  reply: z.string().trim().min(1, 'Nội dung phản hồi không được trống').max(1000),
+});
+router.post(
+  '/reviews/:id/reply',
+  validate(adminReviewReplySchema),
+  asyncHandler(async (req, res) => {
+    const id = Number(req.params.id);
+    const result = await query(
+      'UPDATE reviews SET reply = $1, reply_at = now() WHERE id = $2 RETURNING id, reply, reply_at',
+      [req.body.reply, id]
+    );
+    if (result.rows.length === 0) throw new AppError(404, 'Không tìm thấy đánh giá');
+    const r = result.rows[0];
+    return ok(res, { id: r.id, reply: r.reply, replyAt: r.reply_at });
+  })
+);
+
+/** GET /api/admin/products/:id — chi tiết đầy đủ 1 sản phẩm (kể cả hàng ẩn). */
+router.get(
+  '/products/:id',
+  asyncHandler(async (req, res) => {
+    const detail = await getProductDetail(Number(req.params.id));
+    return ok(res, detail);
   })
 );
 
