@@ -124,7 +124,7 @@ export async function getProductDetail(productId) {
     [productId]
   );
   const reviewsRes = await query(
-    `SELECT r.id, r.rating, r.comment, r.created_at, u.full_name AS user_name
+    `SELECT r.id, r.rating, r.comment, r.reply, r.created_at, u.full_name AS user_name
      FROM reviews r JOIN users u ON u.id = r.user_id
      WHERE r.product_id = $1 ORDER BY r.created_at DESC LIMIT 10`,
     [productId]
@@ -152,6 +152,7 @@ export async function getProductDetail(productId) {
       id: r.id,
       rating: r.rating,
       comment: r.comment,
+      reply: r.reply,
       userName: r.user_name,
       createdAt: r.created_at,
     })),
