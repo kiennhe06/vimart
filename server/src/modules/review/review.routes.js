@@ -68,7 +68,7 @@ router.get(
   asyncHandler(async (req, res) => {
     const productId = Number(req.params.productId);
     const result = await query(
-      `SELECT r.id, r.rating, r.comment, r.created_at, u.full_name AS user_name
+      `SELECT r.id, r.rating, r.comment, r.reply, r.reply_at, r.created_at, u.full_name AS user_name
        FROM reviews r JOIN users u ON u.id = r.user_id
        WHERE r.product_id = $1 ORDER BY r.created_at DESC`,
       [productId]
@@ -79,6 +79,8 @@ router.get(
         id: r.id,
         rating: r.rating,
         comment: r.comment,
+        reply: r.reply,
+        replyAt: r.reply_at,
         userName: r.user_name,
         createdAt: r.created_at,
       }))

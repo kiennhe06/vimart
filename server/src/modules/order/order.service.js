@@ -270,7 +270,7 @@ async function restoreStock(client, orderId) {
  * Đổi trạng thái đơn với kiểm tra quyền + đúng luồng.
  * @param {'confirm'|'ship'|'reject'|'cancel'|'received'} action
  */
-export async function changeStatus(userId, orderId, action) {
+export async function changeStatus(userId, orderId, action, { asAdmin = false } = {}) {
   return withTransaction(async (client) => {
     const res = await client.query(
       `SELECT o.*, s.owner_id FROM orders o JOIN shops s ON s.id = o.shop_id WHERE o.id = $1`,
@@ -279,8 +279,10 @@ export async function changeStatus(userId, orderId, action) {
     const order = res.rows[0];
     if (!order) throw new AppError(404, 'Không tìm thấy đơn hàng');
 
-    const isBuyer = order.buyer_id === userId;
-    const isSeller = order.owner_id === userId;
+    // Admin có quyền thao tác thay cả shop lẫn người mua, nhưng VẪN theo đúng
+    // trình tự trạng thái + side-effect (hoàn kho khi hủy, COD nhận = đã trả).
+    const isBuyer = asAdmin || order.buyer_id === userId;
+    const isSeller = asAdmin || order.owner_id === userId;
 
     let newStatus;
     let paymentStatus = order.payment_status;
