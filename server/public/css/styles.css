@@ -666,6 +666,14 @@ svg.ic {
 .link:hover {
   text-decoration: underline;
 }
+/* Cả dòng bảng bấm được -> mở chi tiết */
+.rowlink {
+  cursor: pointer;
+  transition: background 0.15s;
+}
+.rowlink:hover {
+  background: var(--surface-2);
+}
 /* Khối phản hồi của admin dưới mỗi đánh giá */
 .reply {
   margin-top: 8px;

@@ -587,7 +587,7 @@ async function viewProducts(el) {
   const rows = products
     .map(
       (p) => `
-    <tr>
+    <tr class="rowlink" data-action="product-detail" data-id="${p.id}">
       <td><img class="thumb" src="${escapeHtml(p.imageUrl || '')}" onerror="this.style.visibility='hidden'"/></td>
       <td>${escapeHtml(p.name)}</td>
       <td>${escapeHtml(p.shopName)}</td>
@@ -599,7 +599,6 @@ async function viewProducts(el) {
           : `<span class="tag tag--off">${L('Đang ẩn', 'Hidden')}</span>`
       }</td>
       <td style="white-space:nowrap">
-        <button class="btn btn--sm btn--ghost" data-action="product-detail" data-id="${p.id}">${L('Chi tiết', 'Details')}</button>
         <button class="btn btn--sm" data-action="edit-product" data-id="${p.id}">${L('Sửa', 'Edit')}</button>
         <button class="btn btn--sm btn--danger" data-action="del-product" data-id="${p.id}" data-name="${escapeHtml(p.name)}">${L('Xóa', 'Delete')}</button>
       </td>
@@ -735,15 +734,14 @@ async function viewUsers(el) {
   const rows = users
     .map(
       (u) => `
-    <tr>
+    <tr class="rowlink" data-action="user-detail" data-id="${u.id}">
       <td>${u.id}</td>
-      <td><a class="link" data-action="user-detail" data-id="${u.id}">${escapeHtml(u.fullName)}</a></td>
+      <td>${escapeHtml(u.fullName)}</td>
       <td>${escapeHtml(u.email)}</td>
       <td><span class="tag ${u.role === 'admin' ? 'tag--admin' : 'tag--user'}">${u.role}</span></td>
       <td>${u.shop ? escapeHtml(u.shop.name) : '<span class="muted">—</span>'}</td>
       <td><span class="tag ${u.isActive ? 'tag--on' : 'tag--off'}">${u.isActive ? L('Hoạt động', 'Active') : L('Đã khóa', 'Locked')}</span></td>
       <td style="white-space:nowrap">
-        <button class="btn btn--sm btn--ghost" data-action="user-detail" data-id="${u.id}">${L('Chi tiết', 'Details')}</button>
         ${
           u.role === 'admin'
             ? ''
@@ -810,8 +808,8 @@ function renderOrdersTable() {
   body.innerHTML = list
     .map(
       (o) => `
-    <tr>
-      <td><a class="link" data-action="order-detail" data-id="${o.id}">${escapeHtml(o.code)}</a></td>
+    <tr class="rowlink" data-action="order-detail" data-id="${o.id}">
+      <td><b>${escapeHtml(o.code)}</b></td>
       <td>${escapeHtml(o.buyer_name)}</td>
       <td>${escapeHtml(o.shop_name)}</td>
       <td>${statusChip(o.status)}${orderActions(o) ? `<div class="row-actions">${orderActions(o)}</div>` : ''}</td>
@@ -915,8 +913,8 @@ async function viewReviews(el) {
 
   const rows = reviews
     .map(
-      (r) => `<tr>
-      <td><a data-action="product-detail" data-id="${r.productId}" class="link">${escapeHtml(r.productName)}</a><div class="muted">${escapeHtml(r.shopName || '')}</div></td>
+      (r) => `<tr class="rowlink" data-action="product-detail" data-id="${r.productId}">
+      <td>${escapeHtml(r.productName)}<div class="muted">${escapeHtml(r.shopName || '')}</div></td>
       <td>${escapeHtml(r.userName || '')}</td>
       <td>${stars(r.rating)}</td>
       <td>${r.comment ? escapeHtml(r.comment) : '<span class="muted">—</span>'}${replyBlock(r)}</td>
