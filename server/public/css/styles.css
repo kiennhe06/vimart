@@ -536,6 +536,14 @@ svg.ic {
 .tb-sep {
   flex: 1;
 }
+.row-actions {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+.row-actions .btn {
+  white-space: nowrap;
+}
 .table {
   width: 100%;
   border-collapse: collapse;

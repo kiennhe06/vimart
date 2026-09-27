@@ -758,6 +758,25 @@ async function viewUsers(el) {
 const orderFilter = { status: '', from: '', to: '', q: '' };
 
 /** Lọc + vẽ lại phần thân bảng đơn hàng theo bộ lọc hiện tại. */
+/** Nút thao tác theo trạng thái đơn (admin đổi trạng thái theo pipeline). */
+function orderActions(o) {
+  const btn = (act, label, cls) =>
+    `<button class="btn ${cls} btn--sm" data-action="order-action" data-id="${o.id}" data-act="${act}">${label}</button>`;
+  switch (o.status) {
+    case 'pending':
+      return (
+        btn('confirm', L('Xác nhận', 'Confirm'), 'btn--ok') +
+        btn('reject', L('Từ chối', 'Reject'), 'btn--danger')
+      );
+    case 'confirmed':
+      return btn('ship', L('Giao hàng', 'Ship'), 'btn--ghost');
+    case 'shipping':
+      return btn('received', L('Hoàn thành', 'Complete'), 'btn--ok');
+    default:
+      return '<span class="muted">—</span>';
+  }
+}
+
 function renderOrdersTable() {
   const f = orderFilter;
   const q = f.q.trim().toLowerCase();
@@ -778,7 +797,7 @@ function renderOrdersTable() {
   const body = document.getElementById('ordersBody');
   if (!body) return;
   if (!list.length) {
-    body.innerHTML = `<tr><td colspan="7" class="muted" style="padding:28px;text-align:center">${L('Không có đơn khớp bộ lọc', 'No orders match the filter')}</td></tr>`;
+    body.innerHTML = `<tr><td colspan="8" class="muted" style="padding:28px;text-align:center">${L('Không có đơn khớp bộ lọc', 'No orders match the filter')}</td></tr>`;
     return;
   }
   body.innerHTML = list
@@ -793,6 +812,7 @@ function renderOrdersTable() {
         ${o.payment_status === 'paid' ? `<span class="tag tag--on">${L('Đã trả', 'Paid')}</span>` : `<span class="muted">${L('Chưa trả', 'Unpaid')}</span>`}</td>
       <td><b style="color:var(--orange)">${fmtVnd(o.total)}</b></td>
       <td class="muted">${fmtDate(o.created_at)}</td>
+      <td><div class="row-actions">${orderActions(o)}</div></td>
     </tr>`
     )
     .join('');
@@ -831,7 +851,7 @@ async function viewOrders(el) {
       <span class="toolbar__count" id="ordersCount"></span>
     </div>
     <div class="panel"><table class="table">
-    <thead><tr><th>${L('Mã đơn', 'Order')}</th><th>${L('Khách', 'Customer')}</th><th>Shop</th><th>${L('Trạng thái', 'Status')}</th><th>${L('Thanh toán', 'Payment')}</th><th>${L('Tổng', 'Total')}</th><th>${L('Ngày', 'Date')}</th></tr></thead>
+    <thead><tr><th>${L('Mã đơn', 'Order')}</th><th>${L('Khách', 'Customer')}</th><th>Shop</th><th>${L('Trạng thái', 'Status')}</th><th>${L('Thanh toán', 'Payment')}</th><th>${L('Tổng', 'Total')}</th><th>${L('Ngày', 'Date')}</th><th>${L('Thao tác', 'Actions')}</th></tr></thead>
     <tbody id="ordersBody"></tbody></table></div>`;
 
   document.getElementById('fStatus').addEventListener('change', (e) => {
@@ -967,6 +987,24 @@ document.addEventListener('click', async (e) => {
     orderFilter.to = '';
     orderFilter.q = '';
     location.hash = '#/orders';
+  } else if (action === 'order-action') {
+    const id = el.getAttribute('data-id');
+    const act = el.getAttribute('data-act');
+    if (
+      act === 'reject' &&
+      !confirm(L('Từ chối & hoàn kho đơn này?', 'Reject this order & restore stock?'))
+    )
+      return;
+    el.disabled = true;
+    try {
+      await Api.post(`/admin/orders/${id}/action`, { action: act });
+      state.allOrders = await Api.get('/admin/orders');
+      renderOrdersTable();
+      toast(L('Đã cập nhật trạng thái đơn', 'Order status updated'));
+    } catch (err) {
+      el.disabled = false;
+      toast(err.message);
+    }
   } else if (action === 'chart-mode-week' || action === 'chart-mode-month') {
     const mode = action === 'chart-mode-month' ? 'month' : 'week';
     if (chartView.mode !== mode) {

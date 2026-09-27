@@ -7,6 +7,7 @@ import { asyncHandler } from '../../utils/asyncHandler.js';
 import { validate } from '../../middlewares/validate.middleware.js';
 import { ok, created } from '../../utils/response.js';
 import { AppError } from '../../utils/AppError.js';
+import { changeStatus } from '../order/order.service.js';
 
 const router = Router();
 router.use(authRequired, adminOnly);
@@ -64,6 +65,21 @@ router.get(
        ORDER BY o.created_at DESC LIMIT 200`
     );
     return ok(res, result.rows);
+  })
+);
+
+/** POST /api/admin/orders/:id/action — admin đổi trạng thái đơn (theo đúng trình
+ *  tự pipeline + side-effect: hoàn kho khi hủy, COD nhận = đã trả). */
+const adminOrderActionSchema = z.object({
+  action: z.enum(['confirm', 'ship', 'reject', 'cancel', 'received']),
+});
+router.post(
+  '/orders/:id/action',
+  validate(adminOrderActionSchema),
+  asyncHandler(async (req, res) => {
+    const id = Number(req.params.id);
+    const updated = await changeStatus(req.user.id, id, req.body.action, { asAdmin: true });
+    return ok(res, updated);
   })
 );
 
