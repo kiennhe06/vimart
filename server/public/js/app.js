@@ -7,7 +7,7 @@
 const app = document.getElementById('app');
 const modalRoot = document.getElementById('modalRoot');
 
-const state = { user: null };
+const state = { user: null, chatUnread: 0 };
 
 // ---------- Song ngữ (i18n) — Việt / Anh ----------
 // Helper inline: L('tiếng Việt', 'English') trả về theo ngôn ngữ đang chọn.
@@ -269,10 +269,15 @@ function renderLogin(message) {
 
 // ---------- Khung dashboard ----------
 function renderShell(activeKey) {
-  const tabs = NAV.map(
-    (n) => `
-    <div class="tab ${n.key === activeKey ? 'tab--active' : ''}" data-nav="${n.key}">${navLabel(n.key)}</div>`
-  ).join('');
+  const tabs = NAV.map((n) => {
+    // Badge số tin chưa đọc trên tab Chat (cập nhật real-time khi có tin mới).
+    const badge =
+      n.key === 'chat' && state.chatUnread > 0
+        ? `<span class="tab__badge" id="chatTabBadge">${state.chatUnread > 99 ? '99+' : state.chatUnread}</span>`
+        : '';
+    return `
+    <div class="tab ${n.key === activeKey ? 'tab--active' : ''}" data-nav="${n.key}">${navLabel(n.key)}${badge}</div>`;
+  }).join('');
   const initial = (state.user.fullName || '?').charAt(0).toUpperCase();
 
   app.innerHTML = `
@@ -308,6 +313,8 @@ async function route() {
 
   const key = currentKey();
   renderShell(key);
+  // Luôn mở WS chat khi là admin -> nhận tin + badge ở mọi tab (CSKH).
+  connectChatWS();
   const content = document.getElementById('content');
   try {
     if (key === 'dashboard') await viewDashboard(content);
@@ -1431,6 +1438,7 @@ function chatWsUrl() {
 }
 
 function connectChatWS() {
+  if (!state.user || state.user.role !== 'admin') return;
   if (chatWS && (chatWS.readyState === 0 || chatWS.readyState === 1)) return;
   chatWS = new WebSocket(chatWsUrl());
   chatWS.onmessage = (ev) => {
@@ -1443,18 +1451,48 @@ function connectChatWS() {
   };
   chatWS.onclose = () => {
     chatWS = null;
-    // kết nối lại sau 3s nếu vẫn đang ở tab chat
-    if (currentKey() === 'chat') setTimeout(connectChatWS, 3000);
+    // Luôn kết nối lại khi còn đăng nhập admin (nhận tin ở mọi tab, không chỉ tab Chat).
+    if (state.user && state.user.role === 'admin') setTimeout(connectChatWS, 3000);
   };
 }
 
+function updateChatBadge() {
+  // Cập nhật badge ngay trên DOM (không re-render toàn trang).
+  const tab = document.querySelector('.tab[data-nav="chat"]');
+  if (!tab) return;
+  let badge = document.getElementById('chatTabBadge');
+  if (state.chatUnread > 0) {
+    const text = state.chatUnread > 99 ? '99+' : String(state.chatUnread);
+    if (badge) badge.textContent = text;
+    else tab.insertAdjacentHTML('beforeend', `<span class="tab__badge" id="chatTabBadge">${text}</span>`);
+  } else if (badge) {
+    badge.remove();
+  }
+}
+
 function onChatMessage(msg) {
-  if (chatUI.openId === msg.conversationId) appendChatBubble(msg);
-  refreshChatList();
+  const mine = msg.senderId === (state.user && state.user.id);
+  const onChatTab = currentKey() === 'chat';
+  const viewingThis = onChatTab && chatUI.openId === msg.conversationId;
+
+  if (onChatTab) {
+    if (viewingThis) appendChatBubble(msg);
+    refreshChatList();
+  }
+
+  // Tin của khách (không phải mình) mà đang không mở đúng hội thoại -> báo + đếm.
+  if (!mine && !viewingThis) {
+    state.chatUnread += 1;
+    updateChatBadge();
+    toast(L('💬 Tin nhắn mới từ khách', '💬 New customer message'));
+  }
 }
 
 async function viewChat(el) {
   connectChatWS();
+  // Vào tab Chat -> coi như đã đọc, xóa badge.
+  state.chatUnread = 0;
+  updateChatBadge();
   el.innerHTML = `<div class="chatwrap">
     <div class="chatlist" id="chatList"></div>
     <div class="chatpanel" id="chatPanel"><div class="chatempty muted">${L('Chọn một hội thoại để trả lời', 'Pick a conversation to reply')}</div></div>
