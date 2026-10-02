@@ -15,6 +15,7 @@ import '../../widgets/async_view.dart';
 import '../../widgets/entrance.dart';
 import '../../widgets/pressable.dart';
 import '../catalog/catalog_providers.dart';
+import '../flash/flash_section.dart';
 import '../catalog/search_history.dart';
 import 'home_ui.dart';
 import 'widgets/category_circles.dart';
@@ -133,6 +134,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                     if (showHistory)
                       _historyPanel(s, history)
                     else ...[
+                      const FlashSaleSection(),
                       FadeSlideIn(index: 2, child: _sortFilterBar(s)),
                       FadeSlideIn(
                         index: 3,

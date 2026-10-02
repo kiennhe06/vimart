@@ -19,6 +19,7 @@ import '../auth/auth_provider.dart';
 import '../cart/cart_provider.dart';
 import '../chat/chat_providers.dart';
 import '../favorite/favorite_provider.dart';
+import '../flash/flash_countdown.dart';
 import 'catalog_providers.dart';
 
 /// Trang chi tiết sản phẩm — phong cách grocery: ảnh lớn nền pastel,
@@ -192,22 +193,25 @@ class _ProductDetailScreenState extends ConsumerState<ProductDetailScreen> {
                           ],
                         ),
                         const SizedBox(height: 14),
-                        AnimatedSwitcher(
-                          duration: AppMotion.dur(context, AppMotion.base),
-                          transitionBuilder: (child, anim) => FadeTransition(
-                            opacity: anim,
-                            child: SlideTransition(
-                              position: Tween(begin: const Offset(0, 0.25), end: Offset.zero).animate(anim),
-                              child: child,
+                        if (product.flashSale != null)
+                          _flashPrice(context, product, selected)
+                        else
+                          AnimatedSwitcher(
+                            duration: AppMotion.dur(context, AppMotion.base),
+                            transitionBuilder: (child, anim) => FadeTransition(
+                              opacity: anim,
+                              child: SlideTransition(
+                                position: Tween(begin: const Offset(0, 0.25), end: Offset.zero).animate(anim),
+                                child: child,
+                              ),
+                            ),
+                            child: Text(
+                              formatVnd(selected.price),
+                              key: ValueKey(selected.price),
+                              style: const TextStyle(
+                                  color: AppColors.brand, fontSize: 26, fontWeight: FontWeight.w800),
                             ),
                           ),
-                          child: Text(
-                            formatVnd(selected.price),
-                            key: ValueKey(selected.price),
-                            style: const TextStyle(
-                                color: AppColors.brand, fontSize: 26, fontWeight: FontWeight.w800),
-                          ),
-                        ),
                         const SizedBox(height: 18),
                         // Shop
                         _shopChip(context, product),
@@ -329,6 +333,46 @@ class _ProductDetailScreenState extends ConsumerState<ProductDetailScreen> {
     } catch (e) {
       if (mounted) showAppSnack(context, e.toString(), type: AppSnackType.error);
     }
+  }
+
+  /// Giá flash sale: badge -X%, giá sale (cam), giá gốc gạch ngang, + đếm ngược.
+  Widget _flashPrice(BuildContext context, ProductDetail product, Variant selected) {
+    final pct = product.flashSale!.discountPercent;
+    final sale = (selected.price * (100 - pct)) ~/ 100;
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          crossAxisAlignment: CrossAxisAlignment.end,
+          children: [
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+              decoration: BoxDecoration(
+                  color: context.c.promo, borderRadius: BorderRadius.circular(8)),
+              child: Text('⚡ -$pct%',
+                  style: const TextStyle(
+                      color: Colors.white, fontWeight: FontWeight.w800, fontSize: 13)),
+            ),
+            const SizedBox(width: 10),
+            Text(formatVnd(sale),
+                style: TextStyle(
+                    color: context.c.promo, fontSize: 26, fontWeight: FontWeight.w800)),
+            const SizedBox(width: 8),
+            Padding(
+              padding: const EdgeInsets.only(bottom: 4),
+              child: Text(formatVnd(selected.price),
+                  style: TextStyle(
+                      color: context.c.textSecondary, decoration: TextDecoration.lineThrough)),
+            ),
+          ],
+        ),
+        if (product.flashSale!.endsAt != null)
+          Padding(
+            padding: const EdgeInsets.only(top: 6),
+            child: FlashCountdown(endsAt: product.flashSale!.endsAt!),
+          ),
+      ],
+    );
   }
 
   Widget _variantChip(Variant v, Variant selected) {

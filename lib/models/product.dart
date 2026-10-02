@@ -1,3 +1,20 @@
+/// Thông tin flash sale đang áp cho 1 sản phẩm (null nếu không có).
+class FlashInfo {
+  FlashInfo({required this.discountPercent, required this.salePrice, this.endsAt});
+  final int discountPercent;
+  final int salePrice;
+  final DateTime? endsAt;
+
+  factory FlashInfo.fromJson(Map<String, dynamic> j) => FlashInfo(
+        discountPercent: (j['discountPercent'] as num?)?.toInt() ?? 0,
+        salePrice: (j['salePrice'] as num?)?.toInt() ?? 0,
+        endsAt: DateTime.tryParse(j['endsAt']?.toString() ?? ''),
+      );
+
+  static FlashInfo? maybe(dynamic j) =>
+      j == null ? null : FlashInfo.fromJson(j as Map<String, dynamic>);
+}
+
 /// Sản phẩm dạng thẻ (dùng ở danh sách / trang chủ / tìm kiếm).
 class ProductCard {
   ProductCard({
@@ -11,6 +28,7 @@ class ProductCard {
     required this.soldCount,
     required this.ratingAvg,
     required this.ratingCount,
+    this.flashSale,
   });
 
   final int id;
@@ -23,6 +41,7 @@ class ProductCard {
   final int soldCount;
   final double ratingAvg;
   final int ratingCount;
+  final FlashInfo? flashSale;
 
   bool get hasPriceRange => maxPrice > minPrice;
 
@@ -37,6 +56,7 @@ class ProductCard {
         soldCount: (json['soldCount'] as num?)?.toInt() ?? 0,
         ratingAvg: (json['ratingAvg'] as num?)?.toDouble() ?? 0,
         ratingCount: (json['ratingCount'] as num?)?.toInt() ?? 0,
+        flashSale: FlashInfo.maybe(json['flashSale']),
       );
 }
 
@@ -117,6 +137,7 @@ class ProductDetail {
     required this.shop,
     required this.variants,
     required this.reviews,
+    this.flashSale,
   });
 
   final int id;
@@ -129,6 +150,7 @@ class ProductDetail {
   final ProductShop shop;
   final List<Variant> variants;
   final List<Review> reviews;
+  final FlashInfo? flashSale;
 
   int get minPrice =>
       variants.isEmpty ? 0 : variants.map((v) => v.price).reduce((a, b) => a < b ? a : b);
@@ -148,5 +170,6 @@ class ProductDetail {
         reviews: (json['reviews'] as List<dynamic>? ?? [])
             .map((e) => Review.fromJson(e as Map<String, dynamic>))
             .toList(),
+        flashSale: FlashInfo.maybe(json['flashSale']),
       );
 }
