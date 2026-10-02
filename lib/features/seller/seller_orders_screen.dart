@@ -51,7 +51,7 @@ class _ShopOrderList extends ConsumerWidget {
           if (orders.isEmpty) {
             return ListView(children: [
               const SizedBox(height: 120),
-              EmptyView(message: s.noOrdersShort, icon: Icons.receipt_long_outlined),
+              EmptyView(message: s.noOrdersShort),
             ]);
           }
           return ListView.builder(

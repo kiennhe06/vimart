@@ -31,7 +31,7 @@ class ShopScreen extends ConsumerWidget {
         onRetry: () => ref.invalidate(shopProductsProvider(shopId)),
         data: (products) {
           if (products.isEmpty) {
-            return EmptyView(message: s.shopNoProducts, icon: Icons.storefront_outlined);
+            return EmptyView(message: s.shopNoProducts);
           }
           return Column(
             children: [

@@ -45,7 +45,7 @@ class CartScreen extends ConsumerWidget {
 
   Widget _buildCart(BuildContext context, Cart cart, AppStrings s) {
     if (cart.isEmpty) {
-      return EmptyView(message: s.emptyCart, icon: Icons.shopping_cart_outlined);
+      return EmptyView(message: s.emptyCart, sticker: 'cart');
     }
     final shippingTotal = cart.shops.length * 30000;
     final total = cart.subtotal + shippingTotal;

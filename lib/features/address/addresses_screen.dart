@@ -36,7 +36,7 @@ class AddressesScreen extends ConsumerWidget {
         onRetry: () => ref.invalidate(addressesProvider),
         data: (addresses) {
           if (addresses.isEmpty) {
-            return EmptyView(message: s.noAddresses, icon: Icons.location_off_outlined);
+            return EmptyView(message: s.noAddresses);
           }
           return ListView.builder(
             padding: const EdgeInsets.fromLTRB(16, 12, 16, 90),

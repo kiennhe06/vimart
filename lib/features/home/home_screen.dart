@@ -354,7 +354,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
         if (products.isEmpty) {
           return Padding(
             padding: const EdgeInsets.symmetric(vertical: 24),
-            child: EmptyView(message: s.noProducts, icon: Icons.search_off_rounded),
+            child: EmptyView(message: s.noProducts),
           );
         }
         return GridView.builder(

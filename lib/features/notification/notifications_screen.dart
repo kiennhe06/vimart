@@ -39,7 +39,7 @@ class NotificationsScreen extends ConsumerWidget {
         onRetry: () => ref.invalidate(notificationsProvider),
         data: (items) {
           if (items.isEmpty) {
-            return EmptyView(message: s.noNotifications, icon: Icons.notifications_none_rounded);
+            return EmptyView(message: s.noNotifications, sticker: 'bell');
           }
           return RefreshIndicator(
             onRefresh: () async {

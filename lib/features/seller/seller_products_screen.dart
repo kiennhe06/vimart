@@ -45,7 +45,7 @@ class SellerProductsScreen extends ConsumerWidget {
             if (products.isEmpty) {
               return ListView(children: [
                 const SizedBox(height: 120),
-                EmptyView(message: s.sellerNoProducts, icon: Icons.inventory_2_outlined),
+                EmptyView(message: s.sellerNoProducts),
               ]);
             }
             return ListView.builder(

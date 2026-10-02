@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../app/design.dart';
 import '../app/motion.dart';
 import '../core/i18n/app_strings.dart';
+import 'sticker_icon.dart';
 
 /// Các widget dùng chung để hiển thị 4 trạng thái: loading / error / empty / data.
 /// Giúp mọi màn hình xử lý bất đồng bộ nhất quán, không lặp code.
@@ -55,7 +56,7 @@ class ErrorView extends ConsumerWidget {
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              const Icon(Icons.wifi_off_rounded, size: 48, color: Colors.grey),
+              const StickerIcon('offline', size: 60),
               const SizedBox(height: 12),
               Text(message, textAlign: TextAlign.center),
               if (onRetry != null) ...[
@@ -76,9 +77,11 @@ class ErrorView extends ConsumerWidget {
 
 /// Không có dữ liệu.
 class EmptyView extends StatelessWidget {
-  const EmptyView({super.key, required this.message, this.icon = Icons.inbox_outlined});
+  const EmptyView({super.key, required this.message, this.sticker = 'box'});
   final String message;
-  final IconData icon;
+
+  /// Tên sticker 3D (trong assets/icons/ui) cho trạng thái rỗng. Mặc định "box".
+  final String sticker;
 
   @override
   Widget build(BuildContext context) {
@@ -89,7 +92,7 @@ class EmptyView extends StatelessWidget {
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              Icon(icon, size: 56, color: Colors.grey.shade400),
+              StickerIcon(sticker, size: 64),
               const SizedBox(height: 12),
               Text(message, textAlign: TextAlign.center, style: TextStyle(color: context.c.textSecondary)),
             ],
