@@ -1418,3 +1418,96 @@ svg.ic {
   background: var(--fill-2);
   color: #fff;
 }
+
+/* ---------- Chat (web admin) ---------- */
+.chatwrap {
+  display: flex;
+  gap: 14px;
+  height: calc(100vh - 160px);
+  min-height: 420px;
+}
+.chatlist {
+  width: 320px;
+  flex-shrink: 0;
+  overflow-y: auto;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 8px;
+}
+.chatconv {
+  padding: 12px;
+  border-radius: 14px;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+.chatconv:hover {
+  background: var(--surface-2);
+}
+.chatconv--on {
+  background: var(--selected);
+}
+.chatconv__title {
+  font-weight: 600;
+  margin-bottom: 2px;
+}
+.chatconv__last {
+  font-size: 13px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.chatpanel {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  overflow: hidden;
+}
+.chatempty {
+  margin: auto;
+}
+.chatmsgs {
+  flex: 1;
+  overflow-y: auto;
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.bubble {
+  max-width: 70%;
+  padding: 9px 13px;
+  border-radius: 14px;
+  background: var(--surface-2);
+  align-self: flex-start;
+}
+.bubble--me {
+  align-self: flex-end;
+  background: linear-gradient(135deg, var(--amber), var(--orange));
+  color: #fff;
+}
+.bubble__who {
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--text-2);
+  margin-bottom: 2px;
+}
+.chatinput {
+  display: flex;
+  gap: 8px;
+  padding: 12px;
+  border-top: 1px solid var(--border);
+}
+.chatinput input {
+  flex: 1;
+  padding: 11px 16px;
+  background: rgba(255, 255, 255, 0.045);
+  border: 1px solid var(--border);
+  border-radius: 24px;
+  color: var(--text);
+  outline: none;
+  font-family: inherit;
+}
