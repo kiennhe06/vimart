@@ -336,11 +336,11 @@ async function viewDashboard(el) {
   state.dashStats = s; // giữ số liệu tổng (all-time) cho hero
 
   el.innerHTML = `<div class="dash">
-    <div class="dash__col">${heroCard()}${revenueFlowCard(orders)}${recentOrdersCard(orders)}</div>
+    <div class="dash__col">${heroCard()}${revenueFlowCard(orders)}${recentOrdersCard(orders)}${lowStockCard(products)}</div>
     <div class="dash__col">${miniCard(ic('box', 'i20'), 'rgba(55,214,122,.16)', '#37d67a', L('Tổng đơn hàng', 'Total orders'), s.totalOrders)}
       ${miniCard(ic('bag', 'i20'), 'rgba(244,81,30,.16)', '#ff9a3d', L('Sản phẩm đang bán', 'Active products'), s.totalProducts)}
-      ${categoryDonutCard(products, cats)}</div>
-    <div class="dash__col">${orderStatusCard(orders)}${categoryListCard(products, cats)}</div>
+      ${topProductsCard(products)}</div>
+    <div class="dash__col">${orderStatusCard(orders)}${categoryDonutCard(products, cats)}${categoryListCard(products, cats)}</div>
   </div>`;
 }
 
@@ -528,7 +528,8 @@ function recentOrdersCard(orders) {
 
   return `<div class="dcard">
     <div class="dcard__head"><h4>${L('Đơn hàng gần đây', 'Recent orders')}</h4><div class="spacer"></div>
-      <span class="pill pill--soft" data-nav="orders" style="cursor:pointer">${L('Xem tất cả', 'View all')}</span></div>
+      <span class="pill pill--soft" data-action="export-orders" style="cursor:pointer" title="${L('Xuất tất cả đơn ra CSV', 'Export all orders to CSV')}">${L('Xuất CSV', 'Export CSV')}</span>
+      <span class="pill pill--soft" data-nav="orders" style="cursor:pointer;margin-left:6px">${L('Xem tất cả', 'View all')}</span></div>
     <div class="rowlist">${rows}</div>
   </div>`;
 }
@@ -582,6 +583,106 @@ function categoryListCard(products, cats) {
       <span class="pill pill--soft" data-nav="categories" style="cursor:pointer">${L('Quản lý', 'Manage')}</span></div>
     <div class="rowlist">${rows}</div>
   </div>`;
+}
+
+/** Thẻ: Top sản phẩm bán chạy (theo số đã bán), kèm thanh tỉ lệ. */
+function topProductsCard(products) {
+  const top = [...products].sort((a, b) => (b.soldCount || 0) - (a.soldCount || 0)).slice(0, 5);
+  const max = top.length ? top[0].soldCount || 0 : 0;
+  const rows =
+    top
+      .map((p, i) => {
+        const pct = max ? Math.round(((p.soldCount || 0) / max) * 100) : 0;
+        return `<div class="litem rowlink" data-action="product-detail" data-id="${p.id}">
+      <div class="litem__icon" style="background:var(--selected);color:var(--orange);font-weight:800">${i + 1}</div>
+      <div style="flex:1;min-width:0">
+        <div class="litem__name">${escapeHtml(p.name)}</div>
+        <div class="litem__sub">${escapeHtml(p.shopName || '')}</div>
+        <div class="topbar"><div class="topbar__fill" style="width:${pct}%"></div></div>
+      </div>
+      <div class="litem__val">${L(`Đã bán ${p.soldCount || 0}`, `${p.soldCount || 0} sold`)}</div>
+    </div>`;
+      })
+      .join('') || `<div class="muted" style="padding:12px 0">${L('Chưa có dữ liệu.', 'No data yet.')}</div>`;
+
+  return `<div class="dcard">
+    <div class="dcard__head"><h4>${L('Bán chạy nhất', 'Best sellers')}</h4><div class="spacer"></div>
+      <span class="pill pill--soft" data-nav="products" style="cursor:pointer">${L('Sản phẩm', 'Products')}</span></div>
+    <div class="rowlist">${rows}</div>
+  </div>`;
+}
+
+/** Thẻ: Sản phẩm sắp hết / hết hàng (tổng tồn <= ngưỡng). */
+function lowStockCard(products) {
+  const threshold = 10;
+  const low = products
+    .filter((p) => (p.totalStock || 0) <= threshold)
+    .sort((a, b) => (a.totalStock || 0) - (b.totalStock || 0))
+    .slice(0, 6);
+  const rows =
+    low
+      .map((p) => {
+        const out = (p.totalStock || 0) === 0;
+        const color = out ? 'var(--danger)' : '#ff9a3d';
+        return `<div class="litem rowlink" data-action="product-detail" data-id="${p.id}">
+      <div class="litem__icon" style="background:${out ? 'rgba(255,92,108,.16)' : 'rgba(255,154,61,.16)'};color:${color}">${ic('box', 'i18')}</div>
+      <div><div class="litem__name">${escapeHtml(p.name)}</div>
+        <div class="litem__sub">${escapeHtml(p.shopName || '')}</div></div>
+      <div class="spacer"></div>
+      <span class="status" style="color:${color};background:${color}22">${out ? L('Hết hàng', 'Out') : L(`Còn ${p.totalStock}`, `${p.totalStock} left`)}</span>
+    </div>`;
+      })
+      .join('') ||
+    `<div class="muted" style="padding:12px 0">${L('Tồn kho ổn định 👍', 'Stock looks healthy 👍')}</div>`;
+
+  return `<div class="dcard">
+    <div class="dcard__head"><h4>${L('Sắp hết hàng', 'Low stock')}</h4><div class="spacer"></div>
+      <span class="pill pill--soft">${L(`≤ ${threshold}`, `≤ ${threshold}`)}</span></div>
+    <div class="rowlist">${rows}</div>
+  </div>`;
+}
+
+/** Xuất danh sách đơn hàng ra CSV (mở được bằng Excel, có BOM UTF-8). */
+function exportOrdersCsv() {
+  const orders = state.dashOrders || state.allOrders || [];
+  if (!orders.length) return toast(L('Không có đơn để xuất', 'No orders to export'));
+  const header = [
+    L('Mã đơn', 'Code'),
+    L('Người mua', 'Buyer'),
+    L('Shop', 'Shop'),
+    L('Trạng thái', 'Status'),
+    L('Thanh toán', 'Payment'),
+    L('Tình trạng TT', 'Payment status'),
+    L('Tổng tiền', 'Total'),
+    L('Ngày tạo', 'Created at'),
+  ];
+  const esc = (v) => `"${String(v ?? '').replace(/"/g, '""')}"`;
+  const lines = [header.map(esc).join(',')].concat(
+    orders.map((o) =>
+      [
+        o.code,
+        o.buyer_name,
+        o.shop_name,
+        statusLabel(o.status),
+        o.payment_method === 'cod' ? 'COD' : 'VNPay',
+        o.payment_status === 'paid' ? L('Đã trả', 'Paid') : L('Chưa trả', 'Unpaid'),
+        o.total,
+        o.created_at ? new Date(o.created_at).toLocaleString('vi-VN') : '',
+      ]
+        .map(esc)
+        .join(',')
+    )
+  );
+  const blob = new Blob(['﻿' + lines.join('\n')], { type: 'text/csv;charset=utf-8;' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = `vimart-orders-${new Date().toISOString().slice(0, 10)}.csv`;
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  URL.revokeObjectURL(url);
+  toast(L('Đã xuất CSV', 'CSV exported'));
 }
 
 // ---------- View: Sản phẩm ----------
@@ -1394,6 +1495,8 @@ document.addEventListener('click', async (e) => {
     } catch (err) {
       toast(err.message);
     }
+  } else if (action === 'export-orders') {
+    exportOrdersCsv();
   } else if (action === 'add-voucher') {
     voucherFormModal();
   } else if (action === 'toggle-voucher') {
