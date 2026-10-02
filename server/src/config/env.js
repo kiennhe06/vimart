@@ -16,9 +16,9 @@ function required(name, fallback) {
 }
 
 export const env = {
-  port: Number(process.env.PORT || 4000),
+  port: Number(process.env.PORT || 4100),
   nodeEnv: process.env.NODE_ENV || 'development',
-  apiBaseUrl: process.env.API_BASE_URL || 'http://localhost:4000',
+  apiBaseUrl: process.env.API_BASE_URL || 'http://localhost:4100',
 
   databaseUrl: required('DATABASE_URL', 'postgres://macsos@localhost:5432/vimart'),
 
@@ -29,7 +29,7 @@ export const env = {
     tmnCode: process.env.VNP_TMN_CODE || '',
     hashSecret: process.env.VNP_HASH_SECRET || '',
     url: process.env.VNP_URL || 'https://sandbox.vnpayment.vn/paymentv2/vpcpay.html',
-    returnUrl: process.env.VNP_RETURN_URL || 'http://localhost:4000/api/payments/vnpay/return',
+    returnUrl: process.env.VNP_RETURN_URL || 'http://localhost:4100/api/payments/vnpay/return',
   },
 };
 
