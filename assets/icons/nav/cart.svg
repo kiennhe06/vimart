@@ -1,0 +1,18 @@
+<svg viewBox="0 0 96 96" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <radialGradient id="shadow" cx="0.5" cy="0.5" r="0.5">
+      <stop offset="0" stop-color="#132018" stop-opacity="0.32"/>
+      <stop offset="1" stop-color="#132018" stop-opacity="0"/>
+    </radialGradient>
+    <linearGradient id="gCart" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#FFC94D"/><stop offset="1" stop-color="#F59E1B"/></linearGradient>
+  </defs>
+  <ellipse cx="48" cy="84" rx="24" ry="5" fill="url(#shadow)"/>
+  <path d="M38 40 Q38 26 48 26 Q58 26 58 40" fill="none" stroke="#fff" stroke-width="5" stroke-linecap="round"/>
+  <path d="M38 40 Q38 28 48 28 Q58 28 58 40" fill="none" stroke="#E08A12" stroke-width="2.4" stroke-linecap="round"/>
+  <path d="M27 39 L69 39 Q72 39 71.5 42 L64 70 Q63.4 72 61 72 L35 72 Q32.6 72 32 70 L24.5 42 Q24 39 27 39 Z" fill="url(#gCart)" stroke="#fff" stroke-width="4.5" stroke-linejoin="round"/>
+  <path d="M39 46 L41 66" stroke="#fff" stroke-width="3" stroke-linecap="round" opacity="0.75"/>
+  <path d="M48 46 L48 66" stroke="#fff" stroke-width="3" stroke-linecap="round" opacity="0.75"/>
+  <path d="M57 46 L55 66" stroke="#fff" stroke-width="3" stroke-linecap="round" opacity="0.75"/>
+  <path d="M31 44 Q30 42 32 42 L36 42 L39 60 Q39 63 36 62 Z" fill="#fff" opacity="0.25"/>
+  <path d="M70 32 l1.3 3 3 1.3 -3 1.3 -1.3 3 -1.3 -3 -3 -1.3 3 -1.3 Z" fill="#fff"/>
+</svg>
