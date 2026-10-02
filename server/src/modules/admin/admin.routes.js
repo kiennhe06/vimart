@@ -69,6 +69,98 @@ router.get(
   })
 );
 
+/** GET /api/admin/orders/:id — chi tiết đầy đủ 1 đơn (món hàng + người mua). */
+router.get(
+  '/orders/:id',
+  asyncHandler(async (req, res) => {
+    const id = Number(req.params.id);
+    const orderRes = await query(
+      `SELECT o.*, s.name AS shop_name, u.full_name AS buyer_name, u.email AS buyer_email
+       FROM orders o JOIN shops s ON s.id = o.shop_id JOIN users u ON u.id = o.buyer_id
+       WHERE o.id = $1`,
+      [id]
+    );
+    const o = orderRes.rows[0];
+    if (!o) throw new AppError(404, 'Không tìm thấy đơn hàng');
+
+    const itemsRes = await query(
+      `SELECT product_name, variant_name, image_url, price, quantity
+       FROM order_items WHERE order_id = $1`,
+      [id]
+    );
+    return ok(res, {
+      id: o.id,
+      code: o.code,
+      status: o.status,
+      shopName: o.shop_name,
+      buyerName: o.buyer_name,
+      buyerEmail: o.buyer_email,
+      recipientName: o.recipient_name,
+      recipientPhone: o.recipient_phone,
+      addressText: o.address_text,
+      paymentMethod: o.payment_method,
+      paymentStatus: o.payment_status,
+      subtotal: Number(o.subtotal),
+      shippingFee: Number(o.shipping_fee),
+      discount: Number(o.discount),
+      total: Number(o.total),
+      note: o.note,
+      createdAt: o.created_at,
+      items: itemsRes.rows.map((i) => ({
+        productName: i.product_name,
+        variantName: i.variant_name,
+        imageUrl: i.image_url,
+        price: Number(i.price),
+        quantity: i.quantity,
+      })),
+    });
+  })
+);
+
+/** GET /api/admin/users/:id — chi tiết 1 người dùng (thông tin + shop + đơn đã mua). */
+router.get(
+  '/users/:id',
+  asyncHandler(async (req, res) => {
+    const id = Number(req.params.id);
+    const userRes = await query(
+      `SELECT id, email, full_name, phone, role, is_active, created_at FROM users WHERE id = $1`,
+      [id]
+    );
+    const u = userRes.rows[0];
+    if (!u) throw new AppError(404, 'Không tìm thấy người dùng');
+
+    const [shopRes, ordersRes] = await Promise.all([
+      query('SELECT id, name, status FROM shops WHERE owner_id = $1', [id]),
+      query(
+        `SELECT o.id, o.code, o.status, o.total, o.created_at, s.name AS shop_name
+         FROM orders o JOIN shops s ON s.id = o.shop_id
+         WHERE o.buyer_id = $1 ORDER BY o.created_at DESC LIMIT 20`,
+        [id]
+      ),
+    ]);
+    return ok(res, {
+      id: u.id,
+      email: u.email,
+      fullName: u.full_name,
+      phone: u.phone,
+      role: u.role,
+      isActive: u.is_active,
+      createdAt: u.created_at,
+      shop: shopRes.rows[0]
+        ? { id: shopRes.rows[0].id, name: shopRes.rows[0].name, status: shopRes.rows[0].status }
+        : null,
+      orders: ordersRes.rows.map((o) => ({
+        id: o.id,
+        code: o.code,
+        status: o.status,
+        total: Number(o.total),
+        shopName: o.shop_name,
+        createdAt: o.created_at,
+      })),
+    });
+  })
+);
+
 /** POST /api/admin/orders/:id/action — admin đổi trạng thái đơn (theo đúng trình
  *  tự pipeline + side-effect: hoàn kho khi hủy, COD nhận = đã trả). */
 const adminOrderActionSchema = z.object({
@@ -305,6 +397,104 @@ router.delete(
     ]);
     if (result.rows.length === 0) throw new AppError(404, 'Không tìm thấy sản phẩm');
     return ok(res, { message: 'Đã xóa sản phẩm' });
+  })
+);
+
+// ---------- Mã giảm giá (voucher) ----------
+
+/** GET /api/admin/vouchers — danh sách mã giảm giá. */
+router.get(
+  '/vouchers',
+  asyncHandler(async (req, res) => {
+    const result = await query('SELECT * FROM vouchers ORDER BY created_at DESC');
+    return ok(
+      res,
+      result.rows.map((v) => ({
+        id: v.id,
+        code: v.code,
+        description: v.description,
+        type: v.type,
+        value: v.value,
+        maxDiscount: v.max_discount,
+        minOrder: v.min_order,
+        usageLimit: v.usage_limit,
+        usedCount: v.used_count,
+        startsAt: v.starts_at,
+        expiresAt: v.expires_at,
+        isActive: v.is_active,
+        createdAt: v.created_at,
+      }))
+    );
+  })
+);
+
+const voucherSchema = z.object({
+  code: z
+    .string()
+    .trim()
+    .min(2, 'Mã tối thiểu 2 ký tự')
+    .max(40)
+    .regex(/^[A-Za-z0-9_-]+$/, 'Mã chỉ gồm chữ, số, gạch ngang/dưới'),
+  description: z.string().max(255).optional().nullable(),
+  type: z.enum(['percent', 'fixed']),
+  value: z.number().int().positive('Giá trị phải lớn hơn 0'),
+  maxDiscount: z.number().int().nonnegative().optional().nullable(),
+  minOrder: z.number().int().nonnegative().default(0),
+  usageLimit: z.number().int().positive().optional().nullable(),
+  expiresAt: z.string().datetime().optional().nullable(),
+});
+
+/** POST /api/admin/vouchers — tạo mã giảm giá. */
+router.post(
+  '/vouchers',
+  validate(voucherSchema),
+  asyncHandler(async (req, res) => {
+    const d = req.body;
+    if (d.type === 'percent' && d.value > 100)
+      throw new AppError(400, 'Mã phần trăm không được vượt 100%');
+    const exists = await query('SELECT id FROM vouchers WHERE UPPER(code) = UPPER($1)', [d.code]);
+    if (exists.rows.length > 0) throw new AppError(409, 'Mã này đã tồn tại');
+
+    const result = await query(
+      `INSERT INTO vouchers (code, description, type, value, max_discount, min_order, usage_limit, expires_at)
+       VALUES ($1,$2,$3,$4,$5,$6,$7,$8) RETURNING id`,
+      [
+        d.code.toUpperCase(),
+        d.description ?? null,
+        d.type,
+        d.value,
+        d.type === 'percent' ? (d.maxDiscount ?? null) : null,
+        d.minOrder ?? 0,
+        d.usageLimit ?? null,
+        d.expiresAt ?? null,
+      ]
+    );
+    return created(res, { id: result.rows[0].id });
+  })
+);
+
+/** PUT /api/admin/vouchers/:id/status — bật/tắt mã. Body: { isActive } */
+router.put(
+  '/vouchers/:id/status',
+  asyncHandler(async (req, res) => {
+    const result = await query('UPDATE vouchers SET is_active = $1 WHERE id = $2 RETURNING id', [
+      Boolean(req.body.isActive),
+      Number(req.params.id),
+    ]);
+    if (result.rows.length === 0) throw new AppError(404, 'Không tìm thấy mã giảm giá');
+    return ok(res, { id: result.rows[0].id, isActive: Boolean(req.body.isActive) });
+  })
+);
+
+/** DELETE /api/admin/vouchers/:id — xóa mã. */
+router.delete(
+  '/vouchers/:id',
+  asyncHandler(async (req, res) => {
+    const result = await query('DELETE FROM vouchers WHERE id = $1 RETURNING id', [
+      Number(req.params.id),
+    ]);
+    if (result.rows.length === 0) throw new AppError(404, 'Không tìm thấy mã giảm giá');
+    return ok(res, { message: 'Đã xóa mã giảm giá' });
   })
 );
 

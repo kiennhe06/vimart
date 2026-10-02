@@ -79,6 +79,7 @@ const NAV = [
   { key: 'users', icon: '👥' },
   { key: 'orders', icon: '📦' },
   { key: 'reviews', icon: '⭐' },
+  { key: 'vouchers', icon: '🎟️' },
   { key: 'categories', icon: '🏷️' },
 ];
 // Nhãn menu theo ngôn ngữ.
@@ -90,6 +91,7 @@ function navLabel(key) {
       users: L('Người dùng', 'Users'),
       orders: L('Đơn hàng', 'Orders'),
       reviews: L('Đánh giá', 'Reviews'),
+      vouchers: L('Mã giảm giá', 'Vouchers'),
       categories: L('Danh mục', 'Categories'),
     }[key] || key
   );
@@ -307,6 +309,7 @@ async function route() {
     else if (key === 'users') await viewUsers(content);
     else if (key === 'orders') await viewOrders(content);
     else if (key === 'reviews') await viewReviews(content);
+    else if (key === 'vouchers') await viewVouchers(content);
     else if (key === 'categories') await viewCategories(content);
   } catch (err) {
     content.innerHTML = stateView({
@@ -587,7 +590,7 @@ async function viewProducts(el) {
   const rows = products
     .map(
       (p) => `
-    <tr>
+    <tr class="rowlink" data-action="product-detail" data-id="${p.id}">
       <td><img class="thumb" src="${escapeHtml(p.imageUrl || '')}" onerror="this.style.visibility='hidden'"/></td>
       <td>${escapeHtml(p.name)}</td>
       <td>${escapeHtml(p.shopName)}</td>
@@ -599,7 +602,6 @@ async function viewProducts(el) {
           : `<span class="tag tag--off">${L('Đang ẩn', 'Hidden')}</span>`
       }</td>
       <td style="white-space:nowrap">
-        <button class="btn btn--sm btn--ghost" data-action="product-detail" data-id="${p.id}">${L('Chi tiết', 'Details')}</button>
         <button class="btn btn--sm" data-action="edit-product" data-id="${p.id}">${L('Sửa', 'Edit')}</button>
         <button class="btn btn--sm btn--danger" data-action="del-product" data-id="${p.id}" data-name="${escapeHtml(p.name)}">${L('Xóa', 'Delete')}</button>
       </td>
@@ -735,20 +737,21 @@ async function viewUsers(el) {
   const rows = users
     .map(
       (u) => `
-    <tr>
+    <tr class="rowlink" data-action="user-detail" data-id="${u.id}">
       <td>${u.id}</td>
       <td>${escapeHtml(u.fullName)}</td>
       <td>${escapeHtml(u.email)}</td>
       <td><span class="tag ${u.role === 'admin' ? 'tag--admin' : 'tag--user'}">${u.role}</span></td>
       <td>${u.shop ? escapeHtml(u.shop.name) : '<span class="muted">—</span>'}</td>
       <td><span class="tag ${u.isActive ? 'tag--on' : 'tag--off'}">${u.isActive ? L('Hoạt động', 'Active') : L('Đã khóa', 'Locked')}</span></td>
-      <td>${
-        u.role === 'admin'
-          ? ''
-          : `<button class="btn btn--sm ${u.isActive ? 'btn--danger' : 'btn--ok'}"
+      <td style="white-space:nowrap">
+        ${
+          u.role === 'admin'
+            ? ''
+            : `<button class="btn btn--sm ${u.isActive ? 'btn--danger' : 'btn--ok'}"
         data-action="toggle-user" data-id="${u.id}" data-active="${u.isActive ? 0 : 1}">
         ${u.isActive ? L('Khóa', 'Lock') : L('Mở khóa', 'Unlock')}</button>`
-      }</td>
+        }</td>
     </tr>`
     )
     .join('');
@@ -808,7 +811,7 @@ function renderOrdersTable() {
   body.innerHTML = list
     .map(
       (o) => `
-    <tr>
+    <tr class="rowlink" data-action="order-detail" data-id="${o.id}">
       <td><b>${escapeHtml(o.code)}</b></td>
       <td>${escapeHtml(o.buyer_name)}</td>
       <td>${escapeHtml(o.shop_name)}</td>
@@ -913,8 +916,8 @@ async function viewReviews(el) {
 
   const rows = reviews
     .map(
-      (r) => `<tr>
-      <td><a data-action="product-detail" data-id="${r.productId}" class="link">${escapeHtml(r.productName)}</a><div class="muted">${escapeHtml(r.shopName || '')}</div></td>
+      (r) => `<tr class="rowlink" data-action="product-detail" data-id="${r.productId}">
+      <td>${escapeHtml(r.productName)}<div class="muted">${escapeHtml(r.shopName || '')}</div></td>
       <td>${escapeHtml(r.userName || '')}</td>
       <td>${stars(r.rating)}</td>
       <td>${r.comment ? escapeHtml(r.comment) : '<span class="muted">—</span>'}${replyBlock(r)}</td>
@@ -1019,6 +1022,217 @@ async function productDetailModal(id) {
     <h3 class="pd__section">${L('Đánh giá gần đây', 'Recent reviews')}</h3>
     ${reviews || `<div class="muted">${L('Chưa có đánh giá.', 'No reviews yet.')}</div>`}
   `);
+}
+
+/** Modal chi tiết 1 đơn hàng (admin). */
+async function orderDetailModal(id) {
+  openModal(`<button class="modal__close" data-action="close">×</button>${skeletonView(3)}`);
+  let o;
+  try {
+    o = await Api.get(`/admin/orders/${id}`);
+  } catch (err) {
+    toast(err.message);
+    closeModal();
+    return;
+  }
+
+  const items = (o.items || [])
+    .map(
+      (it) => `<div class="litem">
+      <img class="thumb" src="${escapeHtml(it.imageUrl || '')}" onerror="this.style.visibility='hidden'"/>
+      <div class="litem__body"><div class="litem__name">${escapeHtml(it.productName)}</div>
+        <div class="litem__sub">${escapeHtml(it.variantName || '')} · ${L('SL', 'Qty')} ${it.quantity}</div></div>
+      <div class="litem__val">${fmtVnd(it.price * it.quantity)}</div></div>`
+    )
+    .join('');
+
+  const row = (label, value) =>
+    `<div class="kv"><span class="kv__k">${label}</span><span class="kv__v">${value}</span></div>`;
+
+  openModal(`
+    <button class="modal__close" data-action="close">×</button>
+    <div class="section-head"><h2>${L('Đơn', 'Order')} ${escapeHtml(o.code)}</h2><div class="spacer"></div>${statusChip(o.status)}</div>
+    <h3 class="pd__section">${L('Sản phẩm', 'Items')}</h3>
+    ${items || `<div class="muted">—</div>`}
+    <h3 class="pd__section">${L('Người nhận', 'Recipient')}</h3>
+    ${row(L('Người mua', 'Buyer'), `${escapeHtml(o.buyerName || '')} <span class="muted">${escapeHtml(o.buyerEmail || '')}</span>`)}
+    ${row(L('Nhận hàng', 'Recipient'), `${escapeHtml(o.recipientName || '')} · ${escapeHtml(o.recipientPhone || '')}`)}
+    ${row(L('Địa chỉ', 'Address'), escapeHtml(o.addressText || '—'))}
+    ${o.note ? row(L('Ghi chú', 'Note'), escapeHtml(o.note)) : ''}
+    <h3 class="pd__section">${L('Thanh toán', 'Payment')}</h3>
+    ${row(L('Phương thức', 'Method'), `${o.paymentMethod === 'cod' ? 'COD' : 'VNPay'} · ${o.paymentStatus === 'paid' ? L('Đã trả', 'Paid') : L('Chưa trả', 'Unpaid')}`)}
+    ${row(L('Tạm tính', 'Subtotal'), fmtVnd(o.subtotal))}
+    ${row(L('Phí vận chuyển', 'Shipping'), fmtVnd(o.shippingFee))}
+    ${o.discount ? row(L('Giảm giá', 'Discount'), '-' + fmtVnd(o.discount)) : ''}
+    ${row(`<b>${L('Tổng cộng', 'Total')}</b>`, `<b style="color:var(--orange)">${fmtVnd(o.total)}</b>`)}
+  `);
+}
+
+/** Modal chi tiết 1 người dùng (admin). */
+async function userDetailModal(id) {
+  openModal(`<button class="modal__close" data-action="close">×</button>${skeletonView(3)}`);
+  let u;
+  try {
+    u = await Api.get(`/admin/users/${id}`);
+  } catch (err) {
+    toast(err.message);
+    closeModal();
+    return;
+  }
+
+  const orders = (u.orders || [])
+    .map(
+      (o) => `<div class="litem">
+      <div class="litem__body"><div class="litem__name">${escapeHtml(o.code)} · ${escapeHtml(o.shopName || '')}</div>
+        <div class="litem__sub">${statusLabel(o.status)} · ${fmtDate(o.createdAt)}</div></div>
+      <div class="litem__val">${fmtVnd(o.total)}</div></div>`
+    )
+    .join('');
+
+  const row = (label, value) =>
+    `<div class="kv"><span class="kv__k">${label}</span><span class="kv__v">${value}</span></div>`;
+
+  openModal(`
+    <button class="modal__close" data-action="close">×</button>
+    <div class="section-head"><h2>${escapeHtml(u.fullName)}</h2><div class="spacer"></div>
+      <span class="tag ${u.role === 'admin' ? 'tag--admin' : 'tag--user'}">${u.role}</span>
+      <span class="tag ${u.isActive ? 'tag--on' : 'tag--off'}" style="margin-left:6px">${u.isActive ? L('Hoạt động', 'Active') : L('Đã khóa', 'Locked')}</span></div>
+    ${row('Email', escapeHtml(u.email))}
+    ${row(L('Điện thoại', 'Phone'), escapeHtml(u.phone || '—'))}
+    ${row(L('Tham gia', 'Joined'), fmtDate(u.createdAt))}
+    ${u.shop ? row('Shop', `${escapeHtml(u.shop.name)} <span class="muted">(${escapeHtml(u.shop.status)})</span>`) : ''}
+    <h3 class="pd__section">${L('Đơn đã mua', 'Purchases')} (${u.orders.length})</h3>
+    ${orders || `<div class="muted">${L('Chưa có đơn nào.', 'No orders yet.')}</div>`}
+  `);
+}
+
+// ---------- View: Mã giảm giá (voucher) ----------
+
+/** Nhãn giá trị mã: 10% (tối đa 50.000đ) hoặc 50.000đ. */
+function voucherValueLabel(v) {
+  if (v.type === 'percent') {
+    return `${v.value}%${v.maxDiscount ? ` · ${L('tối đa', 'max')} ${fmtVnd(v.maxDiscount)}` : ''}`;
+  }
+  return fmtVnd(v.value);
+}
+
+async function viewVouchers(el) {
+  const vouchers = await Api.get('/admin/vouchers');
+
+  const head = `<div class="section-head">
+    <h3>${L('Mã giảm giá', 'Vouchers')} (${vouchers.length})</h3><div class="spacer"></div>
+    <button class="btn btn--primary btn--sm" data-action="add-voucher">+ ${L('Tạo mã', 'New voucher')}</button>
+  </div>`;
+
+  if (!vouchers.length) {
+    el.innerHTML =
+      head +
+      `<div class="panel">${stateView({
+        icon: 'file',
+        title: L('Chưa có mã giảm giá', 'No vouchers yet'),
+        message: L('Tạo mã để khách nhập ở màn thanh toán.', 'Create a code customers can enter at checkout.'),
+      })}</div>`;
+    return;
+  }
+
+  const rows = vouchers
+    .map((v) => {
+      const expired = v.expiresAt && new Date(v.expiresAt) < new Date();
+      const usedUp = v.usageLimit != null && v.usedCount >= v.usageLimit;
+      const live = v.isActive && !expired && !usedUp;
+      return `<tr>
+      <td><b>${escapeHtml(v.code)}</b>${v.description ? `<div class="muted">${escapeHtml(v.description)}</div>` : ''}</td>
+      <td>${voucherValueLabel(v)}</td>
+      <td>${v.minOrder ? fmtVnd(v.minOrder) : '<span class="muted">—</span>'}</td>
+      <td>${v.usedCount}${v.usageLimit != null ? ` / ${v.usageLimit}` : ''}</td>
+      <td class="muted">${v.expiresAt ? new Date(v.expiresAt).toLocaleDateString(lang === 'en' ? 'en-GB' : 'vi-VN') : '—'}</td>
+      <td><span class="tag ${live ? 'tag--on' : 'tag--off'}">${
+        !v.isActive
+          ? L('Đã tắt', 'Off')
+          : expired
+            ? L('Hết hạn', 'Expired')
+            : usedUp
+              ? L('Hết lượt', 'Used up')
+              : L('Đang chạy', 'Live')
+      }</span></td>
+      <td style="white-space:nowrap">
+        <button class="btn btn--sm ${v.isActive ? 'btn--ghost' : 'btn--ok'}" data-action="toggle-voucher" data-id="${v.id}" data-active="${v.isActive ? 0 : 1}">${v.isActive ? L('Tắt', 'Disable') : L('Bật', 'Enable')}</button>
+        <button class="btn btn--sm btn--danger" data-action="del-voucher" data-id="${v.id}" data-code="${escapeHtml(v.code)}">${L('Xóa', 'Delete')}</button>
+      </td>
+    </tr>`;
+    })
+    .join('');
+
+  el.innerHTML =
+    head +
+    `<div class="panel"><table class="table">
+      <thead><tr>
+        <th>${L('Mã', 'Code')}</th><th>${L('Giảm', 'Discount')}</th><th>${L('Đơn tối thiểu', 'Min order')}</th>
+        <th>${L('Đã dùng', 'Used')}</th><th>${L('Hạn', 'Expiry')}</th><th>${L('Trạng thái', 'Status')}</th><th></th>
+      </tr></thead>
+      <tbody>${rows}</tbody></table></div>`;
+}
+
+/** Modal tạo mã giảm giá. */
+function voucherFormModal() {
+  openModal(`
+    <button class="modal__close" data-action="close">×</button>
+    <h2>${L('Tạo mã giảm giá', 'New voucher')}</h2>
+    <p class="modal__sub">${L('Mã áp cho tổng đơn ở màn thanh toán.', 'Applied to the whole order at checkout.')}</p>
+    <form id="voucherForm">
+      <div class="field"><label>${L('Mã (VD: SALE20)', 'Code (e.g. SALE20)')}</label><input name="code" required autofocus/></div>
+      <div class="field"><label>${L('Mô tả (không bắt buộc)', 'Description (optional)')}</label><input name="description" placeholder="${L('VD: Giảm 20% cuối tuần', 'e.g. 20% weekend sale')}"/></div>
+      <div class="field"><label>${L('Loại', 'Type')}</label>
+        <select name="type" id="vType">
+          <option value="percent">${L('Giảm phần trăm (%)', 'Percent (%)')}</option>
+          <option value="fixed">${L('Giảm số tiền (đ)', 'Fixed amount (đ)')}</option>
+        </select></div>
+      <div class="field"><label id="vValueLabel">${L('Phần trăm giảm (1–100)', 'Percent off (1–100)')}</label><input name="value" type="number" min="1" required/></div>
+      <div class="field" id="vCapWrap"><label>${L('Giảm tối đa (đ, không bắt buộc)', 'Max discount (đ, optional)')}</label><input name="maxDiscount" type="number" min="0"/></div>
+      <div class="field"><label>${L('Đơn tối thiểu (đ)', 'Min order (đ)')}</label><input name="minOrder" type="number" min="0" value="0"/></div>
+      <div class="field"><label>${L('Giới hạn lượt dùng (không bắt buộc)', 'Usage limit (optional)')}</label><input name="usageLimit" type="number" min="1"/></div>
+      <div class="field"><label>${L('Hết hạn (không bắt buộc)', 'Expiry (optional)')}</label><input name="expiresAt" type="date"/></div>
+      <button class="btn btn--primary btn--block" type="submit">${L('Tạo mã', 'Create voucher')}</button>
+    </form>`);
+
+  const form = document.getElementById('voucherForm');
+  const typeSel = document.getElementById('vType');
+  const syncType = () => {
+    const percent = typeSel.value === 'percent';
+    document.getElementById('vCapWrap').style.display = percent ? '' : 'none';
+    document.getElementById('vValueLabel').textContent = percent
+      ? L('Phần trăm giảm (1–100)', 'Percent off (1–100)')
+      : L('Số tiền giảm (đ)', 'Amount off (đ)');
+  };
+  typeSel.addEventListener('change', syncType);
+  syncType();
+
+  form.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const f = e.target;
+    const num = (name) => (f[name].value === '' ? null : Number(f[name].value));
+    const body = {
+      code: f.code.value.trim(),
+      description: f.description.value.trim() || null,
+      type: f.type.value,
+      value: num('value'),
+      maxDiscount: f.type.value === 'percent' ? num('maxDiscount') : null,
+      minOrder: num('minOrder') ?? 0,
+      usageLimit: num('usageLimit'),
+      expiresAt: f.expiresAt.value ? new Date(f.expiresAt.value + 'T23:59:59').toISOString() : null,
+    };
+    const btn = f.querySelector('button[type=submit]');
+    btn.disabled = true;
+    try {
+      await Api.post('/admin/vouchers', body);
+      closeModal();
+      toast(L('Đã tạo mã giảm giá', 'Voucher created'));
+      route();
+    } catch (err) {
+      btn.disabled = false;
+      toast(err.message);
+    }
+  });
 }
 
 async function viewCategories(el) {
@@ -1180,12 +1394,45 @@ document.addEventListener('click', async (e) => {
     } catch (err) {
       toast(err.message);
     }
+  } else if (action === 'add-voucher') {
+    voucherFormModal();
+  } else if (action === 'toggle-voucher') {
+    try {
+      await Api.put(`/admin/vouchers/${el.getAttribute('data-id')}/status`, {
+        isActive: el.getAttribute('data-active') === '1',
+      });
+      toast(L('Đã cập nhật mã', 'Voucher updated'));
+      route();
+    } catch (err) {
+      toast(err.message);
+    }
+  } else if (action === 'del-voucher') {
+    if (
+      confirm(
+        L(
+          `Xóa mã "${el.getAttribute('data-code')}"?`,
+          `Delete voucher "${el.getAttribute('data-code')}"?`
+        )
+      )
+    ) {
+      try {
+        await Api.del('/admin/vouchers/' + el.getAttribute('data-id'));
+        toast(L('Đã xóa mã giảm giá', 'Voucher deleted'));
+        route();
+      } catch (err) {
+        toast(err.message);
+      }
+    }
   } else if (action === 'add-cat') {
     addCategoryModal();
   } else if (action === 'add-product') {
     productFormModal();
   } else if (action === 'product-detail') {
     productDetailModal(el.getAttribute('data-id'));
+  } else if (action === 'order-detail') {
+    orderDetailModal(el.getAttribute('data-id'));
+  } else if (action === 'user-detail') {
+    userDetailModal(el.getAttribute('data-id'));
   } else if (action === 'reply-review') {
     reviewReplyModal(el.getAttribute('data-id'));
   } else if (action === 'edit-product') {

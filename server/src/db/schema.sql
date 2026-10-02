@@ -3,6 +3,7 @@
 -- Chạy lại được nhiều lần: xoá bảng cũ rồi tạo lại (dev only).
 -- ============================================================
 
+DROP TABLE IF EXISTS vouchers         CASCADE;
 DROP TABLE IF EXISTS reviews          CASCADE;
 DROP TABLE IF EXISTS payments         CASCADE;
 DROP TABLE IF EXISTS order_items      CASCADE;
@@ -181,3 +182,20 @@ CREATE TABLE reviews (
   created_at    TIMESTAMPTZ NOT NULL DEFAULT now()
 );
 CREATE INDEX idx_reviews_product ON reviews(product_id);
+
+-- ---------- Mã giảm giá (voucher toàn sàn, do admin tạo) ----------
+CREATE TABLE vouchers (
+  id           SERIAL PRIMARY KEY,
+  code         VARCHAR(40) UNIQUE NOT NULL,               -- mã khách nhập (không phân biệt hoa/thường)
+  description  VARCHAR(255),
+  type         VARCHAR(20) NOT NULL CHECK (type IN ('percent','fixed')),
+  value        INTEGER NOT NULL CHECK (value > 0),         -- percent: 1..100 | fixed: số tiền VND
+  max_discount INTEGER CHECK (max_discount IS NULL OR max_discount >= 0), -- trần giảm cho loại percent
+  min_order    INTEGER NOT NULL DEFAULT 0 CHECK (min_order >= 0),         -- đơn tối thiểu để dùng
+  usage_limit  INTEGER CHECK (usage_limit IS NULL OR usage_limit > 0),    -- NULL = không giới hạn
+  used_count   INTEGER NOT NULL DEFAULT 0,
+  starts_at    TIMESTAMPTZ,
+  expires_at   TIMESTAMPTZ,
+  is_active    BOOLEAN NOT NULL DEFAULT TRUE,
+  created_at   TIMESTAMPTZ NOT NULL DEFAULT now()
+);

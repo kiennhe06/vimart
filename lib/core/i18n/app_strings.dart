@@ -62,6 +62,13 @@ class AppStrings {
   String get total => _('Tổng cộng', 'Total');
   String checkoutItems(int n) => _('Thanh toán • $n món', 'Checkout • $n items');
 
+  // ---- Mã giảm giá ----
+  String get discountCode => _('Mã giảm giá', 'Discount code');
+  String get enterVoucherHint => _('Nhập mã', 'Enter code');
+  String get applyVoucher => _('Áp dụng', 'Apply');
+  String get removeVoucher => _('Bỏ', 'Remove');
+  String voucherApplied(String code) => _('Đã áp mã $code', 'Applied $code');
+
   // ---- Đơn hàng ----
   String get orders => _('Đơn hàng', 'Orders');
   String get loginToViewOrders => _('Đăng nhập để xem đơn hàng của bạn', 'Log in to view your orders');

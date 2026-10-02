@@ -9,6 +9,7 @@
  */
 import { query, withTransaction } from '../../db/pool.js';
 import { AppError } from '../../utils/AppError.js';
+import { validateVoucher } from '../voucher/voucher.service.js';
 
 /** Phí vận chuyển cố định cho mỗi shop (VND). Đơn giản cho bản MVP. */
 const SHIPPING_FEE_PER_SHOP = 30000;
@@ -24,7 +25,7 @@ function genCode(prefix) {
  * Đặt hàng từ toàn bộ giỏ hàng.
  * @returns { groupCode, totalAmount, paymentMethod, orders: [{id, code, shopId, total}] }
  */
-export async function checkout(userId, { addressId, paymentMethod, note }) {
+export async function checkout(userId, { addressId, paymentMethod, note, voucherCode }) {
   return withTransaction(async (client) => {
     // 1) Lấy địa chỉ nhận hàng (phải là của người dùng)
     const addrRes = await client.query('SELECT * FROM addresses WHERE id = $1 AND user_id = $2', [
@@ -48,11 +49,24 @@ export async function checkout(userId, { addressId, paymentMethod, note }) {
     );
     if (cartRes.rows.length === 0) throw new AppError(400, 'Giỏ hàng đang trống');
 
-    // 3) Gom theo shop
+    // 3) Gom theo shop (kèm subtotal từng shop để phân bổ giảm giá)
     const byShop = new Map();
     for (const row of cartRes.rows) {
-      if (!byShop.has(row.shop_id)) byShop.set(row.shop_id, []);
-      byShop.get(row.shop_id).push(row);
+      if (!byShop.has(row.shop_id)) byShop.set(row.shop_id, { items: [], subtotal: 0 });
+      const group = byShop.get(row.shop_id);
+      group.items.push(row);
+      group.subtotal += Number(row.price) * row.quantity;
+    }
+    const shops = [...byShop.entries()]; // [ [shopId, {items, subtotal}], ... ]
+    const cartSubtotal = shops.reduce((sum, [, g]) => sum + g.subtotal, 0);
+
+    // 3b) Áp mã giảm giá (nếu có) trên TỔNG tiền hàng, khóa dòng voucher trong transaction.
+    let voucher = null;
+    let totalDiscount = 0;
+    if (voucherCode && String(voucherCode).trim()) {
+      const applied = await validateVoucher(voucherCode, cartSubtotal, client);
+      voucher = applied.voucher;
+      totalDiscount = applied.discount;
     }
 
     const addressText = [address.line, address.ward, address.district, address.province]
@@ -61,20 +75,30 @@ export async function checkout(userId, { addressId, paymentMethod, note }) {
     const groupCode = genCode('VG');
     const createdOrders = [];
     let totalAmount = 0;
+    let allocatedDiscount = 0;
 
     // 4) Với mỗi shop -> tạo 1 đơn
-    for (const [shopId, items] of byShop) {
-      let subtotal = 0;
-      for (const it of items) subtotal += Number(it.price) * it.quantity;
+    for (let i = 0; i < shops.length; i++) {
+      const [shopId, group] = shops[i];
+      const items = group.items;
+      const subtotal = group.subtotal;
       const shippingFee = SHIPPING_FEE_PER_SHOP;
-      const total = subtotal + shippingFee;
+      // Chia giảm giá theo tỉ lệ subtotal; đơn cuối nhận phần dư để tổng khớp tuyệt đối.
+      const discountShare =
+        totalDiscount === 0
+          ? 0
+          : i === shops.length - 1
+            ? totalDiscount - allocatedDiscount
+            : Math.round((totalDiscount * subtotal) / cartSubtotal);
+      allocatedDiscount += discountShare;
+      const total = subtotal + shippingFee - discountShare;
       totalAmount += total;
 
       const orderRes = await client.query(
         `INSERT INTO orders
           (code, group_code, buyer_id, shop_id, recipient_name, recipient_phone, address_text,
            payment_method, subtotal, shipping_fee, discount, total, note)
-         VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,0,$11,$12)
+         VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13)
          RETURNING id, code, total`,
         [
           genCode('VM'),
@@ -87,6 +111,7 @@ export async function checkout(userId, { addressId, paymentMethod, note }) {
           paymentMethod,
           subtotal,
           shippingFee,
+          discountShare,
           total,
           note ?? null,
         ]
@@ -127,17 +152,31 @@ export async function checkout(userId, { addressId, paymentMethod, note }) {
       createdOrders.push({ id: order.id, code: order.code, shopId, total: Number(order.total) });
     }
 
-    // 6) Xóa giỏ hàng đã đặt
+    // 6) Ghi nhận đã dùng voucher (đã khóa dòng + kiểm tra hợp lệ ở bước 3b).
+    if (voucher) {
+      await client.query('UPDATE vouchers SET used_count = used_count + 1 WHERE id = $1', [
+        voucher.id,
+      ]);
+    }
+
+    // 7) Xóa giỏ hàng đã đặt
     await client.query('DELETE FROM cart_items WHERE user_id = $1', [userId]);
 
-    // 7) Tạo bản ghi thanh toán cho cả nhóm đơn
+    // 8) Tạo bản ghi thanh toán cho cả nhóm đơn
     await client.query(
       `INSERT INTO payments (group_code, amount, method, status)
        VALUES ($1, $2, $3, $4)`,
       [groupCode, totalAmount, paymentMethod, paymentMethod === 'cod' ? 'pending' : 'pending']
     );
 
-    return { groupCode, totalAmount, paymentMethod, orders: createdOrders };
+    return {
+      groupCode,
+      totalAmount,
+      discount: totalDiscount,
+      voucherCode: voucher ? voucher.code : null,
+      paymentMethod,
+      orders: createdOrders,
+    };
   });
 }
 

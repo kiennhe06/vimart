@@ -6,15 +6,36 @@ import '../../models/order.dart';
 
 /// Kết quả sau khi đặt hàng.
 class CheckoutResult {
-  CheckoutResult({required this.groupCode, required this.totalAmount, required this.paymentMethod});
+  CheckoutResult({
+    required this.groupCode,
+    required this.totalAmount,
+    required this.paymentMethod,
+    this.discount = 0,
+  });
   final String groupCode;
   final int totalAmount;
   final String paymentMethod;
+  final int discount;
 
   factory CheckoutResult.fromJson(Map<String, dynamic> json) => CheckoutResult(
         groupCode: json['groupCode'] as String? ?? '',
         totalAmount: (json['totalAmount'] as num?)?.toInt() ?? 0,
         paymentMethod: json['paymentMethod'] as String? ?? 'cod',
+        discount: (json['discount'] as num?)?.toInt() ?? 0,
+      );
+}
+
+/// Mã giảm giá đã áp cho giỏ hàng hiện tại (kết quả /vouchers/apply).
+class AppliedVoucher {
+  AppliedVoucher({required this.code, required this.discount, this.description});
+  final String code;
+  final int discount;
+  final String? description;
+
+  factory AppliedVoucher.fromJson(Map<String, dynamic> json) => AppliedVoucher(
+        code: json['code'] as String? ?? '',
+        discount: (json['discount'] as num?)?.toInt() ?? 0,
+        description: json['description'] as String?,
       );
 }
 
@@ -28,13 +49,21 @@ class OrderRepository {
     required int addressId,
     required String paymentMethod,
     String? note,
+    String? voucherCode,
   }) async {
     final data = await _api.post('/orders/checkout', body: {
       'addressId': addressId,
       'paymentMethod': paymentMethod,
       if (note != null && note.isNotEmpty) 'note': note,
+      if (voucherCode != null && voucherCode.isNotEmpty) 'voucherCode': voucherCode,
     });
     return CheckoutResult.fromJson(data as Map<String, dynamic>);
+  }
+
+  /// Kiểm tra mã giảm giá với giỏ hàng hiện tại (xem trước mức giảm).
+  Future<AppliedVoucher> applyVoucher(String code) async {
+    final data = await _api.post('/vouchers/apply', body: {'code': code});
+    return AppliedVoucher.fromJson(data as Map<String, dynamic>);
   }
 
   /// Đơn của người mua.

@@ -666,6 +666,14 @@ svg.ic {
 .link:hover {
   text-decoration: underline;
 }
+/* Cả dòng bảng bấm được -> mở chi tiết */
+.rowlink {
+  cursor: pointer;
+  transition: background 0.15s;
+}
+.rowlink:hover {
+  background: var(--surface-2);
+}
 /* Khối phản hồi của admin dưới mỗi đánh giá */
 .reply {
   margin-top: 8px;
@@ -717,6 +725,25 @@ svg.ic {
 .litem__body {
   flex: 1;
   min-width: 0;
+}
+/* Hàng khóa–giá trị trong modal chi tiết */
+.kv {
+  display: flex;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 7px 0;
+  border-bottom: 1px solid var(--border);
+  font-size: 14px;
+}
+.kv:last-child {
+  border-bottom: none;
+}
+.kv__k {
+  color: var(--text-2);
+  flex-shrink: 0;
+}
+.kv__v {
+  text-align: right;
 }
 .muted {
   color: var(--text-2);
