@@ -298,13 +298,13 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                     child: Row(
                       mainAxisSize: MainAxisSize.min,
                       children: [
-                        Icon(Icons.history_rounded, size: 16, color: context.c.textSecondary),
+                        const StickerIcon('history', size: 16),
                         const SizedBox(width: 6),
                         Text(term, style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w500)),
                         const SizedBox(width: 4),
                         GestureDetector(
                           onTap: () => ref.read(searchHistoryProvider.notifier).remove(term),
-                          child: Icon(Icons.close_rounded, size: 15, color: context.c.textSecondary),
+                          child: const StickerIcon('close', size: 15),
                         ),
                       ],
                     ),
@@ -562,7 +562,7 @@ class _PromoBanner extends ConsumerWidget {
             Container(
               width: 64, height: 64,
               decoration: BoxDecoration(color: Colors.white.withValues(alpha: 0.18), shape: BoxShape.circle),
-              child: const Icon(Icons.shopping_basket_rounded, color: Color(0xFFFFFFFF), size: 34),
+              child: const StickerIcon('cart', size: 40),
             ),
           ],
         ),

@@ -63,7 +63,7 @@ class ErrorView extends ConsumerWidget {
                 const SizedBox(height: 16),
                 OutlinedButton.icon(
                   onPressed: onRetry,
-                  icon: const Icon(Icons.refresh),
+                  icon: const StickerIcon('refresh', size: 20),
                   label: Text(ref.watch(stringsProvider).retry),
                 ),
               ],

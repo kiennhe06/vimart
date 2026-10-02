@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../app/motion.dart';
+import 'sticker_icon.dart';
 
 /// Hiển thị ảnh từ URL, có xử lý sẵn: đang tải, lỗi, và không có ảnh.
 /// Ảnh mờ dần khi tải xong (không "nhảy bụp"). Dùng Image.network (không thư viện ngoài).
@@ -12,7 +13,7 @@ class NetworkImageBox extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    if (url == null || url!.isEmpty) return _placeholder(Icons.image_not_supported_outlined);
+    if (url == null || url!.isEmpty) return _placeholder();
 
     return Image.network(
       url!,
@@ -33,12 +34,13 @@ class NetworkImageBox extends StatelessWidget {
         );
       },
       // Ảnh lỗi (link hỏng) -> hiện icon thay thế.
-      errorBuilder: (context, error, stack) => _placeholder(Icons.broken_image_outlined),
+      errorBuilder: (context, error, stack) => _placeholder(),
     );
   }
 
-  Widget _placeholder(IconData icon) => Container(
+  Widget _placeholder() => Container(
         color: Colors.grey.shade200,
-        child: Icon(icon, color: Colors.grey),
+        alignment: Alignment.center,
+        child: const StickerIcon('image', size: 34),
       );
 }

@@ -1,4 +1,3 @@
-import 'package:flutter/material.dart' show Icons;
 import 'package:flutter/services.dart' show TextInputAction;
 import 'package:flutter/widgets.dart';
 
@@ -142,7 +141,7 @@ class _VimartSearchBoxState extends State<VimartSearchBox> {
                         onTap: _clear,
                         child: Padding(
                           padding: const EdgeInsets.only(left: 8),
-                          child: Icon(Icons.close, size: 18, color: context.c.textSecondary),
+                          child: const StickerIcon('close', size: 18),
                         ),
                       )
                     : const SizedBox(key: ValueKey('empty')),

@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../app/design.dart';
+import '../../widgets/sticker_icon.dart';
 import '../../app/motion.dart';
 import '../../app/theme.dart';
 import '../../core/i18n/app_strings.dart';
@@ -62,7 +63,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                     child: Container(
                       width: 92, height: 92,
                       decoration: const BoxDecoration(color: AppColors.brandSoft, shape: BoxShape.circle),
-                      child: const Icon(Icons.storefront_rounded, size: 46, color: AppColors.brand),
+                      child: const StickerIcon('shop', size: 50),
                     ),
                   ),
                   const SizedBox(height: 16),
@@ -76,7 +77,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                   TextFormField(
                     controller: _emailCtrl,
                     keyboardType: TextInputType.emailAddress,
-                    decoration: InputDecoration(labelText: s.email, prefixIcon: const Icon(Icons.email_outlined)),
+                    decoration: InputDecoration(labelText: s.email, prefixIcon: const StickerIcon('mail', size: 22)),
                     validator: (v) => (v == null || !v.contains('@')) ? s.emailInvalid : null,
                   ),
                   const SizedBox(height: 14),
@@ -85,14 +86,15 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                     obscureText: _obscure,
                     decoration: InputDecoration(
                       labelText: s.password,
-                      prefixIcon: const Icon(Icons.lock_outline),
+                      prefixIcon: const StickerIcon('lock', size: 22),
                       suffixIcon: IconButton(
                         icon: AnimatedSwitcher(
                           duration: AppMotion.dur(context, AppMotion.fast),
                           transitionBuilder: (c, a) => ScaleTransition(
                               scale: a, child: FadeTransition(opacity: a, child: c)),
-                          child: Icon(
-                              _obscure ? Icons.visibility_off_outlined : Icons.visibility_outlined,
+                          child: StickerIcon(
+                              _obscure ? 'eye-off' : 'eye',
+                              size: 22,
                               key: ValueKey(_obscure)),
                         ),
                         onPressed: () => setState(() => _obscure = !_obscure),

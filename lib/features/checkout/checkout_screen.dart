@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 import '../../app/motion.dart';
+import '../../widgets/sticker_icon.dart';
 import '../../app/nav_provider.dart';
 import '../../app/theme.dart';
 import '../../core/format.dart';
@@ -241,7 +242,7 @@ class _CheckoutScreenState extends ConsumerState<CheckoutScreen> {
                                     textCapitalization: TextCapitalization.characters,
                                     decoration: InputDecoration(
                                       hintText: s.enterVoucherHint,
-                                      prefixIcon: const Icon(Icons.local_offer_outlined),
+                                      prefixIcon: const StickerIcon('tag', size: 22),
                                       border: const OutlineInputBorder(),
                                       isDense: true,
                                     ),
@@ -262,7 +263,7 @@ class _CheckoutScreenState extends ConsumerState<CheckoutScreen> {
                               )
                             : Row(
                                 children: [
-                                  const Icon(Icons.check_circle, color: AppColors.accent),
+                                  const StickerIcon('check', size: 24),
                                   const SizedBox(width: 8),
                                   Expanded(
                                     child: Column(
@@ -300,12 +301,12 @@ class _CheckoutScreenState extends ConsumerState<CheckoutScreen> {
                             RadioListTile<String>(
                               value: 'cod',
                               title: Text(s.codOption),
-                              secondary: const Icon(Icons.local_shipping_outlined),
+                              secondary: const StickerIcon('truck', size: 26),
                             ),
                             RadioListTile<String>(
                               value: 'vnpay',
                               title: Text(s.vnpayOption),
-                              secondary: const Icon(Icons.account_balance_wallet_outlined),
+                              secondary: const StickerIcon('wallet', size: 26),
                             ),
                           ],
                         ),
@@ -410,7 +411,7 @@ class _AddressPicker extends ConsumerWidget {
             ),
           TextButton.icon(
             onPressed: onAdd,
-            icon: const Icon(Icons.add_location_alt_outlined),
+            icon: const StickerIcon('location', size: 22),
             label: Text(s.addNewAddress),
           ),
           ],

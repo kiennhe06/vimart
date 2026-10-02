@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../app/design.dart';
+import '../../widgets/sticker_icon.dart';
 import '../../app/motion.dart';
 import '../../app/theme.dart';
 import '../../core/format.dart';
@@ -88,8 +89,8 @@ class _ShopGroup extends ConsumerWidget {
         children: [
           Row(
             children: [
-              const CircleAvatar(radius: 16, backgroundColor: AppColors.brandSoft,
-                  child: Icon(Icons.storefront_rounded, size: 18, color: AppColors.brand)),
+              CircleAvatar(radius: 16, backgroundColor: context.c.surface,
+                  child: const StickerIcon('shop', size: 22)),
               const SizedBox(width: 10),
               Expanded(
                 child: Column(
@@ -145,7 +146,7 @@ class _CartItemRow extends ConsumerWidget {
           color: AppColors.danger.withValues(alpha: 0.12),
           borderRadius: BorderRadius.circular(14),
         ),
-        child: const Icon(Icons.delete_rounded, color: AppColors.danger),
+        child: const StickerIcon('trash', size: 26),
       ),
       child: Padding(
         padding: const EdgeInsets.symmetric(vertical: 8),
@@ -203,7 +204,7 @@ class _QtyStepper extends StatelessWidget {
     return Row(
       mainAxisSize: MainAxisSize.min,
       children: [
-        _circle(context, Icons.remove_rounded, onDecrease, filled: false),
+        _circle(context, 'minus', onDecrease),
         SizedBox(
           width: 30,
           child: AnimatedSwitcher(
@@ -215,24 +216,16 @@ class _QtyStepper extends StatelessWidget {
                 style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 15)),
           ),
         ),
-        _circle(context, Icons.add_rounded, canIncrease ? onIncrease : null, filled: true),
+        _circle(context, 'plus', canIncrease ? onIncrease : null),
       ],
     );
   }
 
-  Widget _circle(BuildContext context, IconData icon, VoidCallback? onTap, {required bool filled}) {
+  Widget _circle(BuildContext context, String sticker, VoidCallback? onTap) {
     return Pressable(
       onTap: onTap,
       scale: 0.82,
-      child: Container(
-        width: 32, height: 32,
-        decoration: BoxDecoration(
-          shape: BoxShape.circle,
-          color: filled ? (onTap == null ? context.c.border : AppColors.brand) : context.c.surface,
-          border: filled ? null : Border.all(color: context.c.border),
-        ),
-        child: Icon(icon, size: 18, color: filled ? context.c.onBrand : AppColors.brand),
-      ),
+      child: StickerIcon(sticker, size: 32, colorFilter: onTap == null ? StickerIcon.grayscale : null),
     );
   }
 }

@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../app/design.dart';
+import '../../widgets/sticker_icon.dart';
 import '../../app/theme.dart';
 import '../../core/format.dart';
 import '../../core/i18n/app_strings.dart';
@@ -32,7 +33,7 @@ class SellerProductsScreen extends ConsumerWidget {
         onPressed: () => context.push('/seller/products/new'),
         backgroundColor: AppColors.brand,
         foregroundColor: Colors.white,
-        icon: const Icon(Icons.add_rounded),
+        icon: const StickerIcon('plus', size: 22),
         label: Text(s.addProduct, style: const TextStyle(fontWeight: FontWeight.w700)),
       ),
       body: AppRefresh(
@@ -92,24 +93,25 @@ class _ProductRow extends ConsumerWidget {
               ],
             ),
           ),
-          _iconBtn(Icons.edit_rounded, AppColors.brandSoft, AppColors.brand,
+          _iconBtn('edit', AppColors.brandSoft,
               () => context.push('/seller/products/edit/${product.id}')),
           const SizedBox(width: 8),
-          _iconBtn(Icons.delete_rounded, const Color(0xFFFDECEC), AppColors.danger,
+          _iconBtn('trash', const Color(0xFFFDECEC),
               () => _confirmDelete(context, ref)),
         ],
       ),
     );
   }
 
-  Widget _iconBtn(IconData icon, Color bg, Color fg, VoidCallback onTap) {
+  Widget _iconBtn(String sticker, Color bg, VoidCallback onTap) {
     return Pressable(
       onTap: onTap,
       scale: 0.85,
       child: Container(
         width: 38, height: 38,
+        alignment: Alignment.center,
         decoration: BoxDecoration(color: bg, borderRadius: BorderRadius.circular(11)),
-        child: Icon(icon, size: 19, color: fg),
+        child: StickerIcon(sticker, size: 22),
       ),
     );
   }
