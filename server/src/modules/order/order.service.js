@@ -10,6 +10,7 @@
 import { query, withTransaction } from '../../db/pool.js';
 import { AppError } from '../../utils/AppError.js';
 import { validateVoucher } from '../voucher/voucher.service.js';
+import { createNotification } from '../notification/notification.service.js';
 
 /** Phí vận chuyển cố định cho mỗi shop (VND). Đơn giản cho bản MVP. */
 const SHIPPING_FEE_PER_SHOP = 30000;
@@ -266,6 +267,11 @@ export async function getOrderDetail(userId, orderId) {
      FROM order_items WHERE order_id = $1`,
     [orderId]
   );
+  const historyRes = await query(
+    `SELECT to_status, actor_role, created_at
+     FROM order_status_history WHERE order_id = $1 ORDER BY created_at ASC`,
+    [orderId]
+  );
 
   return {
     ...toOrder(order),
@@ -279,6 +285,11 @@ export async function getOrderDetail(userId, orderId) {
       price: i.price,
       quantity: i.quantity,
       reviewed: i.reviewed,
+    })),
+    history: historyRes.rows.map((h) => ({
+      toStatus: h.to_status,
+      actorRole: h.actor_role,
+      createdAt: h.created_at,
     })),
   };
 }
@@ -365,6 +376,39 @@ export async function changeStatus(userId, orderId, action, { asAdmin = false } 
       'UPDATE orders SET status = $1, payment_status = $2 WHERE id = $3 RETURNING *',
       [newStatus, paymentStatus, orderId]
     );
+
+    // Ghi lịch sử đổi trạng thái (ai đổi, từ -> đến).
+    const actorRole = asAdmin
+      ? 'admin'
+      : order.buyer_id === userId
+        ? 'buyer'
+        : 'seller';
+    await client.query(
+      `INSERT INTO order_status_history (order_id, from_status, to_status, changed_by, actor_role)
+       VALUES ($1, $2, $3, $4, $5)`,
+      [orderId, order.status, newStatus, userId, actorRole]
+    );
+
+    // Thông báo cho NGƯỜI MUA khi shop/admin đổi trạng thái (không tự thông báo cho chính mình).
+    const actorIsBuyer = !asAdmin && order.buyer_id === userId;
+    if (!actorIsBuyer) {
+      const msg = {
+        confirmed: ['Đơn đã được xác nhận', `Đơn ${order.code} đã được xác nhận và đang chuẩn bị.`],
+        shipping: ['Đơn đang được giao', `Đơn ${order.code} đang trên đường giao tới bạn.`],
+        completed: ['Đơn đã hoàn thành', `Đơn ${order.code} đã hoàn thành. Cảm ơn bạn!`],
+        cancelled: ['Đơn đã bị huỷ', `Đơn ${order.code} đã bị huỷ/từ chối.`],
+      }[newStatus];
+      if (msg) {
+        await createNotification(client, {
+          userId: order.buyer_id,
+          type: 'order_status',
+          title: msg[0],
+          body: msg[1],
+          orderId,
+        });
+      }
+    }
+
     return toOrder({ ...updated.rows[0], shop_name: null, buyer_name: null });
   });
 }

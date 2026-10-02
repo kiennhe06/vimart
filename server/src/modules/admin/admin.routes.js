@@ -1,7 +1,7 @@
 /** Khu vực quản trị (admin). Mọi route đều cần đăng nhập + quyền admin. */
 import { Router } from 'express';
 import { z } from 'zod';
-import { query, withTransaction } from '../../db/pool.js';
+import { query, withTransaction, pool } from '../../db/pool.js';
 import { authRequired, adminOnly } from '../../middlewares/auth.middleware.js';
 import { asyncHandler } from '../../utils/asyncHandler.js';
 import { validate } from '../../middlewares/validate.middleware.js';
@@ -9,6 +9,7 @@ import { ok, created } from '../../utils/response.js';
 import { AppError } from '../../utils/AppError.js';
 import { changeStatus } from '../order/order.service.js';
 import { getProductDetail } from '../product/product.service.js';
+import { createNotification } from '../notification/notification.service.js';
 
 const router = Router();
 router.use(authRequired, adminOnly);
@@ -88,6 +89,12 @@ router.get(
        FROM order_items WHERE order_id = $1`,
       [id]
     );
+    const historyRes = await query(
+      `SELECT h.to_status, h.actor_role, h.created_at, u.full_name AS actor_name
+       FROM order_status_history h LEFT JOIN users u ON u.id = h.changed_by
+       WHERE h.order_id = $1 ORDER BY h.created_at ASC`,
+      [id]
+    );
     return ok(res, {
       id: o.id,
       code: o.code,
@@ -112,6 +119,12 @@ router.get(
         imageUrl: i.image_url,
         price: Number(i.price),
         quantity: i.quantity,
+      })),
+      history: historyRes.rows.map((h) => ({
+        toStatus: h.to_status,
+        actorRole: h.actor_role,
+        actorName: h.actor_name,
+        createdAt: h.created_at,
       })),
     });
   })
@@ -218,11 +231,23 @@ router.post(
   asyncHandler(async (req, res) => {
     const id = Number(req.params.id);
     const result = await query(
-      'UPDATE reviews SET reply = $1, reply_at = now() WHERE id = $2 RETURNING id, reply, reply_at',
+      `UPDATE reviews SET reply = $1, reply_at = now() WHERE id = $2
+       RETURNING id, reply, reply_at, user_id, product_id`,
       [req.body.reply, id]
     );
     if (result.rows.length === 0) throw new AppError(404, 'Không tìm thấy đánh giá');
     const r = result.rows[0];
+
+    // Thông báo cho người đã viết đánh giá.
+    const prod = await query('SELECT name FROM products WHERE id = $1', [r.product_id]);
+    const productName = prod.rows[0]?.name || 'sản phẩm';
+    await createNotification(pool, {
+      userId: r.user_id,
+      type: 'review_reply',
+      title: 'ViMart đã phản hồi đánh giá của bạn',
+      body: `Về "${productName}": ${req.body.reply}`,
+    });
+
     return ok(res, { id: r.id, reply: r.reply, replyAt: r.reply_at });
   })
 );

@@ -78,6 +78,21 @@ class OrderItem {
 }
 
 /// Chi tiết đầy đủ của 1 đơn.
+/// Một mốc trong lịch sử đổi trạng thái đơn.
+class OrderStatusEvent {
+  OrderStatusEvent({required this.toStatus, this.actorRole, this.createdAt});
+
+  final String toStatus;
+  final String? actorRole; // 'admin' | 'seller' | 'buyer'
+  final DateTime? createdAt;
+
+  factory OrderStatusEvent.fromJson(Map<String, dynamic> json) => OrderStatusEvent(
+        toStatus: json['toStatus'] as String? ?? '',
+        actorRole: json['actorRole'] as String?,
+        createdAt: DateTime.tryParse(json['createdAt']?.toString() ?? ''),
+      );
+}
+
 class OrderDetail {
   OrderDetail({
     required this.summary,
@@ -89,6 +104,7 @@ class OrderDetail {
     required this.discount,
     this.note,
     required this.items,
+    required this.history,
   });
 
   final OrderSummary summary;
@@ -100,6 +116,7 @@ class OrderDetail {
   final int discount;
   final String? note;
   final List<OrderItem> items;
+  final List<OrderStatusEvent> history;
 
   factory OrderDetail.fromJson(Map<String, dynamic> json) => OrderDetail(
         summary: OrderSummary.fromJson(json),
@@ -112,6 +129,9 @@ class OrderDetail {
         note: json['note'] as String?,
         items: (json['items'] as List<dynamic>? ?? [])
             .map((e) => OrderItem.fromJson(e as Map<String, dynamic>))
+            .toList(),
+        history: (json['history'] as List<dynamic>? ?? [])
+            .map((e) => OrderStatusEvent.fromJson(e as Map<String, dynamic>))
             .toList(),
       );
 }
