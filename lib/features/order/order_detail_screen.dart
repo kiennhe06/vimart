@@ -89,6 +89,126 @@ class _OrderDetailBodyState extends ConsumerState<_OrderDetailBody> {
     ref.invalidate(shopOrdersProvider);
   }
 
+  /// Thẻ hiển thị yêu cầu trả hàng (khi đã gửi).
+  Widget _returnCard(ReturnRequest r) {
+    final str = ref.watch(stringsProvider);
+    final color = switch (r.status) {
+      'approved' => AppColors.brand,
+      'rejected' => Colors.red.shade400,
+      _ => const Color(0xFFF59E0B),
+    };
+    return _card(str.returnStatusLabel, [
+      Row(
+        children: [
+          Expanded(
+            child: Text(str.returnReasonText(r.reason),
+                style: const TextStyle(fontWeight: FontWeight.w700)),
+          ),
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 3),
+            decoration: BoxDecoration(
+                color: color.withValues(alpha: 0.15), borderRadius: BorderRadius.circular(20)),
+            child: Text(str.returnStatusText(r.status),
+                style: TextStyle(color: color, fontWeight: FontWeight.w700, fontSize: 12)),
+          ),
+        ],
+      ),
+      if (r.note != null && r.note!.isNotEmpty)
+        Padding(
+          padding: const EdgeInsets.only(top: 4),
+          child: Text(r.note!, style: TextStyle(color: context.c.textSecondary)),
+        ),
+      if (r.adminNote != null && r.adminNote!.isNotEmpty)
+        Padding(
+          padding: const EdgeInsets.only(top: 6),
+          child: Text(r.adminNote!,
+              style: TextStyle(color: context.c.textSecondary, fontStyle: FontStyle.italic)),
+        ),
+    ]);
+  }
+
+  /// Mở form yêu cầu trả hàng (chọn lý do + mô tả).
+  Future<void> _openReturnSheet() async {
+    final str = ref.read(stringsProvider);
+    const reasons = ['defective', 'wrong_item', 'not_as_described', 'other'];
+    String reason = reasons.first;
+    final noteCtrl = TextEditingController();
+
+    final submitted = await showModalBottomSheet<bool>(
+      context: context,
+      isScrollControlled: true,
+      showDragHandle: true,
+      builder: (ctx) => Padding(
+        padding: EdgeInsets.only(
+          left: 16,
+          right: 16,
+          top: 8,
+          bottom: MediaQuery.of(ctx).viewInsets.bottom + 16,
+        ),
+        child: StatefulBuilder(
+          builder: (ctx, setSheet) => Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(str.requestReturn,
+                  style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w800)),
+              const SizedBox(height: 14),
+              Text(str.returnReason, style: TextStyle(color: context.c.textSecondary)),
+              const SizedBox(height: 6),
+              RadioGroup<String>(
+                groupValue: reason,
+                onChanged: (v) => setSheet(() => reason = v!),
+                child: Column(
+                  children: [
+                    for (final r in reasons)
+                      RadioListTile<String>(
+                        value: r,
+                        title: Text(str.returnReasonText(r)),
+                        contentPadding: EdgeInsets.zero,
+                        dense: true,
+                      ),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 8),
+              TextField(
+                controller: noteCtrl,
+                minLines: 2,
+                maxLines: 4,
+                decoration: InputDecoration(
+                  hintText: str.returnNote,
+                  border: const OutlineInputBorder(),
+                ),
+              ),
+              const SizedBox(height: 14),
+              SizedBox(
+                width: double.infinity,
+                child: FilledButton(
+                  onPressed: () => Navigator.pop(ctx, true),
+                  child: Text(str.send2),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+
+    final note = noteCtrl.text.trim();
+    noteCtrl.dispose();
+    if (submitted != true || !mounted) return;
+    setState(() => _busy = true);
+    try {
+      await ref.read(orderRepositoryProvider).requestReturn(order.summary.id, reason, note);
+      _refresh();
+      if (mounted) showAppSnack(context, str.returnSent, type: AppSnackType.success);
+    } catch (e) {
+      if (mounted) showAppSnack(context, e.toString(), type: AppSnackType.error);
+    } finally {
+      if (mounted) setState(() => _busy = false);
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final s = order.summary;
@@ -134,6 +254,19 @@ class _OrderDetailBodyState extends ConsumerState<_OrderDetailBody> {
                   for (int i = 0; i < order.history.length; i++)
                     _historyRow(order.history[i], i == order.history.length - 1),
                 ]),
+              // Trả hàng / hoàn tiền
+              if (order.returnRequest != null)
+                _returnCard(order.returnRequest!)
+              else if (order.summary.status == 'completed')
+                Padding(
+                  padding: const EdgeInsets.only(top: 4),
+                  child: OutlinedButton.icon(
+                    onPressed: _busy ? null : _openReturnSheet,
+                    icon: const Icon(Icons.assignment_return_outlined, size: 18),
+                    label: Text(str.requestReturn),
+                    style: OutlinedButton.styleFrom(minimumSize: const Size.fromHeight(46)),
+                  ),
+                ),
             ],
           ),
         ),

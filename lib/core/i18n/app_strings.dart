@@ -62,6 +62,32 @@ class AppStrings {
   String get total => _('Tổng cộng', 'Total');
   String checkoutItems(int n) => _('Thanh toán • $n món', 'Checkout • $n items');
 
+  // ---- Trả hàng / hoàn tiền ----
+  String get requestReturn => _('Yêu cầu trả hàng / hoàn tiền', 'Request return / refund');
+  String get returnReason => _('Lý do', 'Reason');
+  String get returnNote => _('Mô tả thêm (không bắt buộc)', 'Details (optional)');
+  String get send2 => _('Gửi yêu cầu', 'Submit request');
+  String get returnSent => _('Đã gửi yêu cầu trả hàng', 'Return request sent');
+  String get returnStatusLabel => _('Yêu cầu trả hàng', 'Return request');
+  String returnReasonText(String r) => _(
+        {
+          'defective': 'Hàng lỗi/hỏng',
+          'wrong_item': 'Giao sai sản phẩm',
+          'not_as_described': 'Không giống mô tả',
+          'other': 'Lý do khác',
+        }[r] ?? r,
+        {
+          'defective': 'Defective',
+          'wrong_item': 'Wrong item',
+          'not_as_described': 'Not as described',
+          'other': 'Other',
+        }[r] ?? r,
+      );
+  String returnStatusText(String s) => _(
+        {'requested': 'Đang chờ xử lý', 'approved': 'Đã chấp nhận', 'rejected': 'Bị từ chối'}[s] ?? s,
+        {'requested': 'Pending', 'approved': 'Approved', 'rejected': 'Rejected'}[s] ?? s,
+      );
+
   // ---- Chat / Tin nhắn ----
   String get messages => _('Tin nhắn', 'Messages');
   String get noConversations => _('Chưa có cuộc trò chuyện nào', 'No conversations yet');

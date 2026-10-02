@@ -80,6 +80,7 @@ const NAV = [
   { key: 'orders', icon: '📦' },
   { key: 'reviews', icon: '⭐' },
   { key: 'vouchers', icon: '🎟️' },
+  { key: 'returns', icon: '↩️' },
   { key: 'categories', icon: '🏷️' },
 ];
 // Nhãn menu theo ngôn ngữ.
@@ -92,6 +93,7 @@ function navLabel(key) {
       orders: L('Đơn hàng', 'Orders'),
       reviews: L('Đánh giá', 'Reviews'),
       vouchers: L('Mã giảm giá', 'Vouchers'),
+      returns: L('Trả hàng', 'Returns'),
       categories: L('Danh mục', 'Categories'),
     }[key] || key
   );
@@ -310,6 +312,7 @@ async function route() {
     else if (key === 'orders') await viewOrders(content);
     else if (key === 'reviews') await viewReviews(content);
     else if (key === 'vouchers') await viewVouchers(content);
+    else if (key === 'returns') await viewReturns(content);
     else if (key === 'categories') await viewCategories(content);
   } catch (err) {
     content.innerHTML = stateView({
@@ -1349,6 +1352,69 @@ function voucherFormModal() {
   });
 }
 
+// ---------- View: Trả hàng / hoàn tiền ----------
+
+function returnReasonLabel(r) {
+  return {
+    defective: L('Hàng lỗi/hỏng', 'Defective'),
+    wrong_item: L('Giao sai sản phẩm', 'Wrong item'),
+    not_as_described: L('Không giống mô tả', 'Not as described'),
+    other: L('Lý do khác', 'Other'),
+  }[r] || r;
+}
+
+function returnStatusChip(st) {
+  const map = {
+    requested: ['#f59e0b', L('Chờ xử lý', 'Pending')],
+    approved: ['#2e7d32', L('Đã chấp nhận', 'Approved')],
+    rejected: ['#d32f2f', L('Từ chối', 'Rejected')],
+  };
+  const [color, label] = map[st] || ['#888', st];
+  return `<span class="status" style="color:${color};background:${color}22">${label}</span>`;
+}
+
+async function viewReturns(el) {
+  const returns = await Api.get('/admin/returns');
+
+  if (!returns.length) {
+    el.innerHTML = `<div class="section-head"><h3>${L('Trả hàng / hoàn tiền', 'Returns / refunds')}</h3></div>
+      <div class="panel">${stateView({
+        icon: 'box',
+        title: L('Chưa có yêu cầu trả hàng', 'No return requests'),
+        message: L('Khách gửi yêu cầu trả hàng với đơn đã hoàn thành sẽ hiện ở đây.', 'Requests on completed orders will appear here.'),
+      })}</div>`;
+    return;
+  }
+
+  const rows = returns
+    .map(
+      (r) => `<tr>
+      <td><b>${escapeHtml(r.orderCode)}</b><div class="muted">${fmtVnd(r.total)}</div></td>
+      <td>${escapeHtml(r.buyerName || '')}<div class="muted">${escapeHtml(r.shopName || '')}</div></td>
+      <td>${returnReasonLabel(r.reason)}${r.note ? `<div class="muted">${escapeHtml(r.note)}</div>` : ''}</td>
+      <td>${returnStatusChip(r.status)}${r.adminNote ? `<div class="muted">${escapeHtml(r.adminNote)}</div>` : ''}</td>
+      <td class="muted">${fmtDate(r.createdAt)}</td>
+      <td style="white-space:nowrap">${
+        r.status === 'requested'
+          ? `<button class="btn btn--sm btn--ok" data-action="return-approve" data-id="${r.id}">${L('Chấp nhận', 'Approve')}</button>
+             <button class="btn btn--sm btn--danger" data-action="return-reject" data-id="${r.id}">${L('Từ chối', 'Reject')}</button>`
+          : '<span class="muted">—</span>'
+      }</td>
+    </tr>`
+    )
+    .join('');
+
+  el.innerHTML = `
+    <div class="section-head"><h3>${L('Trả hàng / hoàn tiền', 'Returns / refunds')} (${returns.length})</h3></div>
+    <div class="panel"><table class="table">
+      <thead><tr>
+        <th>${L('Đơn', 'Order')}</th><th>${L('Khách / Shop', 'Buyer / Shop')}</th>
+        <th>${L('Lý do', 'Reason')}</th><th>${L('Trạng thái', 'Status')}</th>
+        <th>${L('Ngày', 'Date')}</th><th></th>
+      </tr></thead>
+      <tbody>${rows}</tbody></table></div>`;
+}
+
 async function viewCategories(el) {
   const cats = await Api.get('/categories');
   const rows = cats
@@ -1504,6 +1570,23 @@ document.addEventListener('click', async (e) => {
         isActive: el.getAttribute('data-active') === '1',
       });
       toast(L('Đã cập nhật tài khoản', 'Account updated'));
+      route();
+    } catch (err) {
+      toast(err.message);
+    }
+  } else if (action === 'return-approve' || action === 'return-reject') {
+    const id = el.getAttribute('data-id');
+    const approve = action === 'return-approve';
+    let adminNote = null;
+    if (!approve) {
+      adminNote = prompt(L('Lý do từ chối (không bắt buộc):', 'Reason for rejection (optional):'));
+      if (adminNote === null) return; // bấm Cancel
+    } else if (!confirm(L('Chấp nhận trả hàng & hoàn kho đơn này?', 'Approve return & restore stock?'))) {
+      return;
+    }
+    try {
+      await Api.post(`/admin/returns/${id}/resolve`, { action: approve ? 'approve' : 'reject', adminNote });
+      toast(approve ? L('Đã chấp nhận trả hàng', 'Return approved') : L('Đã từ chối', 'Return rejected'));
       route();
     } catch (err) {
       toast(err.message);

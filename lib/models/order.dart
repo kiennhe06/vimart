@@ -93,6 +93,22 @@ class OrderStatusEvent {
       );
 }
 
+/// Yêu cầu trả hàng gắn với 1 đơn (nếu có).
+class ReturnRequest {
+  ReturnRequest({required this.reason, this.note, required this.status, this.adminNote});
+  final String reason; // 'defective'|'wrong_item'|'not_as_described'|'other'
+  final String? note;
+  final String status; // 'requested'|'approved'|'rejected'
+  final String? adminNote;
+
+  factory ReturnRequest.fromJson(Map<String, dynamic> j) => ReturnRequest(
+        reason: j['reason'] as String? ?? '',
+        note: j['note'] as String?,
+        status: j['status'] as String? ?? 'requested',
+        adminNote: j['adminNote'] as String?,
+      );
+}
+
 class OrderDetail {
   OrderDetail({
     required this.summary,
@@ -105,6 +121,7 @@ class OrderDetail {
     this.note,
     required this.items,
     required this.history,
+    this.returnRequest,
   });
 
   final OrderSummary summary;
@@ -117,6 +134,7 @@ class OrderDetail {
   final String? note;
   final List<OrderItem> items;
   final List<OrderStatusEvent> history;
+  final ReturnRequest? returnRequest;
 
   factory OrderDetail.fromJson(Map<String, dynamic> json) => OrderDetail(
         summary: OrderSummary.fromJson(json),
@@ -133,5 +151,8 @@ class OrderDetail {
         history: (json['history'] as List<dynamic>? ?? [])
             .map((e) => OrderStatusEvent.fromJson(e as Map<String, dynamic>))
             .toList(),
+        returnRequest: json['returnRequest'] == null
+            ? null
+            : ReturnRequest.fromJson(json['returnRequest'] as Map<String, dynamic>),
       );
 }

@@ -87,6 +87,13 @@ class OrderRepository {
   /// Đổi trạng thái đơn: cancel | received | confirm | ship | reject.
   Future<void> action(int orderId, String action) => _api.post('/orders/$orderId/$action');
 
+  /// Yêu cầu trả hàng / hoàn tiền cho 1 đơn đã hoàn thành.
+  Future<void> requestReturn(int orderId, String reason, String? note) =>
+      _api.post('/orders/$orderId/return', body: {
+        'reason': reason,
+        if (note != null && note.isNotEmpty) 'note': note,
+      });
+
   /// Đánh giá 1 món hàng đã hoàn thành.
   Future<void> review(int orderItemId, int rating, String? comment) => _api.post('/reviews', body: {
         'orderItemId': orderItemId,
