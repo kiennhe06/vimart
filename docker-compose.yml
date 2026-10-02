@@ -20,5 +20,28 @@ services:
       timeout: 5s
       retries: 5
 
+  # Backend + web admin (API phục vụ cả website tĩnh).
+  # Chỉ chạy khi bật profile "full":  docker compose --profile full up --build
+  # (mặc định `docker compose up` chỉ chạy Postgres cho dev local.)
+  app:
+    build: ./server
+    container_name: vimart-app
+    profiles: ['full']
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      PORT: 4100
+      NODE_ENV: production
+      DATABASE_URL: postgres://vimart:vimart@db:5432/vimart
+      JWT_SECRET: ${JWT_SECRET:-doi-secret-nay-thanh-chuoi-ngau-nhien-dai}
+      API_BASE_URL: ${API_BASE_URL:-http://localhost:4100}
+      # VNPay (điền mã sandbox thật để bật thanh toán online).
+      VNP_TMN_CODE: ${VNP_TMN_CODE:-}
+      VNP_HASH_SECRET: ${VNP_HASH_SECRET:-}
+      VNP_RETURN_URL: ${VNP_RETURN_URL:-http://localhost:4100/api/payments/vnpay/return}
+    ports:
+      - '4100:4100'
+
 volumes:
   vimart_pgdata:
