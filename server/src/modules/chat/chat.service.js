@@ -151,6 +151,78 @@ export async function sendMessage(conversationId, senderId, body) {
   };
 }
 
+// ---------- Admin (web admin trực chat / CSKH) ----------
+
+/** Toàn bộ hội thoại trên sàn (cho web admin). */
+export async function adminListConversations() {
+  const res = await query(
+    `SELECT c.id, c.last_message, c.last_message_at, c.buyer_unread, c.seller_unread,
+            bu.full_name AS buyer_name, s.name AS shop_name
+     FROM conversations c
+     JOIN users bu ON bu.id = c.buyer_id
+     JOIN shops s ON s.id = c.shop_id
+     ORDER BY c.last_message_at DESC NULLS LAST, c.created_at DESC`
+  );
+  return res.rows.map((r) => ({
+    id: r.id,
+    buyerName: r.buyer_name,
+    shopName: r.shop_name,
+    lastMessage: r.last_message,
+    lastMessageAt: r.last_message_at,
+  }));
+}
+
+/** Tin nhắn của 1 hội thoại (admin xem — kèm tên người gửi). */
+export async function adminMessages(conversationId) {
+  const res = await query(
+    `SELECT m.id, m.sender_id, m.body, m.created_at, u.full_name AS sender_name,
+            u.role AS sender_role
+     FROM messages m JOIN users u ON u.id = m.sender_id
+     WHERE m.conversation_id = $1 ORDER BY m.created_at ASC`,
+    [conversationId]
+  );
+  return res.rows.map((m) => ({
+    id: m.id,
+    senderId: m.sender_id,
+    senderName: m.sender_name,
+    senderRole: m.sender_role,
+    body: m.body,
+    createdAt: m.created_at,
+  }));
+}
+
+/** Admin gửi tin vào 1 hội thoại (CSKH). Trả về { message, buyerId }. */
+export async function adminSend(conversationId, adminId, body) {
+  const text = String(body || '').trim();
+  if (!text) throw new AppError(400, 'Nội dung tin nhắn trống');
+  const parties = await getParties(conversationId); // ném 404 nếu không có
+
+  const message = await withTransaction(async (client) => {
+    const ins = await client.query(
+      'INSERT INTO messages (conversation_id, sender_id, body) VALUES ($1,$2,$3) RETURNING id, created_at',
+      [conversationId, adminId, text]
+    );
+    await client.query(
+      `UPDATE conversations
+       SET last_message = $1, last_message_at = now(), buyer_unread = buyer_unread + 1
+       WHERE id = $2`,
+      [text.slice(0, 500), conversationId]
+    );
+    return ins.rows[0];
+  });
+
+  return {
+    buyerId: parties.buyer_id,
+    message: {
+      id: message.id,
+      conversationId: Number(conversationId),
+      senderId: adminId,
+      body: text,
+      createdAt: message.created_at,
+    },
+  };
+}
+
 /** Tổng số tin chưa đọc của user (cho badge). */
 export async function unreadTotal(userId) {
   const res = await query(

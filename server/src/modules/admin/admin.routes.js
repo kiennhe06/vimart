@@ -11,6 +11,8 @@ import { changeStatus } from '../order/order.service.js';
 import { getProductDetail } from '../product/product.service.js';
 import { createNotification } from '../notification/notification.service.js';
 import { listReturns, resolveReturn } from '../return/return.service.js';
+import { adminListConversations, adminMessages, adminSend } from '../chat/chat.service.js';
+import { pushToUser, pushToAdmins } from '../chat/chat.ws.js';
 
 const router = Router();
 router.use(authRequired, adminOnly);
@@ -543,6 +545,32 @@ router.post(
   asyncHandler(async (req, res) =>
     ok(res, await resolveReturn(Number(req.params.id), req.body.action, req.body.adminNote))
   )
+);
+
+// ---------- Chat (web admin trực chat / CSKH) ----------
+
+/** GET /api/admin/chat/conversations — toàn bộ hội thoại trên sàn. */
+router.get(
+  '/chat/conversations',
+  asyncHandler(async (req, res) => ok(res, await adminListConversations()))
+);
+
+/** GET /api/admin/chat/conversations/:id/messages — tin nhắn của 1 hội thoại. */
+router.get(
+  '/chat/conversations/:id/messages',
+  asyncHandler(async (req, res) => ok(res, await adminMessages(Number(req.params.id))))
+);
+
+/** POST /api/admin/chat/conversations/:id/messages — admin gửi tin. */
+router.post(
+  '/chat/conversations/:id/messages',
+  validate(z.object({ body: z.string().trim().min(1).max(2000) })),
+  asyncHandler(async (req, res) => {
+    const { message, buyerId } = await adminSend(Number(req.params.id), req.user.id, req.body.body);
+    pushToUser(buyerId, { type: 'message', message }); // người mua nhận ngay
+    pushToAdmins({ type: 'message', message }); // các admin khác cũng cập nhật
+    return created(res, message);
+  })
 );
 
 export default router;

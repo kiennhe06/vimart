@@ -10,12 +10,16 @@ import { verifyToken } from '../../utils/token.js';
 
 /** userId -> Set<WebSocket> */
 const clients = new Map();
+/** Các socket của admin (web admin) — nhận MỌI tin để trực chat/CSKH. */
+const admins = new Set();
 
 function add(userId, ws) {
   if (!clients.has(userId)) clients.set(userId, new Set());
   clients.get(userId).add(ws);
+  if (ws.role === 'admin') admins.add(ws);
 }
 function remove(userId, ws) {
+  admins.delete(ws);
   const set = clients.get(userId);
   if (!set) return;
   set.delete(ws);
@@ -32,6 +36,14 @@ export function pushToUser(userId, payload) {
   }
 }
 
+/** Đẩy tới mọi admin đang online (web admin nhận mọi tin nhắn). */
+export function pushToAdmins(payload) {
+  const data = JSON.stringify(payload);
+  for (const ws of admins) {
+    if (ws.readyState === ws.OPEN) ws.send(data);
+  }
+}
+
 /** Gắn WebSocket server vào HTTP server (xử lý upgrade ở path /ws). */
 export function attachChatWebSocket(httpServer) {
   const wss = new WebSocketServer({ noServer: true });
@@ -42,8 +54,11 @@ export function attachChatWebSocket(httpServer) {
 
     const token = searchParams.get('token');
     let userId;
+    let role;
     try {
-      userId = verifyToken(token || '').id;
+      const payload = verifyToken(token || '');
+      userId = payload.id;
+      role = payload.role;
     } catch {
       socket.write('HTTP/1.1 401 Unauthorized\r\n\r\n');
       socket.destroy();
@@ -51,6 +66,7 @@ export function attachChatWebSocket(httpServer) {
     }
     wss.handleUpgrade(req, socket, head, (ws) => {
       ws.userId = Number(userId);
+      ws.role = role;
       ws.isAlive = true;
       add(ws.userId, ws);
       ws.on('pong', () => (ws.isAlive = true));

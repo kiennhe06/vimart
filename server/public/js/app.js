@@ -78,6 +78,7 @@ const NAV = [
   { key: 'products', icon: '🛍️' },
   { key: 'users', icon: '👥' },
   { key: 'orders', icon: '📦' },
+  { key: 'chat', icon: '💬' },
   { key: 'reviews', icon: '⭐' },
   { key: 'vouchers', icon: '🎟️' },
   { key: 'returns', icon: '↩️' },
@@ -91,6 +92,7 @@ function navLabel(key) {
       products: L('Sản phẩm', 'Products'),
       users: L('Người dùng', 'Users'),
       orders: L('Đơn hàng', 'Orders'),
+      chat: L('Tin nhắn', 'Chat'),
       reviews: L('Đánh giá', 'Reviews'),
       vouchers: L('Mã giảm giá', 'Vouchers'),
       returns: L('Trả hàng', 'Returns'),
@@ -310,6 +312,7 @@ async function route() {
     else if (key === 'products') await viewProducts(content);
     else if (key === 'users') await viewUsers(content);
     else if (key === 'orders') await viewOrders(content);
+    else if (key === 'chat') await viewChat(content);
     else if (key === 'reviews') await viewReviews(content);
     else if (key === 'vouchers') await viewVouchers(content);
     else if (key === 'returns') await viewReturns(content);
@@ -1415,6 +1418,112 @@ async function viewReturns(el) {
       <tbody>${rows}</tbody></table></div>`;
 }
 
+// ---------- View: Chat (web admin trực chat / CSKH) ----------
+let chatWS = null;
+const chatUI = { openId: null };
+
+function chatWsUrl() {
+  const proto = location.protocol === 'https:' ? 'wss' : 'ws';
+  return `${proto}://${location.host}/ws?token=${encodeURIComponent(Api.getToken() || '')}`;
+}
+
+function connectChatWS() {
+  if (chatWS && (chatWS.readyState === 0 || chatWS.readyState === 1)) return;
+  chatWS = new WebSocket(chatWsUrl());
+  chatWS.onmessage = (ev) => {
+    try {
+      const m = JSON.parse(ev.data);
+      if (m.type === 'message') onChatMessage(m.message);
+    } catch {
+      /* bỏ qua */
+    }
+  };
+  chatWS.onclose = () => {
+    chatWS = null;
+    // kết nối lại sau 3s nếu vẫn đang ở tab chat
+    if (currentKey() === 'chat') setTimeout(connectChatWS, 3000);
+  };
+}
+
+function onChatMessage(msg) {
+  if (chatUI.openId === msg.conversationId) appendChatBubble(msg);
+  refreshChatList();
+}
+
+async function viewChat(el) {
+  connectChatWS();
+  el.innerHTML = `<div class="chatwrap">
+    <div class="chatlist" id="chatList"></div>
+    <div class="chatpanel" id="chatPanel"><div class="chatempty muted">${L('Chọn một hội thoại để trả lời', 'Pick a conversation to reply')}</div></div>
+  </div>`;
+  await refreshChatList();
+}
+
+async function refreshChatList() {
+  const list = document.getElementById('chatList');
+  if (!list) return;
+  const convs = await Api.get('/admin/chat/conversations');
+  list.innerHTML =
+    convs
+      .map(
+        (c) => `<div class="chatconv ${c.id === chatUI.openId ? 'chatconv--on' : ''}" data-action="open-conv" data-id="${c.id}">
+      <div class="chatconv__title">${escapeHtml(c.buyerName)} <span class="muted">↔ ${escapeHtml(c.shopName)}</span></div>
+      <div class="chatconv__last muted">${escapeHtml(c.lastMessage || '')}</div>
+    </div>`
+      )
+      .join('') || `<div class="muted" style="padding:16px">${L('Chưa có hội thoại nào', 'No conversations yet')}</div>`;
+}
+
+function chatBubbleHtml(m) {
+  const mine = m.senderRole === 'admin' || m.senderId === (state.user && state.user.id);
+  return `<div class="bubble ${mine ? 'bubble--me' : ''}">
+    ${!mine && m.senderName ? `<div class="bubble__who">${escapeHtml(m.senderName)}</div>` : ''}
+    <div>${escapeHtml(m.body)}</div></div>`;
+}
+
+function appendChatBubble(m) {
+  const box = document.getElementById('chatMsgs');
+  if (!box) return;
+  const mine = m.senderId === (state.user && state.user.id);
+  box.insertAdjacentHTML(
+    'beforeend',
+    `<div class="bubble ${mine ? 'bubble--me' : ''}"><div>${escapeHtml(m.body)}</div></div>`
+  );
+  box.scrollTop = box.scrollHeight;
+}
+
+async function openConversation(id) {
+  chatUI.openId = Number(id);
+  await refreshChatList();
+  const panel = document.getElementById('chatPanel');
+  const msgs = await Api.get(`/admin/chat/conversations/${id}/messages`);
+  panel.innerHTML = `<div class="chatmsgs" id="chatMsgs">${msgs.map(chatBubbleHtml).join('')}</div>
+    <div class="chatinput">
+      <input id="chatText" placeholder="${L('Nhập tin nhắn...', 'Type a message...')}" autocomplete="off"/>
+      <button class="btn btn--primary btn--sm" data-action="send-chat">${L('Gửi', 'Send')}</button>
+    </div>`;
+  const box = document.getElementById('chatMsgs');
+  box.scrollTop = box.scrollHeight;
+  document.getElementById('chatText').addEventListener('keydown', (e) => {
+    if (e.key === 'Enter') sendChat();
+  });
+}
+
+async function sendChat() {
+  const input = document.getElementById('chatText');
+  if (!input || !chatUI.openId) return;
+  const text = input.value.trim();
+  if (!text) return;
+  input.value = '';
+  try {
+    // Tin của mình sẽ được server đẩy lại qua WS -> appendChatBubble hiển thị.
+    await Api.post(`/admin/chat/conversations/${chatUI.openId}/messages`, { body: text });
+  } catch (err) {
+    toast(err.message);
+    input.value = text;
+  }
+}
+
 async function viewCategories(el) {
   const cats = await Api.get('/categories');
   const rows = cats
@@ -1591,6 +1700,10 @@ document.addEventListener('click', async (e) => {
     } catch (err) {
       toast(err.message);
     }
+  } else if (action === 'open-conv') {
+    openConversation(el.getAttribute('data-id'));
+  } else if (action === 'send-chat') {
+    sendChat();
   } else if (action === 'export-orders') {
     exportOrdersCsv();
   } else if (action === 'add-voucher') {

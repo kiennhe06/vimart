@@ -13,7 +13,7 @@ import {
   sendMessage,
   unreadTotal,
 } from './chat.service.js';
-import { pushToUser } from './chat.ws.js';
+import { pushToUser, pushToAdmins } from './chat.ws.js';
 
 const router = Router();
 router.use(authRequired);
@@ -65,8 +65,9 @@ router.post(
       req.user.id,
       req.body.body
     );
-    // Đẩy real-time cho phía nhận (nếu đang online).
+    // Đẩy real-time cho phía nhận + mọi admin đang trực chat trên web.
     pushToUser(recipientId, { type: 'message', message });
+    pushToAdmins({ type: 'message', message });
     return created(res, message);
   })
 );
