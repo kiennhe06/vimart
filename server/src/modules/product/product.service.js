@@ -5,6 +5,22 @@
  */
 import { query, withTransaction } from '../../db/pool.js';
 import { AppError } from '../../utils/AppError.js';
+import { getActiveFlashMap, salePrice } from '../flash/flash.service.js';
+
+/** Gắn thông tin flash sale (nếu có) vào 1 object đã có id + minPrice. */
+function withFlash(obj, flashMap) {
+  const f = flashMap.get(obj.id);
+  if (!f) return obj;
+  return {
+    ...obj,
+    flashSale: {
+      discountPercent: f.discountPercent,
+      salePrice: salePrice(obj.minPrice, f.discountPercent),
+      endsAt: f.endsAt,
+      remaining: f.remaining,
+    },
+  };
+}
 
 /** Gọn 1 dòng sản phẩm (dạng danh sách) thành object cho app. */
 function toProductCard(row) {
@@ -102,8 +118,9 @@ export async function listProducts(filters) {
     listParams
   );
 
+  const flashMap = await getActiveFlashMap();
   return {
-    items: listRes.rows.map(toProductCard),
+    items: listRes.rows.map((r) => withFlash(toProductCard(r), flashMap)),
     pagination: { page, limit, total, totalPages: Math.ceil(total / limit) },
   };
 }
@@ -130,6 +147,12 @@ export async function getProductDetail(productId) {
     [productId]
   );
 
+  const minPrice = variantsRes.rows.reduce(
+    (m, v) => Math.min(m, Number(v.price)),
+    Number.MAX_SAFE_INTEGER
+  );
+  const flash = (await getActiveFlashMap()).get(p.id);
+
   return {
     id: p.id,
     name: p.name,
@@ -141,6 +164,14 @@ export async function getProductDetail(productId) {
     ratingAvg: Number(p.rating_avg),
     ratingCount: p.rating_count,
     createdAt: p.created_at,
+    flashSale: flash
+      ? {
+          discountPercent: flash.discountPercent,
+          salePrice: salePrice(minPrice, flash.discountPercent),
+          endsAt: flash.endsAt,
+          remaining: flash.remaining,
+        }
+      : null,
     shop: { id: p.shop_id, name: p.shop_name, avatarUrl: p.shop_avatar },
     variants: variantsRes.rows.map((v) => ({
       id: v.id,

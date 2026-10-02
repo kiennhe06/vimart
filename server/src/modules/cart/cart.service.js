@@ -1,6 +1,7 @@
 /** Logic giỏ hàng. Giỏ được gộp theo từng shop khi hiển thị (giống Shopee). */
 import { query } from '../../db/pool.js';
 import { AppError } from '../../utils/AppError.js';
+import { getActiveFlashMap, salePrice } from '../flash/flash.service.js';
 
 /**
  * Lấy toàn bộ giỏ hàng của người dùng, gom nhóm theo shop.
@@ -21,12 +22,16 @@ export async function getCart(userId) {
     [userId]
   );
 
+  const flashMap = await getActiveFlashMap();
   const shopMap = new Map();
   let subtotal = 0;
   let itemCount = 0;
 
   for (const row of result.rows) {
-    const lineTotal = Number(row.price) * row.quantity;
+    const f = flashMap.get(row.product_id);
+    const onFlash = f && (f.remaining == null || f.remaining >= row.quantity);
+    const unit = onFlash ? salePrice(row.price, f.discountPercent) : Number(row.price);
+    const lineTotal = unit * row.quantity;
     subtotal += lineTotal;
     itemCount += row.quantity;
 
@@ -40,7 +45,9 @@ export async function getCart(userId) {
       productId: row.product_id,
       productName: row.product_name,
       imageUrl: row.image_url,
-      price: Number(row.price),
+      price: unit,
+      originalPrice: Number(row.price),
+      flashSale: onFlash ? { discountPercent: f.discountPercent } : null,
       stock: row.stock,
       quantity: row.quantity,
       lineTotal,
