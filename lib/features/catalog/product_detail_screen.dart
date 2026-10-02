@@ -15,6 +15,7 @@ import '../../widgets/burst.dart';
 import '../../widgets/fly_to_cart.dart';
 import '../../widgets/network_image_box.dart';
 import '../../widgets/pressable.dart';
+import '../../widgets/sticker_icon.dart';
 import '../auth/auth_provider.dart';
 import '../cart/cart_provider.dart';
 import '../chat/chat_providers.dart';
@@ -180,7 +181,7 @@ class _ProductDetailScreenState extends ConsumerState<ProductDetailScreen> {
                         const SizedBox(height: 10),
                         Row(
                           children: [
-                            const Icon(Icons.star_rounded, size: 18, color: AppColors.accent),
+                            const StickerIcon('star', size: 18),
                             const SizedBox(width: 4),
                             Text(
                               product.ratingCount > 0

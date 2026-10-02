@@ -12,6 +12,7 @@ import '../../../widgets/app_feedback.dart';
 import '../../../widgets/fly_to_cart.dart';
 import '../../../widgets/network_image_box.dart';
 import '../../../widgets/pressable.dart';
+import '../../../widgets/sticker_icon.dart';
 import '../../auth/auth_provider.dart';
 import '../../cart/cart_provider.dart';
 import '../../catalog/catalog_repository.dart';
@@ -122,7 +123,7 @@ class _ProductTileState extends ConsumerState<ProductTile> {
             const SizedBox(height: 2),
             Row(
               children: [
-                const Icon(Icons.star_rounded, size: 14, color: HomeColors.star),
+                const StickerIcon('star', size: 15),
                 const SizedBox(width: 2),
                 Text(p.ratingCount > 0 ? p.ratingAvg.toStringAsFixed(1) : s.newLabel,
                     style: AppType.caption.copyWith(color: context.c.textSecondary)),

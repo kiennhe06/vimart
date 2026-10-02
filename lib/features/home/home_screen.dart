@@ -14,6 +14,7 @@ import '../../widgets/app_skeleton.dart';
 import '../../widgets/async_view.dart';
 import '../../widgets/entrance.dart';
 import '../../widgets/pressable.dart';
+import '../../widgets/sticker_icon.dart';
 import '../catalog/catalog_providers.dart';
 import '../flash/flash_section.dart';
 import '../catalog/search_history.dart';
@@ -231,12 +232,15 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
             width: 40,
             height: 40,
             decoration: BoxDecoration(
-              color: _hasFilters ? AppColors.brand : context.c.surface,
+              color: context.c.surface,
               borderRadius: BorderRadius.circular(14),
-              border: Border.all(color: _hasFilters ? AppColors.brand : context.c.border),
+              border: Border.all(
+                color: _hasFilters ? AppColors.brand : context.c.border,
+                width: _hasFilters ? 1.6 : 1,
+              ),
             ),
-            child: Icon(Icons.tune_rounded,
-                size: 20, color: _hasFilters ? context.c.onBrand : context.c.textSecondary),
+            alignment: Alignment.center,
+            child: const StickerIcon('filter', size: 22),
           ),
           if (_hasFilters)
             Positioned(

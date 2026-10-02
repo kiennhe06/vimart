@@ -4,6 +4,7 @@ import 'package:flutter/widgets.dart';
 
 import '../../../app/design.dart';
 import '../../../app/motion.dart';
+import '../../../widgets/sticker_icon.dart';
 import '../home_ui.dart';
 
 /// Ô tìm kiếm tự dựng hoàn toàn:
@@ -101,7 +102,7 @@ class _VimartSearchBoxState extends State<VimartSearchBox> {
           ),
           child: Row(
             children: [
-              Icon(Icons.search, size: 20, color: context.c.textSecondary),
+              const StickerIcon('search', size: 22),
               const SizedBox(width: 10),
               Expanded(
                 child: Stack(
