@@ -8,6 +8,8 @@ import '../features/auth/login_screen.dart';
 import '../features/auth/register_screen.dart';
 import '../features/catalog/product_detail_screen.dart';
 import '../features/catalog/shop_screen.dart';
+import '../features/chat/chat_detail_screen.dart';
+import '../features/chat/conversations_screen.dart';
 import '../features/checkout/checkout_screen.dart';
 import '../features/favorite/favorites_screen.dart';
 import '../features/notification/notifications_screen.dart';
@@ -93,6 +95,20 @@ final routerProvider = Provider<GoRouter>((ref) {
       GoRoute(
         path: '/notifications',
         pageBuilder: (_, s) => _appPage(s, const NotificationsScreen()),
+      ),
+      GoRoute(
+        path: '/chat',
+        pageBuilder: (_, s) => _appPage(s, const ConversationsScreen()),
+      ),
+      GoRoute(
+        path: '/chat/:id',
+        pageBuilder: (_, s) => _appPage(
+          s,
+          ChatDetailScreen(
+            conversationId: int.parse(s.pathParameters['id']!),
+            title: s.extra as String?,
+          ),
+        ),
       ),
       GoRoute(path: '/addresses', pageBuilder: (_, s) => _appPage(s, const AddressesScreen())),
       GoRoute(

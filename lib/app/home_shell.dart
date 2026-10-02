@@ -9,6 +9,7 @@ import '../features/home/widgets/vimart_bottom_nav.dart';
 import '../features/order/orders_screen.dart';
 import '../features/profile/profile_screen.dart';
 import '../core/i18n/app_strings.dart';
+import '../features/chat/chat_socket.dart';
 import 'design.dart';
 import 'motion.dart';
 import 'nav_provider.dart';
@@ -30,6 +31,7 @@ class HomeShell extends ConsumerWidget {
     final index = ref.watch(bottomNavIndexProvider);
     final cartCount = ref.watch(cartCountProvider);
     final s = ref.watch(stringsProvider);
+    ref.watch(chatSocketProvider); // giữ kết nối chat real-time khi đã đăng nhập
 
     return Material(
       color: context.c.background,

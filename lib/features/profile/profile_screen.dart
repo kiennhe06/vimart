@@ -14,6 +14,7 @@ import '../../widgets/app_feedback.dart';
 import '../../widgets/entrance.dart';
 import '../../widgets/login_required_view.dart';
 import '../auth/auth_provider.dart';
+import '../chat/chat_providers.dart';
 import '../seller/seller_repository.dart';
 
 /// Tab Tài khoản — phong cách grocery: thẻ hồ sơ bo tròn + menu dạng thẻ,
@@ -34,6 +35,7 @@ class ProfileScreen extends ConsumerWidget {
     final user = auth.user!;
     final localeCode = ref.watch(localeProvider);
     final themeMode = ref.watch(themeModeProvider);
+    final chatUnread = ref.watch(chatUnreadProvider).maybeWhen(data: (c) => c, orElse: () => 0);
 
     return Scaffold(
       appBar: AppBar(title: Text(s.account)),
@@ -80,6 +82,9 @@ class ProfileScreen extends ConsumerWidget {
           FadeSlideIn(
             index: 1,
             child: _menuCard(context, [
+            _MenuRow(Icons.chat_bubble_rounded, const Color(0xFFE2F7EC), const Color(0xFF16A34A),
+                s.messages, () => context.push('/chat'),
+                trailingText: chatUnread > 0 ? '$chatUnread' : null),
             _MenuRow(Icons.favorite_rounded, const Color(0xFFFFEDE2), const Color(0xFFFF7A45),
                 s.favoriteProducts, () => context.push('/favorites')),
             _MenuRow(Icons.location_on_rounded, const Color(0xFFE2F0FF), const Color(0xFF2B8AF0),
