@@ -10,6 +10,7 @@ import { AppError } from '../../utils/AppError.js';
 import { changeStatus } from '../order/order.service.js';
 import { getProductDetail } from '../product/product.service.js';
 import { createNotification } from '../notification/notification.service.js';
+import { listReturns, resolveReturn } from '../return/return.service.js';
 
 const router = Router();
 router.use(authRequired, adminOnly);
@@ -521,6 +522,27 @@ router.delete(
     if (result.rows.length === 0) throw new AppError(404, 'Không tìm thấy mã giảm giá');
     return ok(res, { message: 'Đã xóa mã giảm giá' });
   })
+);
+
+// ---------- Trả hàng / hoàn tiền ----------
+
+/** GET /api/admin/returns — danh sách yêu cầu trả hàng. */
+router.get(
+  '/returns',
+  asyncHandler(async (req, res) => ok(res, await listReturns()))
+);
+
+/** POST /api/admin/returns/:id/resolve — duyệt/từ chối. Body: { action, adminNote? } */
+const resolveSchema = z.object({
+  action: z.enum(['approve', 'reject']),
+  adminNote: z.string().max(500).optional().nullable(),
+});
+router.post(
+  '/returns/:id/resolve',
+  validate(resolveSchema),
+  asyncHandler(async (req, res) =>
+    ok(res, await resolveReturn(Number(req.params.id), req.body.action, req.body.adminNote))
+  )
 );
 
 export default router;

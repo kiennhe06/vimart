@@ -3,6 +3,7 @@
 -- Chạy lại được nhiều lần: xoá bảng cũ rồi tạo lại (dev only).
 -- ============================================================
 
+DROP TABLE IF EXISTS return_requests       CASCADE;
 DROP TABLE IF EXISTS messages              CASCADE;
 DROP TABLE IF EXISTS conversations         CASCADE;
 DROP TABLE IF EXISTS notifications         CASCADE;
@@ -250,3 +251,16 @@ CREATE TABLE messages (
   created_at      TIMESTAMPTZ NOT NULL DEFAULT now()
 );
 CREATE INDEX idx_messages_conv ON messages(conversation_id, created_at);
+
+-- ---------- Yêu cầu trả hàng / hoàn tiền ----------
+CREATE TABLE return_requests (
+  id          SERIAL PRIMARY KEY,
+  order_id    INTEGER NOT NULL UNIQUE REFERENCES orders(id) ON DELETE CASCADE,
+  buyer_id    INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  reason      VARCHAR(30) NOT NULL,   -- 'defective'|'wrong_item'|'not_as_described'|'other'
+  note        VARCHAR(1000),
+  status      VARCHAR(20) NOT NULL DEFAULT 'requested',  -- 'requested'|'approved'|'rejected'
+  admin_note  VARCHAR(500),
+  created_at  TIMESTAMPTZ NOT NULL DEFAULT now(),
+  resolved_at TIMESTAMPTZ
+);

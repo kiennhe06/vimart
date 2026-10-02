@@ -272,9 +272,23 @@ export async function getOrderDetail(userId, orderId) {
      FROM order_status_history WHERE order_id = $1 ORDER BY created_at ASC`,
     [orderId]
   );
+  const returnRes = await query(
+    'SELECT reason, note, status, admin_note, created_at FROM return_requests WHERE order_id = $1',
+    [orderId]
+  );
+  const rr = returnRes.rows[0];
 
   return {
     ...toOrder(order),
+    returnRequest: rr
+      ? {
+          reason: rr.reason,
+          note: rr.note,
+          status: rr.status,
+          adminNote: rr.admin_note,
+          createdAt: rr.created_at,
+        }
+      : null,
     items: itemsRes.rows.map((i) => ({
       id: i.id,
       productId: i.product_id,
@@ -295,7 +309,7 @@ export async function getOrderDetail(userId, orderId) {
 }
 
 /** Hoàn kho khi hủy đơn (cộng lại tồn kho, trừ số đã bán). */
-async function restoreStock(client, orderId) {
+export async function restoreStock(client, orderId) {
   const items = await client.query(
     'SELECT variant_id, product_id, quantity FROM order_items WHERE order_id = $1',
     [orderId]
