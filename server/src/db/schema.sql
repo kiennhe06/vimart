@@ -3,6 +3,8 @@
 -- Chạy lại được nhiều lần: xoá bảng cũ rồi tạo lại (dev only).
 -- ============================================================
 
+DROP TABLE IF EXISTS flash_sale_items      CASCADE;
+DROP TABLE IF EXISTS flash_sales           CASCADE;
 DROP TABLE IF EXISTS return_requests       CASCADE;
 DROP TABLE IF EXISTS messages              CASCADE;
 DROP TABLE IF EXISTS conversations         CASCADE;
@@ -251,6 +253,27 @@ CREATE TABLE messages (
   created_at      TIMESTAMPTZ NOT NULL DEFAULT now()
 );
 CREATE INDEX idx_messages_conv ON messages(conversation_id, created_at);
+
+-- ---------- Flash sale (deal theo khung giờ, giảm % cho sản phẩm chọn) ----------
+CREATE TABLE flash_sales (
+  id         SERIAL PRIMARY KEY,
+  name       VARCHAR(255) NOT NULL,
+  starts_at  TIMESTAMPTZ NOT NULL,
+  ends_at    TIMESTAMPTZ NOT NULL,
+  is_active  BOOLEAN NOT NULL DEFAULT TRUE,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+
+CREATE TABLE flash_sale_items (
+  id               SERIAL PRIMARY KEY,
+  flash_sale_id    INTEGER NOT NULL REFERENCES flash_sales(id) ON DELETE CASCADE,
+  product_id       INTEGER NOT NULL REFERENCES products(id) ON DELETE CASCADE,
+  discount_percent INTEGER NOT NULL CHECK (discount_percent BETWEEN 1 AND 90),
+  qty_limit        INTEGER,                    -- NULL = không giới hạn số lượng
+  sold             INTEGER NOT NULL DEFAULT 0,
+  UNIQUE (flash_sale_id, product_id)
+);
+CREATE INDEX idx_fsi_product ON flash_sale_items(product_id);
 
 -- ---------- Yêu cầu trả hàng / hoàn tiền ----------
 CREATE TABLE return_requests (

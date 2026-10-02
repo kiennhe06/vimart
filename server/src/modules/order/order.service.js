@@ -11,6 +11,7 @@ import { query, withTransaction } from '../../db/pool.js';
 import { AppError } from '../../utils/AppError.js';
 import { validateVoucher } from '../voucher/voucher.service.js';
 import { createNotification } from '../notification/notification.service.js';
+import { getActiveFlashMap, salePrice } from '../flash/flash.service.js';
 
 /** Phí vận chuyển cố định cho mỗi shop (VND). Đơn giản cho bản MVP. */
 const SHIPPING_FEE_PER_SHOP = 30000;
@@ -50,13 +51,32 @@ export async function checkout(userId, { addressId, paymentMethod, note, voucher
     );
     if (cartRes.rows.length === 0) throw new AppError(400, 'Giỏ hàng đang trống');
 
+    // 3-flash) Áp giá FLASH SALE cho từng dòng giỏ (reserve số lượng sale an toàn
+    // trong transaction). Dùng row.unitPrice làm giá thực trả.
+    const flashMap = await getActiveFlashMap(client);
+    for (const row of cartRes.rows) {
+      row.unitPrice = Number(row.price);
+      const f = flashMap.get(row.product_id);
+      if (f && (f.remaining == null || f.remaining >= row.quantity)) {
+        const upd = await client.query(
+          `UPDATE flash_sale_items SET sold = sold + $1
+           WHERE id = $2 AND (qty_limit IS NULL OR sold + $1 <= qty_limit) RETURNING id`,
+          [row.quantity, f.itemId]
+        );
+        if (upd.rows.length > 0) {
+          row.unitPrice = salePrice(row.price, f.discountPercent);
+          if (f.remaining != null) f.remaining -= row.quantity;
+        }
+      }
+    }
+
     // 3) Gom theo shop (kèm subtotal từng shop để phân bổ giảm giá)
     const byShop = new Map();
     for (const row of cartRes.rows) {
       if (!byShop.has(row.shop_id)) byShop.set(row.shop_id, { items: [], subtotal: 0 });
       const group = byShop.get(row.shop_id);
       group.items.push(row);
-      group.subtotal += Number(row.price) * row.quantity;
+      group.subtotal += row.unitPrice * row.quantity;
     }
     const shops = [...byShop.entries()]; // [ [shopId, {items, subtotal}], ... ]
     const cartSubtotal = shops.reduce((sum, [, g]) => sum + g.subtotal, 0);
@@ -139,7 +159,7 @@ export async function checkout(userId, { addressId, paymentMethod, note, voucher
             it.product_name,
             it.variant_name,
             it.image_url,
-            it.price,
+            it.unitPrice, // giá thực trả (đã áp flash sale nếu có)
             it.quantity,
           ]
         );

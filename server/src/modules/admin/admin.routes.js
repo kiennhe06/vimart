@@ -13,6 +13,7 @@ import { createNotification } from '../notification/notification.service.js';
 import { listReturns, resolveReturn } from '../return/return.service.js';
 import { adminListConversations, adminMessages, adminSend } from '../chat/chat.service.js';
 import { pushToUser, pushToAdmins } from '../chat/chat.ws.js';
+import * as flash from '../flash/flash.service.js';
 
 const router = Router();
 router.use(authRequired, adminOnly);
@@ -571,6 +572,50 @@ router.post(
     pushToAdmins({ type: 'message', message }); // các admin khác cũng cập nhật
     return created(res, message);
   })
+);
+
+// ---------- Flash sale ----------
+
+/** GET /api/admin/flash-sales — danh sách đợt flash sale. */
+router.get(
+  '/flash-sales',
+  asyncHandler(async (req, res) => ok(res, await flash.listAll()))
+);
+
+const flashSchema = z.object({
+  name: z.string().trim().min(2, 'Tên tối thiểu 2 ký tự').max(255),
+  startsAt: z.string().datetime(),
+  endsAt: z.string().datetime(),
+  items: z
+    .array(
+      z.object({
+        productId: z.number().int(),
+        discountPercent: z.number().int().min(1).max(90),
+        qtyLimit: z.number().int().positive().optional().nullable(),
+      })
+    )
+    .min(1, 'Cần ít nhất 1 sản phẩm'),
+});
+
+/** POST /api/admin/flash-sales — tạo đợt flash sale. */
+router.post(
+  '/flash-sales',
+  validate(flashSchema),
+  asyncHandler(async (req, res) => created(res, await flash.create(req.body)))
+);
+
+/** PUT /api/admin/flash-sales/:id/status — bật/tắt. Body: { isActive } */
+router.put(
+  '/flash-sales/:id/status',
+  asyncHandler(async (req, res) =>
+    ok(res, await flash.setActive(Number(req.params.id), Boolean(req.body.isActive)))
+  )
+);
+
+/** DELETE /api/admin/flash-sales/:id — xóa. */
+router.delete(
+  '/flash-sales/:id',
+  asyncHandler(async (req, res) => ok(res, await flash.remove(Number(req.params.id))))
 );
 
 export default router;

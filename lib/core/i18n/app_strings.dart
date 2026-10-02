@@ -62,6 +62,12 @@ class AppStrings {
   String get total => _('Tổng cộng', 'Total');
   String checkoutItems(int n) => _('Thanh toán • $n món', 'Checkout • $n items');
 
+  // ---- Flash sale ----
+  String get flashSaleTitle => _('⚡ Flash Sale', '⚡ Flash Sale');
+  String get flashEndsIn => _('Kết thúc sau', 'Ends in');
+  String get flashEnded => _('Đã kết thúc', 'Ended');
+  String flashSoldQty(int n) => _('Đã bán $n', '$n sold');
+
   // ---- Trả hàng / hoàn tiền ----
   String get requestReturn => _('Yêu cầu trả hàng / hoàn tiền', 'Request return / refund');
   String get returnReason => _('Lý do', 'Reason');

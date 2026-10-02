@@ -81,6 +81,7 @@ const NAV = [
   { key: 'chat', icon: '💬' },
   { key: 'reviews', icon: '⭐' },
   { key: 'vouchers', icon: '🎟️' },
+  { key: 'flash', icon: '⚡' },
   { key: 'returns', icon: '↩️' },
   { key: 'categories', icon: '🏷️' },
 ];
@@ -95,6 +96,7 @@ function navLabel(key) {
       chat: L('Tin nhắn', 'Chat'),
       reviews: L('Đánh giá', 'Reviews'),
       vouchers: L('Mã giảm giá', 'Vouchers'),
+      flash: L('Flash sale', 'Flash sale'),
       returns: L('Trả hàng', 'Returns'),
       categories: L('Danh mục', 'Categories'),
     }[key] || key
@@ -316,6 +318,7 @@ async function route() {
     else if (key === 'reviews') await viewReviews(content);
     else if (key === 'vouchers') await viewVouchers(content);
     else if (key === 'returns') await viewReturns(content);
+    else if (key === 'flash') await viewFlashSales(content);
     else if (key === 'categories') await viewCategories(content);
   } catch (err) {
     content.innerHTML = stateView({
@@ -1524,6 +1527,116 @@ async function sendChat() {
   }
 }
 
+// ---------- View: Flash sale ----------
+
+function flashStateChip(state) {
+  const map = {
+    live: ['#2e7d32', L('Đang chạy', 'Live')],
+    scheduled: ['#2563eb', L('Sắp diễn ra', 'Scheduled')],
+    ended: ['#888', L('Đã kết thúc', 'Ended')],
+    off: ['#d32f2f', L('Đã tắt', 'Off')],
+  };
+  const [c, label] = map[state] || ['#888', state];
+  return `<span class="status" style="color:${c};background:${c}22">${label}</span>`;
+}
+
+async function viewFlashSales(el) {
+  const sales = await Api.get('/admin/flash-sales');
+  const head = `<div class="section-head"><h3>${L('Flash sale', 'Flash sales')} (${sales.length})</h3><div class="spacer"></div>
+    <button class="btn btn--primary btn--sm" data-action="add-flash">+ ${L('Tạo đợt', 'New flash sale')}</button></div>`;
+
+  if (!sales.length) {
+    el.innerHTML = head + `<div class="panel">${stateView({
+      icon: 'file',
+      title: L('Chưa có đợt flash sale', 'No flash sales yet'),
+      message: L('Tạo đợt giảm giá theo khung giờ cho sản phẩm.', 'Create a time-boxed deal on products.'),
+    })}</div>`;
+    return;
+  }
+
+  const fmtDT = (s) => new Date(s).toLocaleString(lang === 'en' ? 'en-GB' : 'vi-VN');
+  const rows = sales
+    .map(
+      (s) => `<tr>
+      <td><b>${escapeHtml(s.name)}</b><div class="muted">${s.itemCount} ${L('sản phẩm', 'items')}</div></td>
+      <td class="muted">${fmtDT(s.startsAt)}<br>→ ${fmtDT(s.endsAt)}</td>
+      <td>${flashStateChip(s.state)}</td>
+      <td style="white-space:nowrap">
+        <button class="btn btn--sm ${s.isActive ? 'btn--ghost' : 'btn--ok'}" data-action="toggle-flash" data-id="${s.id}" data-active="${s.isActive ? 0 : 1}">${s.isActive ? L('Tắt', 'Disable') : L('Bật', 'Enable')}</button>
+        <button class="btn btn--sm btn--danger" data-action="del-flash" data-id="${s.id}" data-name="${escapeHtml(s.name)}">${L('Xóa', 'Delete')}</button>
+      </td>
+    </tr>`
+    )
+    .join('');
+
+  el.innerHTML = head + `<div class="panel"><table class="table">
+    <thead><tr><th>${L('Tên đợt', 'Name')}</th><th>${L('Thời gian', 'Window')}</th><th>${L('Trạng thái', 'Status')}</th><th></th></tr></thead>
+    <tbody>${rows}</tbody></table></div>`;
+}
+
+/** 1 dòng chọn sản phẩm trong form flash sale. */
+function flashItemRow(products) {
+  const opts = products
+    .map((p) => `<option value="${p.id}">${escapeHtml(p.name)} — ${fmtVnd(p.minPrice)}</option>`)
+    .join('');
+  return `<div class="flash-row" style="display:flex;gap:8px;margin-bottom:8px;align-items:center">
+    <select class="f-prod" style="flex:2">${opts}</select>
+    <input class="f-pct" type="number" min="1" max="90" placeholder="%" style="flex:1" title="${L('Giảm %', 'Discount %')}"/>
+    <input class="f-lim" type="number" min="1" placeholder="${L('SL', 'Limit')}" style="flex:1" title="${L('Giới hạn số lượng', 'Qty limit')}"/>
+    <button type="button" class="btn btn--sm btn--danger" data-action="flash-row-remove">×</button>
+  </div>`;
+}
+
+async function flashFormModal() {
+  const products = await Api.get('/admin/products');
+  openModal(`
+    <button class="modal__close" data-action="close">×</button>
+    <h2>${L('Tạo đợt flash sale', 'New flash sale')}</h2>
+    <form id="flashForm">
+      <div class="field"><label>${L('Tên đợt', 'Name')}</label><input name="name" required autofocus placeholder="${L('VD: Flash sale 12h trưa', 'e.g. Noon flash sale')}"/></div>
+      <div class="field"><label>${L('Bắt đầu', 'Starts at')}</label><input name="startsAt" type="datetime-local" required/></div>
+      <div class="field"><label>${L('Kết thúc', 'Ends at')}</label><input name="endsAt" type="datetime-local" required/></div>
+      <label style="font-size:12px;font-weight:600;color:var(--text-2)">${L('Sản phẩm (giảm % + giới hạn SL tùy chọn)', 'Products (% off + optional qty limit)')}</label>
+      <div id="flashItems" style="margin-top:8px">${flashItemRow(products)}</div>
+      <button type="button" class="btn btn--sm" data-action="flash-row-add" style="margin:4px 0 14px">+ ${L('Thêm sản phẩm', 'Add product')}</button>
+      <button class="btn btn--primary btn--block" type="submit">${L('Tạo đợt', 'Create flash sale')}</button>
+    </form>`);
+
+  // lưu options để thêm dòng mới
+  window.__flashProducts = products;
+
+  document.getElementById('flashForm').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const f = e.target;
+    const items = [...document.querySelectorAll('#flashItems .flash-row')]
+      .map((row) => ({
+        productId: Number(row.querySelector('.f-prod').value),
+        discountPercent: Number(row.querySelector('.f-pct').value),
+        qtyLimit: row.querySelector('.f-lim').value ? Number(row.querySelector('.f-lim').value) : null,
+      }))
+      .filter((i) => i.productId && i.discountPercent >= 1);
+    if (!items.length) return toast(L('Cần ít nhất 1 sản phẩm hợp lệ', 'Need at least 1 valid product'));
+
+    const body = {
+      name: f.name.value.trim(),
+      startsAt: new Date(f.startsAt.value).toISOString(),
+      endsAt: new Date(f.endsAt.value).toISOString(),
+      items,
+    };
+    const btn = f.querySelector('button[type=submit]');
+    btn.disabled = true;
+    try {
+      await Api.post('/admin/flash-sales', body);
+      closeModal();
+      toast(L('Đã tạo đợt flash sale', 'Flash sale created'));
+      route();
+    } catch (err) {
+      btn.disabled = false;
+      toast(err.message);
+    }
+  });
+}
+
 async function viewCategories(el) {
   const cats = await Api.get('/categories');
   const rows = cats
@@ -1706,6 +1819,33 @@ document.addEventListener('click', async (e) => {
     sendChat();
   } else if (action === 'export-orders') {
     exportOrdersCsv();
+  } else if (action === 'add-flash') {
+    flashFormModal();
+  } else if (action === 'flash-row-add') {
+    const box = document.getElementById('flashItems');
+    if (box && window.__flashProducts) box.insertAdjacentHTML('beforeend', flashItemRow(window.__flashProducts));
+  } else if (action === 'flash-row-remove') {
+    const row = el.closest('.flash-row');
+    const box = document.getElementById('flashItems');
+    if (row && box && box.children.length > 1) row.remove();
+  } else if (action === 'toggle-flash') {
+    try {
+      await Api.put(`/admin/flash-sales/${el.getAttribute('data-id')}/status`, { isActive: el.getAttribute('data-active') === '1' });
+      toast(L('Đã cập nhật', 'Updated'));
+      route();
+    } catch (err) {
+      toast(err.message);
+    }
+  } else if (action === 'del-flash') {
+    if (confirm(L(`Xóa đợt "${el.getAttribute('data-name')}"?`, `Delete "${el.getAttribute('data-name')}"?`))) {
+      try {
+        await Api.del('/admin/flash-sales/' + el.getAttribute('data-id'));
+        toast(L('Đã xóa', 'Deleted'));
+        route();
+      } catch (err) {
+        toast(err.message);
+      }
+    }
   } else if (action === 'add-voucher') {
     voucherFormModal();
   } else if (action === 'toggle-voucher') {

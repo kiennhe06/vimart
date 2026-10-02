@@ -131,8 +131,26 @@ class _ProductTileState extends ConsumerState<ProductTile> {
               ],
             ),
             const SizedBox(height: 6),
-            Text(formatVnd(p.minPrice),
-                style: AppType.price.copyWith(color: context.c.textPrimary)),
+            if (p.flashSale != null)
+              Row(
+                crossAxisAlignment: CrossAxisAlignment.end,
+                children: [
+                  Flexible(
+                    child: Text(formatVnd(p.flashSale!.salePrice),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: AppType.price.copyWith(color: context.c.promo)),
+                  ),
+                  const SizedBox(width: 4),
+                  Text(formatVnd(p.minPrice),
+                      style: AppType.caption.copyWith(
+                          color: context.c.textSecondary,
+                          decoration: TextDecoration.lineThrough)),
+                ],
+              )
+            else
+              Text(formatVnd(p.minPrice),
+                  style: AppType.price.copyWith(color: context.c.textPrimary)),
             const SizedBox(height: 8),
             _addBar(),
           ],
