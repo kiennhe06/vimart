@@ -3,6 +3,8 @@
 -- Chạy lại được nhiều lần: xoá bảng cũ rồi tạo lại (dev only).
 -- ============================================================
 
+DROP TABLE IF EXISTS messages              CASCADE;
+DROP TABLE IF EXISTS conversations         CASCADE;
 DROP TABLE IF EXISTS notifications         CASCADE;
 DROP TABLE IF EXISTS order_status_history  CASCADE;
 DROP TABLE IF EXISTS vouchers         CASCADE;
@@ -226,3 +228,25 @@ CREATE TABLE notifications (
   created_at TIMESTAMPTZ NOT NULL DEFAULT now()
 );
 CREATE INDEX idx_notif_user ON notifications(user_id, is_read);
+
+-- ---------- Chat: hội thoại giữa người mua và shop ----------
+CREATE TABLE conversations (
+  id              SERIAL PRIMARY KEY,
+  buyer_id        INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  shop_id         INTEGER NOT NULL REFERENCES shops(id) ON DELETE CASCADE,
+  last_message    VARCHAR(500),
+  last_message_at TIMESTAMPTZ,
+  buyer_unread    INTEGER NOT NULL DEFAULT 0,   -- số tin người mua chưa đọc
+  seller_unread   INTEGER NOT NULL DEFAULT 0,   -- số tin shop chưa đọc
+  created_at      TIMESTAMPTZ NOT NULL DEFAULT now(),
+  UNIQUE (buyer_id, shop_id)
+);
+
+CREATE TABLE messages (
+  id              SERIAL PRIMARY KEY,
+  conversation_id INTEGER NOT NULL REFERENCES conversations(id) ON DELETE CASCADE,
+  sender_id       INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  body            VARCHAR(2000) NOT NULL,
+  created_at      TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+CREATE INDEX idx_messages_conv ON messages(conversation_id, created_at);

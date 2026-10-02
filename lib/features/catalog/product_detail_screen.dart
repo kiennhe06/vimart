@@ -17,6 +17,7 @@ import '../../widgets/network_image_box.dart';
 import '../../widgets/pressable.dart';
 import '../auth/auth_provider.dart';
 import '../cart/cart_provider.dart';
+import '../chat/chat_providers.dart';
 import '../favorite/favorite_provider.dart';
 import 'catalog_providers.dart';
 
@@ -210,6 +211,7 @@ class _ProductDetailScreenState extends ConsumerState<ProductDetailScreen> {
                         const SizedBox(height: 18),
                         // Shop
                         _shopChip(context, product),
+                        _chatButton(context, product),
                         const SizedBox(height: 18),
                         Text(s.options, style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 16)),
                         const SizedBox(height: 10),
@@ -299,6 +301,34 @@ class _ProductDetailScreenState extends ConsumerState<ProductDetailScreen> {
         ),
       ),
     );
+  }
+
+  /// Nút nhắn tin với shop (full-width -> không vỡ layout trong Row).
+  Widget _chatButton(BuildContext context, ProductDetail product) {
+    return Padding(
+      padding: const EdgeInsets.only(top: 10),
+      child: OutlinedButton.icon(
+        onPressed: () => _openChat(product),
+        icon: const Icon(Icons.chat_bubble_outline_rounded, size: 18),
+        label: Text(ref.watch(stringsProvider).chatWithShop),
+        style: OutlinedButton.styleFrom(
+          minimumSize: const Size.fromHeight(46),
+          foregroundColor: AppColors.accent,
+          side: const BorderSide(color: AppColors.accent),
+        ),
+      ),
+    );
+  }
+
+  /// Mở (hoặc tạo) hội thoại với shop của sản phẩm rồi vào màn chat.
+  Future<void> _openChat(ProductDetail product) async {
+    if (!ref.read(authProvider).isLoggedIn) return _promptLogin();
+    try {
+      final conv = await ref.read(chatRepositoryProvider).openWithShop(product.shop.id);
+      if (mounted) context.push('/chat/${conv.id}', extra: product.shop.name);
+    } catch (e) {
+      if (mounted) showAppSnack(context, e.toString(), type: AppSnackType.error);
+    }
   }
 
   Widget _variantChip(Variant v, Variant selected) {

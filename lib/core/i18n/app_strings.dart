@@ -62,6 +62,13 @@ class AppStrings {
   String get total => _('Tổng cộng', 'Total');
   String checkoutItems(int n) => _('Thanh toán • $n món', 'Checkout • $n items');
 
+  // ---- Chat / Tin nhắn ----
+  String get messages => _('Tin nhắn', 'Messages');
+  String get noConversations => _('Chưa có cuộc trò chuyện nào', 'No conversations yet');
+  String get chatStart => _('Hãy gửi tin nhắn đầu tiên 👋', 'Say hi to start the chat 👋');
+  String get typeMessage => _('Nhập tin nhắn...', 'Type a message...');
+  String get chatWithShop => _('Nhắn tin với shop', 'Chat with shop');
+
   // ---- Thông báo ----
   String get notifications => _('Thông báo', 'Notifications');
   String get noNotifications => _('Chưa có thông báo nào', 'No notifications yet');

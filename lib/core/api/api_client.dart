@@ -23,13 +23,13 @@ class ApiClient {
         ));
 
   final Dio _dio;
-  String? _token;
 
-  /// Gắn / gỡ token (gọi khi đăng nhập hoặc đăng xuất).
-  set token(String? value) => _token = value;
+  /// Token đăng nhập hiện tại (null nếu chưa đăng nhập).
+  /// Được dùng cho cả HTTP (Authorization header) lẫn WebSocket chat.
+  String? token;
 
   Options get _options => Options(
-        headers: _token != null ? {'Authorization': 'Bearer $_token'} : null,
+        headers: token != null ? {'Authorization': 'Bearer $token'} : null,
       );
 
   Future<dynamic> get(String path, {Map<String, dynamic>? query}) =>
