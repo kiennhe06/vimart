@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_svg/flutter_svg.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../app/design.dart';
@@ -38,6 +39,8 @@ class FlashSaleSection extends ConsumerWidget {
             children: [
               Row(
                 children: [
+                  SvgPicture.asset('assets/icons/ui/bolt.svg', width: 22, height: 22),
+                  const SizedBox(width: 6),
                   Text(s.flashSaleTitle,
                       style: TextStyle(
                           color: context.c.promo, fontWeight: FontWeight.w800, fontSize: 16)),

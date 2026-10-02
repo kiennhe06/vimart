@@ -63,7 +63,7 @@ class AppStrings {
   String checkoutItems(int n) => _('Thanh toán • $n món', 'Checkout • $n items');
 
   // ---- Flash sale ----
-  String get flashSaleTitle => _('⚡ Flash Sale', '⚡ Flash Sale');
+  String get flashSaleTitle => _('Flash Sale', 'Flash Sale');
   String get flashEndsIn => _('Kết thúc sau', 'Ends in');
   String get flashEnded => _('Đã kết thúc', 'Ended');
   String flashSoldQty(int n) => _('Đã bán $n', '$n sold');
