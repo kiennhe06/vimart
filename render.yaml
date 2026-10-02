@@ -1,0 +1,37 @@
+# Render Blueprint — deploy backend + web admin + Postgres gần như 1 chạm.
+# Cách dùng: đẩy repo lên GitHub -> Render > New > Blueprint -> chọn repo.
+# Sau lần deploy đầu, chạy migrate+seed một lần (Shell của service):
+#   npm run db:migrate && npm run db:seed
+# Rồi đặt API_BASE_URL = URL service, và (tùy chọn) VNP_* để bật VNPay.
+databases:
+  - name: vimart-db
+    databaseName: vimart
+    plan: free
+
+services:
+  - type: web
+    name: vimart
+    runtime: docker
+    rootDir: server
+    dockerfilePath: ./Dockerfile
+    plan: free
+    healthCheckPath: /api/categories
+    envVars:
+      - key: DATABASE_URL
+        fromDatabase:
+          name: vimart-db
+          property: connectionString
+      - key: JWT_SECRET
+        generateValue: true
+      - key: NODE_ENV
+        value: production
+      # Đặt lại = URL công khai của service sau lần deploy đầu.
+      - key: API_BASE_URL
+        sync: false
+      # VNPay (để trống nếu chỉ demo COD).
+      - key: VNP_TMN_CODE
+        sync: false
+      - key: VNP_HASH_SECRET
+        sync: false
+      - key: VNP_RETURN_URL
+        sync: false
