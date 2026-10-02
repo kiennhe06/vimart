@@ -1,8 +1,9 @@
 /** Logic thanh toán: tạo link VNPay, xác nhận kết quả, và mock-pay cho môi trường dev. */
-import { query } from '../../db/pool.js';
+import { query, pool } from '../../db/pool.js';
 import { AppError } from '../../utils/AppError.js';
 import { env, isVnpayConfigured } from '../../config/env.js';
 import { buildPaymentUrl, verifyReturn, formatDate } from './vnpay.util.js';
+import { createNotification } from '../notification/notification.service.js';
 
 /** Lấy bản ghi thanh toán theo group_code (phải thuộc về người dùng). */
 async function getPayment(groupCode, userId) {
@@ -81,6 +82,20 @@ async function markGroupPaid(groupCode, paidOk, responseCode) {
   ]);
   if (paidOk) {
     await query("UPDATE orders SET payment_status = 'paid' WHERE group_code = $1", [groupCode]);
+    // Thông báo cho người mua là đã thanh toán thành công.
+    const r = await query(
+      'SELECT buyer_id, id, code FROM orders WHERE group_code = $1 ORDER BY id LIMIT 1',
+      [groupCode]
+    );
+    if (r.rows[0]) {
+      await createNotification(pool, {
+        userId: r.rows[0].buyer_id,
+        type: 'order_status',
+        title: 'Thanh toán thành công',
+        body: `Đơn ${r.rows[0].code} đã được thanh toán qua VNPay.`,
+        orderId: r.rows[0].id,
+      });
+    }
   }
 }
 
