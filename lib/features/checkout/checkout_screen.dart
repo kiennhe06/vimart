@@ -19,6 +19,7 @@ import '../../widgets/app_skeleton.dart';
 import '../../widgets/async_view.dart';
 import '../address/address_form_sheet.dart';
 import '../address/address_provider.dart';
+import '../../models/cart.dart';
 import '../cart/cart_provider.dart';
 import '../order/order_providers.dart';
 import '../order/order_repository.dart';
@@ -87,6 +88,7 @@ class _CheckoutScreenState extends ConsumerState<CheckoutScreen> {
         addressId: _addressId!,
         paymentMethod: _paymentMethod,
         voucherCode: _voucher?.code,
+        variantIds: ref.read(cartSelectionProvider).toList(),
       );
       _voucher = null;
       await ref.read(cartProvider.notifier).reload();
@@ -179,9 +181,24 @@ class _CheckoutScreenState extends ConsumerState<CheckoutScreen> {
         value: cartAsync,
         loading: const SkeletonList(count: 4),
         data: (cart) {
-          final shippingTotal = cart.shops.length * _shippingPerShop;
-          final discount = (_voucher?.discount ?? 0).clamp(0, cart.subtotal);
-          final total = cart.subtotal + shippingTotal - discount;
+          // Chỉ thanh toán các món ĐÃ CHỌN ở giỏ (lọc theo variantId).
+          final selected = ref.watch(cartSelectionProvider);
+          final shops = [
+            for (final shop in cart.shops)
+              if (shop.items.any((i) => selected.contains(i.variantId)))
+                CartShop(
+                  shopId: shop.shopId,
+                  shopName: shop.shopName,
+                  items: shop.items.where((i) => selected.contains(i.variantId)).toList(),
+                ),
+          ];
+          final selectedSubtotal = shops.fold<int>(
+              0, (a, sh) => a + sh.items.fold<int>(0, (b, i) => b + i.lineTotal));
+          final selectedCount = shops.fold<int>(
+              0, (a, sh) => a + sh.items.fold<int>(0, (b, i) => b + i.quantity));
+          final shippingTotal = shops.length * _shippingPerShop;
+          final discount = (_voucher?.discount ?? 0).clamp(0, selectedSubtotal);
+          final total = selectedSubtotal + shippingTotal - discount;
 
           return Column(
             children: [
@@ -203,8 +220,8 @@ class _CheckoutScreenState extends ConsumerState<CheckoutScreen> {
                     ),
                     const SizedBox(height: 8),
                     // Sản phẩm
-                    _section(s.productsSection(cart.itemCount)),
-                    for (final shop in cart.shops)
+                    _section(s.productsSection(selectedCount)),
+                    for (final shop in shops)
                       Card(
                         child: Padding(
                           padding: const EdgeInsets.all(12),
@@ -319,7 +336,7 @@ class _CheckoutScreenState extends ConsumerState<CheckoutScreen> {
                         padding: const EdgeInsets.all(12),
                         child: Column(
                           children: [
-                            _summaryRow(s.subtotal, cart.subtotal),
+                            _summaryRow(s.subtotal, selectedSubtotal),
                             _summaryRow(s.shippingFee, shippingTotal),
                             if (discount > 0) _summaryRow(s.discount, -discount),
                             const Divider(),
@@ -336,7 +353,7 @@ class _CheckoutScreenState extends ConsumerState<CheckoutScreen> {
                 child: Padding(
                   padding: const EdgeInsets.all(12),
                   child: ElevatedButton(
-                    onPressed: (_placing || cart.isEmpty) ? null : _placeOrder,
+                    onPressed: (_placing || shops.isEmpty) ? null : _placeOrder,
                     child: BusySwitch(busy: _placing, child: Text(s.placeOrder(formatVnd(total)))),
                   ),
                 ),

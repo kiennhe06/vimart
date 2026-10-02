@@ -48,8 +48,6 @@ class CartScreen extends ConsumerWidget {
     if (cart.isEmpty) {
       return EmptyView(message: s.emptyCart, sticker: 'cart');
     }
-    final shippingTotal = cart.shops.length * 30000;
-    final total = cart.subtotal + shippingTotal;
 
     return Column(
       children: [
@@ -62,8 +60,40 @@ class CartScreen extends ConsumerWidget {
             ],
           ),
         ),
-        _Footer(subtotal: cart.subtotal, shipping: shippingTotal, total: total, count: cart.itemCount),
+        _Footer(cart: cart),
       ],
+    );
+  }
+}
+
+/// Ô chọn tròn (checkbox) cho từng món / shop / tất cả.
+class _CheckDot extends StatelessWidget {
+  const _CheckDot({required this.selected, required this.onTap});
+  final bool selected;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return Pressable(
+      onTap: onTap,
+      scale: 0.85,
+      child: AnimatedContainer(
+        duration: AppMotion.dur(context, AppMotion.fast),
+        width: 24,
+        height: 24,
+        alignment: Alignment.center,
+        decoration: BoxDecoration(
+          shape: BoxShape.circle,
+          color: selected ? AppColors.brand : context.c.surface,
+          border: Border.all(
+            color: selected ? AppColors.brand : context.c.border,
+            width: 1.6,
+          ),
+        ),
+        child: selected
+            ? const Icon(Icons.check_rounded, size: 15, color: Color(0xFFFFFFFF))
+            : null,
+      ),
     );
   }
 }
@@ -76,6 +106,9 @@ class _ShopGroup extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final s = ref.watch(stringsProvider);
+    final selected = ref.watch(cartSelectionProvider);
+    final shopVariantIds = shop.items.map((e) => e.variantId).toList();
+    final allSelected = shopVariantIds.every(selected.contains);
     return Container(
       margin: const EdgeInsets.only(bottom: 14),
       decoration: BoxDecoration(
@@ -89,6 +122,13 @@ class _ShopGroup extends ConsumerWidget {
         children: [
           Row(
             children: [
+              _CheckDot(
+                selected: allSelected,
+                onTap: () => ref
+                    .read(cartSelectionProvider.notifier)
+                    .setMany(shopVariantIds, !allSelected),
+              ),
+              const SizedBox(width: 10),
               CircleAvatar(radius: 16, backgroundColor: context.c.surface,
                   child: const StickerIcon('shop', size: 22)),
               const SizedBox(width: 10),
@@ -130,6 +170,7 @@ class _CartItemRow extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final selected = ref.watch(cartSelectionProvider).contains(item.variantId);
     // Vuốt sang trái để xóa nhanh.
     return Dismissible(
       key: ValueKey(item.cartItemId),
@@ -152,6 +193,11 @@ class _CartItemRow extends ConsumerWidget {
         padding: const EdgeInsets.symmetric(vertical: 8),
         child: Row(
         children: [
+          _CheckDot(
+            selected: selected,
+            onTap: () => ref.read(cartSelectionProvider.notifier).toggle(item.variantId),
+          ),
+          const SizedBox(width: 10),
           ClipRRect(
             borderRadius: BorderRadius.circular(14),
             child: Container(
@@ -230,14 +276,26 @@ class _QtyStepper extends StatelessWidget {
   }
 }
 
-/// Thanh dưới cùng: tổng tiền + nút thanh toán lớn.
+/// Thanh dưới cùng: chọn-tất-cả + tổng tiền (phần đã chọn) + nút thanh toán.
 class _Footer extends ConsumerWidget {
-  const _Footer({required this.subtotal, required this.shipping, required this.total, required this.count});
-  final int subtotal, shipping, total, count;
+  const _Footer({required this.cart});
+  final Cart cart;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final s = ref.watch(stringsProvider);
+    final selected = ref.watch(cartSelectionProvider);
+    final sum = ref.watch(selectedCartSummaryProvider);
+
+    final allVariantIds = [
+      for (final shop in cart.shops)
+        for (final item in shop.items) item.variantId,
+    ];
+    final allSelected = allVariantIds.isNotEmpty && allVariantIds.every(selected.contains);
+    final shipping = sum.shopCount * 30000;
+    final total = sum.subtotal + shipping;
+    final hasSelection = sum.count > 0;
+
     return SafeArea(
       top: false,
       child: Container(
@@ -250,15 +308,25 @@ class _Footer extends ConsumerWidget {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            _row(s.subtotal, formatVnd(subtotal)),
+            _row(s.subtotal, formatVnd(sum.subtotal)),
             const SizedBox(height: 6),
             _row(s.shippingFee, formatVnd(shipping)),
             const Padding(padding: EdgeInsets.symmetric(vertical: 10), child: Divider(height: 1)),
             Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
+                // Chọn / bỏ chọn tất cả.
+                _CheckDot(
+                  selected: allSelected,
+                  onTap: () => ref
+                      .read(cartSelectionProvider.notifier)
+                      .setMany(allVariantIds, !allSelected),
+                ),
+                const SizedBox(width: 8),
+                Text(s.selectAll, style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 13)),
+                const Spacer(),
                 Text(s.total, style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 16)),
-                // Tổng tiền "cuộn" tới giá trị mới khi đổi số lượng (secondary motion).
+                const SizedBox(width: 8),
+                // Tổng tiền "cuộn" tới giá trị mới khi đổi lựa chọn/số lượng.
                 RollingNumber(
                   value: total,
                   format: formatVnd,
@@ -268,8 +336,8 @@ class _Footer extends ConsumerWidget {
             ),
             const SizedBox(height: 14),
             ElevatedButton(
-              onPressed: () => context.push('/checkout'),
-              child: Text(s.checkoutItems(count)),
+              onPressed: hasSelection ? () => context.push('/checkout') : null,
+              child: Text(s.checkoutItems(sum.count)),
             ),
           ],
         ),

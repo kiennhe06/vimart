@@ -61,6 +61,7 @@ class AppStrings {
   String get shippingFee => _('Phí vận chuyển', 'Shipping fee');
   String get total => _('Tổng cộng', 'Total');
   String checkoutItems(int n) => _('Thanh toán • $n món', 'Checkout • $n items');
+  String get selectAll => _('Tất cả', 'All');
 
   // ---- Flash sale ----
   String get flashSaleTitle => _('Flash Sale', 'Flash Sale');

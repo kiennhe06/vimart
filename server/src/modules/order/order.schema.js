@@ -6,4 +6,6 @@ export const checkoutSchema = z.object({
   paymentMethod: z.enum(['cod', 'vnpay']).default('cod'),
   note: z.string().max(500).optional().nullable(),
   voucherCode: z.string().max(40).optional().nullable(),
+  // Danh sách variant được chọn để thanh toán (Shopee-style). Bỏ trống = cả giỏ.
+  variantIds: z.array(z.number().int()).min(1).optional(),
 });
