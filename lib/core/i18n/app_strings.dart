@@ -62,6 +62,12 @@ class AppStrings {
   String get total => _('Tổng cộng', 'Total');
   String checkoutItems(int n) => _('Thanh toán • $n món', 'Checkout • $n items');
 
+  // ---- Thông báo ----
+  String get notifications => _('Thông báo', 'Notifications');
+  String get noNotifications => _('Chưa có thông báo nào', 'No notifications yet');
+  String get markAllRead => _('Đọc tất cả', 'Mark all read');
+  String get orderHistory => _('Lịch sử đơn hàng', 'Order history');
+
   // ---- Mã giảm giá ----
   String get discountCode => _('Mã giảm giá', 'Discount code');
   String get enterVoucherHint => _('Nhập mã', 'Enter code');

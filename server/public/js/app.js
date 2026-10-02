@@ -1150,11 +1150,24 @@ async function orderDetailModal(id) {
   const row = (label, value) =>
     `<div class="kv"><span class="kv__k">${label}</span><span class="kv__v">${value}</span></div>`;
 
+  const history = (o.history || [])
+    .map((h) => {
+      const color = STATUS_COLOR[h.toStatus] || '#888';
+      const who = h.actorRole === 'admin' ? 'Admin' : h.actorRole === 'seller' ? 'Shop' : L('Khách', 'Buyer');
+      return `<div class="litem">
+      <span class="statusrow__dot" style="background:${color};margin-top:6px"></span>
+      <div class="litem__body" style="margin-left:10px"><div class="litem__name">${statusLabel(h.toStatus)}</div>
+        <div class="litem__sub">${who} · ${fmtDate(h.createdAt)}</div></div>
+    </div>`;
+    })
+    .join('');
+
   openModal(`
     <button class="modal__close" data-action="close">×</button>
     <div class="section-head"><h2>${L('Đơn', 'Order')} ${escapeHtml(o.code)}</h2><div class="spacer"></div>${statusChip(o.status)}</div>
     <h3 class="pd__section">${L('Sản phẩm', 'Items')}</h3>
     ${items || `<div class="muted">—</div>`}
+    ${history ? `<h3 class="pd__section">${L('Lịch sử trạng thái', 'Status history')}</h3>${history}` : ''}
     <h3 class="pd__section">${L('Người nhận', 'Recipient')}</h3>
     ${row(L('Người mua', 'Buyer'), `${escapeHtml(o.buyerName || '')} <span class="muted">${escapeHtml(o.buyerEmail || '')}</span>`)}
     ${row(L('Nhận hàng', 'Recipient'), `${escapeHtml(o.recipientName || '')} · ${escapeHtml(o.recipientPhone || '')}`)}

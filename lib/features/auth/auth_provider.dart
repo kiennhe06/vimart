@@ -2,11 +2,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../core/providers.dart';
 import '../../models/user.dart';
-import '../address/address_provider.dart';
-import '../cart/cart_provider.dart';
-import '../favorite/favorite_provider.dart';
 import '../order/order_providers.dart';
-import '../seller/seller_repository.dart';
 import 'auth_repository.dart';
 
 /// Trạng thái đăng nhập của app.
@@ -102,14 +98,12 @@ class AuthNotifier extends Notifier<AuthState> {
   /// mới không thấy dữ liệu của tài khoản trước (giỏ hàng, yêu thích, đơn,
   /// địa chỉ, lịch sử tìm kiếm...).
   void _resetUserScopedData() {
-    // Các provider tự tải lại theo authProvider vẫn được invalidate để chắc
-    // chắn không dùng lại cache của tài khoản cũ.
-    ref.invalidate(cartProvider);
-    ref.invalidate(favoritesProvider);
-    ref.invalidate(myOrdersProvider);
-    ref.invalidate(addressesProvider);
-    ref.invalidate(myProductsProvider);
-    // Provider family KHÔNG theo dõi đăng nhập -> phải invalidate thủ công.
+    // QUAN TRỌNG: KHÔNG invalidate các provider đã watch(authProvider)
+    // (cart, favorites, myOrders, addresses, myProducts). Chúng tự rebuild khi
+    // `state` đổi ngay bên dưới. Nếu invalidate chúng từ trong AuthNotifier sẽ
+    // gây CircularDependencyError (cart watch auth -> auth invalidate cart).
+    //
+    // Chỉ cần invalidate các family KHÔNG theo dõi đăng nhập để xoá cache cũ.
     ref.invalidate(shopOrdersProvider);
     ref.invalidate(orderDetailProvider);
     // Lịch sử tìm kiếm tự tách theo user (search_history_<userId>) nhờ watch

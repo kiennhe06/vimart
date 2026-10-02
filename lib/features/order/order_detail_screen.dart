@@ -128,6 +128,12 @@ class _OrderDetailBodyState extends ConsumerState<_OrderDetailBody> {
                 _row(str.method, s.paymentMethod == 'cod' ? 'COD' : 'VNPay'),
                 _row(str.statusLabel, s.isPaid ? str.paidFull : str.unpaid),
               ]),
+              // Lịch sử trạng thái đơn
+              if (order.history.isNotEmpty)
+                _card(str.orderHistory, [
+                  for (int i = 0; i < order.history.length; i++)
+                    _historyRow(order.history[i], i == order.history.length - 1),
+                ]),
             ],
           ),
         ),
@@ -226,6 +232,52 @@ class _OrderDetailBodyState extends ConsumerState<_OrderDetailBody> {
           ],
         ),
       );
+
+  /// Một mốc timeline: chấm màu + đường nối + nhãn trạng thái + thời gian.
+  Widget _historyRow(OrderStatusEvent e, bool isLast) {
+    final str = ref.watch(stringsProvider);
+    final color = switch (e.toStatus) {
+      'completed' => AppColors.brand,
+      'cancelled' => Colors.red.shade400,
+      'confirmed' || 'shipping' => AppColors.accent,
+      _ => Colors.grey,
+    };
+    return IntrinsicHeight(
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Column(
+            children: [
+              Container(
+                width: 12,
+                height: 12,
+                margin: const EdgeInsets.only(top: 2),
+                decoration: BoxDecoration(color: color, shape: BoxShape.circle),
+              ),
+              if (!isLast)
+                Expanded(child: Container(width: 2, color: Colors.grey.withValues(alpha: 0.3))),
+            ],
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Padding(
+              padding: EdgeInsets.only(bottom: isLast ? 0 : 14),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(str.orderStatus(e.toStatus),
+                      style: const TextStyle(fontWeight: FontWeight.w700)),
+                  if (e.createdAt != null)
+                    Text(formatDateTime(e.createdAt!),
+                        style: TextStyle(fontSize: 12, color: context.c.textSecondary)),
+                ],
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
 
   Widget _btn(String label, VoidCallback onTap) => Padding(
         padding: const EdgeInsets.only(bottom: 8),

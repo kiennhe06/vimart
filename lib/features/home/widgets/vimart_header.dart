@@ -6,6 +6,7 @@ import 'package:go_router/go_router.dart';
 import '../../../app/design.dart';
 import '../../../core/i18n/app_strings.dart';
 import '../../../widgets/pressable.dart';
+import '../../notification/notification_providers.dart';
 import '../home_ui.dart';
 
 /// Header trang chủ kiểu grocery: lời chào + tên app + nút tròn (yêu thích / thông báo).
@@ -15,6 +16,7 @@ class VimartHeader extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final s = ref.watch(stringsProvider);
+    final unread = ref.watch(unreadCountProvider).maybeWhen(data: (c) => c, orElse: () => 0);
     return Padding(
       padding: const EdgeInsets.fromLTRB(HomeDims.pagePadding, 6, HomeDims.pagePadding, 8),
       child: Row(
@@ -45,7 +47,35 @@ class VimartHeader extends ConsumerWidget {
           ),
           _CircleButton(icon: Icons.favorite_border, onTap: () => context.push('/favorites')),
           const SizedBox(width: 10),
-          _CircleButton(icon: Icons.notifications_none_rounded, onTap: () {}),
+          Stack(
+            clipBehavior: Clip.none,
+            children: [
+              _CircleButton(
+                icon: Icons.notifications_none_rounded,
+                onTap: () => context.push('/notifications'),
+              ),
+              if (unread > 0)
+                Positioned(
+                  right: -2,
+                  top: -2,
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 1),
+                    constraints: const BoxConstraints(minWidth: 18),
+                    decoration: BoxDecoration(
+                      color: context.c.danger,
+                      borderRadius: BorderRadius.circular(10),
+                      border: Border.all(color: context.c.background, width: 1.5),
+                    ),
+                    child: Text(
+                      unread > 9 ? '9+' : '$unread',
+                      textAlign: TextAlign.center,
+                      style: const TextStyle(
+                          color: Color(0xFFFFFFFF), fontSize: 11, fontWeight: FontWeight.w800),
+                    ),
+                  ),
+                ),
+            ],
+          ),
         ],
       ),
     );
