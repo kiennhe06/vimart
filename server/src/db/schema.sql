@@ -3,6 +3,8 @@
 -- Chạy lại được nhiều lần: xoá bảng cũ rồi tạo lại (dev only).
 -- ============================================================
 
+DROP TABLE IF EXISTS notifications         CASCADE;
+DROP TABLE IF EXISTS order_status_history  CASCADE;
 DROP TABLE IF EXISTS vouchers         CASCADE;
 DROP TABLE IF EXISTS reviews          CASCADE;
 DROP TABLE IF EXISTS payments         CASCADE;
@@ -199,3 +201,28 @@ CREATE TABLE vouchers (
   is_active    BOOLEAN NOT NULL DEFAULT TRUE,
   created_at   TIMESTAMPTZ NOT NULL DEFAULT now()
 );
+
+-- ---------- Lịch sử đổi trạng thái đơn (audit) ----------
+CREATE TABLE order_status_history (
+  id          SERIAL PRIMARY KEY,
+  order_id    INTEGER NOT NULL REFERENCES orders(id) ON DELETE CASCADE,
+  from_status VARCHAR(20),
+  to_status   VARCHAR(20) NOT NULL,
+  changed_by  INTEGER REFERENCES users(id) ON DELETE SET NULL,
+  actor_role  VARCHAR(20),   -- 'admin' | 'seller' | 'buyer'
+  created_at  TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+CREATE INDEX idx_osh_order ON order_status_history(order_id);
+
+-- ---------- Thông báo cho người dùng ----------
+CREATE TABLE notifications (
+  id         SERIAL PRIMARY KEY,
+  user_id    INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  type       VARCHAR(30) NOT NULL,   -- 'order_status' | 'review_reply'
+  title      VARCHAR(255) NOT NULL,
+  body       VARCHAR(500),
+  order_id   INTEGER REFERENCES orders(id) ON DELETE CASCADE,
+  is_read    BOOLEAN NOT NULL DEFAULT FALSE,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+CREATE INDEX idx_notif_user ON notifications(user_id, is_read);
