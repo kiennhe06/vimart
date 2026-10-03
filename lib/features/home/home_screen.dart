@@ -14,6 +14,7 @@ import '../../widgets/app_skeleton.dart';
 import '../../widgets/async_view.dart';
 import '../../widgets/entrance.dart';
 import '../../widgets/pressable.dart';
+import '../../widgets/sticker_icon.dart';
 import '../catalog/catalog_providers.dart';
 import '../flash/flash_section.dart';
 import '../catalog/search_history.dart';
@@ -231,12 +232,15 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
             width: 40,
             height: 40,
             decoration: BoxDecoration(
-              color: _hasFilters ? AppColors.brand : context.c.surface,
+              color: context.c.surface,
               borderRadius: BorderRadius.circular(14),
-              border: Border.all(color: _hasFilters ? AppColors.brand : context.c.border),
+              border: Border.all(
+                color: _hasFilters ? AppColors.brand : context.c.border,
+                width: _hasFilters ? 1.6 : 1,
+              ),
             ),
-            child: Icon(Icons.tune_rounded,
-                size: 20, color: _hasFilters ? context.c.onBrand : context.c.textSecondary),
+            alignment: Alignment.center,
+            child: const StickerIcon('filter', size: 22),
           ),
           if (_hasFilters)
             Positioned(
@@ -294,13 +298,13 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                     child: Row(
                       mainAxisSize: MainAxisSize.min,
                       children: [
-                        Icon(Icons.history_rounded, size: 16, color: context.c.textSecondary),
+                        const StickerIcon('history', size: 16),
                         const SizedBox(width: 6),
                         Text(term, style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w500)),
                         const SizedBox(width: 4),
                         GestureDetector(
                           onTap: () => ref.read(searchHistoryProvider.notifier).remove(term),
-                          child: Icon(Icons.close_rounded, size: 15, color: context.c.textSecondary),
+                          child: const StickerIcon('close', size: 15),
                         ),
                       ],
                     ),
@@ -350,7 +354,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
         if (products.isEmpty) {
           return Padding(
             padding: const EdgeInsets.symmetric(vertical: 24),
-            child: EmptyView(message: s.noProducts, icon: Icons.search_off_rounded),
+            child: EmptyView(message: s.noProducts),
           );
         }
         return GridView.builder(
@@ -558,7 +562,7 @@ class _PromoBanner extends ConsumerWidget {
             Container(
               width: 64, height: 64,
               decoration: BoxDecoration(color: Colors.white.withValues(alpha: 0.18), shape: BoxShape.circle),
-              child: const Icon(Icons.shopping_basket_rounded, color: Color(0xFFFFFFFF), size: 34),
+              child: const StickerIcon('cart', size: 40),
             ),
           ],
         ),

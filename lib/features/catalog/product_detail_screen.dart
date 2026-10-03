@@ -15,6 +15,7 @@ import '../../widgets/burst.dart';
 import '../../widgets/fly_to_cart.dart';
 import '../../widgets/network_image_box.dart';
 import '../../widgets/pressable.dart';
+import '../../widgets/sticker_icon.dart';
 import '../auth/auth_provider.dart';
 import '../cart/cart_provider.dart';
 import '../chat/chat_providers.dart';
@@ -140,7 +141,7 @@ class _ProductDetailScreenState extends ConsumerState<ProductDetailScreen> {
                           padding: const EdgeInsets.fromLTRB(16, 8, 16, 0),
                           child: Row(
                             children: [
-                              _circleBtn(Icons.arrow_back_ios_new_rounded, () => context.pop()),
+                              _circleBtn('back', () => context.pop()),
                               const Spacer(),
                               _favBtn(),
                             ],
@@ -180,7 +181,7 @@ class _ProductDetailScreenState extends ConsumerState<ProductDetailScreen> {
                         const SizedBox(height: 10),
                         Row(
                           children: [
-                            const Icon(Icons.star_rounded, size: 18, color: AppColors.accent),
+                            const StickerIcon('star', size: 18),
                             const SizedBox(width: 4),
                             Text(
                               product.ratingCount > 0
@@ -252,13 +253,14 @@ class _ProductDetailScreenState extends ConsumerState<ProductDetailScreen> {
     );
   }
 
-  Widget _circleBtn(IconData icon, VoidCallback onTap) {
+  Widget _circleBtn(String sticker, VoidCallback onTap) {
     return Pressable(
       onTap: onTap,
       child: Container(
         width: 44, height: 44,
+        alignment: Alignment.center,
         decoration: BoxDecoration(color: context.c.surface, shape: BoxShape.circle),
-        child: Icon(icon, size: 20, color: context.c.textPrimary),
+        child: StickerIcon(sticker, size: 22),
       ),
     );
   }
@@ -277,11 +279,11 @@ class _ProductDetailScreenState extends ConsumerState<ProductDetailScreen> {
           duration: AppMotion.dur(context, AppMotion.base),
           transitionBuilder: (c, a) =>
               ScaleTransition(scale: CurvedAnimation(parent: a, curve: AppMotion.pop), child: c),
-          child: Icon(
-            _fav ? Icons.favorite_rounded : Icons.favorite_border_rounded,
+          child: StickerIcon(
+            'heart',
             key: ValueKey(_fav),
-            size: 20,
-            color: _fav ? AppColors.danger : context.c.textPrimary,
+            size: 22,
+            colorFilter: _fav ? null : StickerIcon.grayscale,
           ),
         ),
       ),
@@ -296,11 +298,11 @@ class _ProductDetailScreenState extends ConsumerState<ProductDetailScreen> {
         decoration: BoxDecoration(color: context.c.surface, borderRadius: BorderRadius.circular(16), border: Border.all(color: context.c.border)),
         child: Row(
           children: [
-            const CircleAvatar(radius: 18, backgroundColor: AppColors.brandSoft,
-                child: Icon(Icons.storefront_rounded, color: AppColors.brand, size: 20)),
+            CircleAvatar(radius: 18, backgroundColor: context.c.surface,
+                child: const StickerIcon('shop', size: 24)),
             const SizedBox(width: 10),
             Expanded(child: Text(product.shop.name, style: const TextStyle(fontWeight: FontWeight.w700))),
-            const Icon(Icons.chevron_right_rounded, color: Colors.grey),
+            const StickerIcon('chevron', size: 18),
           ],
         ),
       ),
@@ -313,7 +315,7 @@ class _ProductDetailScreenState extends ConsumerState<ProductDetailScreen> {
       padding: const EdgeInsets.only(top: 10),
       child: OutlinedButton.icon(
         onPressed: () => _openChat(product),
-        icon: const Icon(Icons.chat_bubble_outline_rounded, size: 18),
+        icon: const StickerIcon('chat', size: 20),
         label: Text(ref.watch(stringsProvider).chatWithShop),
         style: OutlinedButton.styleFrom(
           minimumSize: const Size.fromHeight(46),
@@ -421,7 +423,7 @@ class _ProductDetailScreenState extends ConsumerState<ProductDetailScreen> {
               ),
               child: Row(
                 children: [
-                  _stepBtn(Icons.remove_rounded, _qty > 1 ? () => setState(() => _qty--) : null),
+                  _stepBtn('minus', _qty > 1 ? () => setState(() => _qty--) : null),
                   SizedBox(
                     width: 28,
                     child: AnimatedSwitcher(
@@ -434,7 +436,7 @@ class _ProductDetailScreenState extends ConsumerState<ProductDetailScreen> {
                           style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w700)),
                     ),
                   ),
-                  _stepBtn(Icons.add_rounded,
+                  _stepBtn('plus',
                       _qty < selected.stock ? () => setState(() => _qty++) : null),
                 ],
               ),
@@ -457,13 +459,13 @@ class _ProductDetailScreenState extends ConsumerState<ProductDetailScreen> {
     );
   }
 
-  Widget _stepBtn(IconData icon, VoidCallback? onTap) {
+  Widget _stepBtn(String sticker, VoidCallback? onTap) {
     return Pressable(
       onTap: onTap,
       scale: 0.85,
       child: Container(
         width: 44, height: 44, alignment: Alignment.center,
-        child: Icon(icon, size: 20, color: onTap == null ? Colors.grey.shade400 : AppColors.brand),
+        child: StickerIcon(sticker, size: 30, colorFilter: onTap == null ? StickerIcon.grayscale : null),
       ),
     );
   }
@@ -485,8 +487,8 @@ class _ReviewTile extends ConsumerWidget {
               Text(review.userName ?? ref.watch(stringsProvider).user, style: const TextStyle(fontWeight: FontWeight.w700)),
               const SizedBox(width: 8),
               Row(
-                children: List.generate(5, (i) => Icon(Icons.star_rounded,
-                    size: 14, color: i < review.rating ? AppColors.accent : Colors.grey.shade300)),
+                children: List.generate(5, (i) => StickerIcon('star',
+                    size: 15, colorFilter: i < review.rating ? null : StickerIcon.grayscale)),
               ),
             ],
           ),

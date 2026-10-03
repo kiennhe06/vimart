@@ -1,6 +1,6 @@
-import 'package:flutter/material.dart' show Icons;
 import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_svg/flutter_svg.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../app/design.dart';
@@ -45,13 +45,13 @@ class VimartHeader extends ConsumerWidget {
               ],
             ),
           ),
-          _CircleButton(icon: Icons.favorite_border, onTap: () => context.push('/favorites')),
+          _CircleButton(asset: 'assets/icons/ui/heart.svg', onTap: () => context.push('/favorites')),
           const SizedBox(width: 10),
           Stack(
             clipBehavior: Clip.none,
             children: [
               _CircleButton(
-                icon: Icons.notifications_none_rounded,
+                asset: 'assets/icons/ui/bell.svg',
                 onTap: () => context.push('/notifications'),
               ),
               if (unread > 0)
@@ -83,8 +83,8 @@ class VimartHeader extends ConsumerWidget {
 }
 
 class _CircleButton extends StatelessWidget {
-  const _CircleButton({required this.icon, required this.onTap});
-  final IconData icon;
+  const _CircleButton({required this.asset, required this.onTap});
+  final String asset;
   final VoidCallback onTap;
 
   @override
@@ -94,13 +94,14 @@ class _CircleButton extends StatelessWidget {
       child: Container(
         width: 46,
         height: 46,
+        alignment: Alignment.center,
         decoration: BoxDecoration(
           color: context.c.surface,
           borderRadius: BorderRadius.circular(15),
           border: Border.all(color: context.c.border),
           boxShadow: AppShadow.soft(context.c.shadow),
         ),
-        child: Icon(icon, size: 22, color: context.c.textPrimary),
+        child: SvgPicture.asset(asset, width: 26, height: 26),
       ),
     );
   }

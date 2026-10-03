@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../core/i18n/app_strings.dart';
+import 'sticker_icon.dart';
 
 /// Hiển thị khi khách vãng lai mở một tab cần đăng nhập (Giỏ hàng, Đơn hàng...).
 class LoginRequiredView extends ConsumerWidget {
@@ -17,7 +18,7 @@ class LoginRequiredView extends ConsumerWidget {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            const Icon(Icons.lock_outline, size: 56, color: Colors.grey),
+            const StickerIcon('lock', size: 64),
             const SizedBox(height: 12),
             Text(message, textAlign: TextAlign.center),
             const SizedBox(height: 16),

@@ -27,7 +27,10 @@ function genCode(prefix) {
  * Đặt hàng từ toàn bộ giỏ hàng.
  * @returns { groupCode, totalAmount, paymentMethod, orders: [{id, code, shopId, total}] }
  */
-export async function checkout(userId, { addressId, paymentMethod, note, voucherCode }) {
+export async function checkout(userId, { addressId, paymentMethod, note, voucherCode, variantIds }) {
+  // Chuẩn hóa danh sách variant được chọn (null = thanh toán cả giỏ).
+  const selectedVariantIds =
+    Array.isArray(variantIds) && variantIds.length > 0 ? variantIds.map(Number) : null;
   return withTransaction(async (client) => {
     // 1) Lấy địa chỉ nhận hàng (phải là của người dùng)
     const addrRes = await client.query('SELECT * FROM addresses WHERE id = $1 AND user_id = $2', [
@@ -46,10 +49,12 @@ export async function checkout(userId, { addressId, paymentMethod, note, voucher
        JOIN product_variants v ON v.id = ci.variant_id
        JOIN products p ON p.id = v.product_id
        WHERE ci.user_id = $1
+         AND ($2::int[] IS NULL OR ci.variant_id = ANY($2))
        ORDER BY p.shop_id`,
-      [userId]
+      [userId, selectedVariantIds]
     );
-    if (cartRes.rows.length === 0) throw new AppError(400, 'Giỏ hàng đang trống');
+    if (cartRes.rows.length === 0)
+      throw new AppError(400, selectedVariantIds ? 'Chưa chọn sản phẩm để thanh toán' : 'Giỏ hàng đang trống');
 
     // 3-flash) Áp giá FLASH SALE cho từng dòng giỏ (reserve số lượng sale an toàn
     // trong transaction). Dùng row.unitPrice làm giá thực trả.
@@ -180,8 +185,12 @@ export async function checkout(userId, { addressId, paymentMethod, note, voucher
       ]);
     }
 
-    // 7) Xóa giỏ hàng đã đặt
-    await client.query('DELETE FROM cart_items WHERE user_id = $1', [userId]);
+    // 7) Xóa khỏi giỏ các món vừa đặt (chỉ các variant đã chọn; null = cả giỏ)
+    await client.query(
+      `DELETE FROM cart_items
+       WHERE user_id = $1 AND ($2::int[] IS NULL OR variant_id = ANY($2))`,
+      [userId, selectedVariantIds]
+    );
 
     // 8) Tạo bản ghi thanh toán cho cả nhóm đơn
     await client.query(

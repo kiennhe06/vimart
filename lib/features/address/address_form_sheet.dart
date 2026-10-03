@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../app/design.dart';
+import '../../widgets/sticker_icon.dart';
 import '../../app/motion.dart';
 import '../../app/theme.dart';
 import '../../core/i18n/app_strings.dart';
@@ -119,7 +120,8 @@ class _AddressFormSheetState extends ConsumerState<_AddressFormSheet> {
                       color: AppColors.brandSoft,
                       borderRadius: BorderRadius.circular(12),
                     ),
-                    child: const Icon(Icons.location_on_rounded, color: AppColors.brand, size: 22),
+                    alignment: Alignment.center,
+                    child: const StickerIcon('location', size: 24),
                   ),
                   const SizedBox(width: 12),
                   Expanded(
@@ -128,21 +130,20 @@ class _AddressFormSheetState extends ConsumerState<_AddressFormSheet> {
                   ),
                   IconButton(
                     onPressed: () => Navigator.pop(context, false),
-                    icon: const Icon(Icons.close_rounded),
-                    color: context.c.textSecondary,
+                    icon: const StickerIcon('close', size: 22),
                   ),
                 ],
               ),
               const SizedBox(height: 14),
-              _field(_name, s.recipientName, Icons.person_outline_rounded,
+              _field(_name, s.recipientName, 'person',
                   validator: (v) => _req(v, s.required)),
               const SizedBox(height: 12),
-              _field(_phone, s.phone, Icons.phone_outlined,
+              _field(_phone, s.phone, 'call',
                   keyboard: TextInputType.phone, validator: (v) => _req(v, s.required)),
               const SizedBox(height: 12),
               // Tỉnh/Thành + Phường/Xã: chọn từ danh sách (API).
               _selectField(
-                icon: Icons.public_rounded,
+                sticker: 'globe',
                 value: _province?.name,
                 hint: s.chooseProvince,
                 error: _showLocError && _province == null,
@@ -150,7 +151,7 @@ class _AddressFormSheetState extends ConsumerState<_AddressFormSheet> {
               ),
               const SizedBox(height: 12),
               _selectField(
-                icon: Icons.holiday_village_outlined,
+                sticker: 'location',
                 value: _ward?.name,
                 hint: _province == null ? s.chooseProvinceFirst : s.chooseWard,
                 enabled: _province != null,
@@ -158,7 +159,7 @@ class _AddressFormSheetState extends ConsumerState<_AddressFormSheet> {
                 onTap: _pickWard,
               ),
               const SizedBox(height: 12),
-              _field(_line, s.streetLineFull, Icons.home_outlined,
+              _field(_line, s.streetLineFull, 'location',
                   validator: (v) => _req(v, s.required)),
               const SizedBox(height: 22),
               ElevatedButton.icon(
@@ -169,7 +170,7 @@ class _AddressFormSheetState extends ConsumerState<_AddressFormSheet> {
                         width: 20,
                         child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
                       )
-                    : const Icon(Icons.check_rounded),
+                    : const StickerIcon('check', size: 22),
                 label: Text(s.saveAddress),
               ),
             ],
@@ -182,7 +183,7 @@ class _AddressFormSheetState extends ConsumerState<_AddressFormSheet> {
   Widget _field(
     TextEditingController c,
     String label,
-    IconData icon, {
+    String sticker, {
     TextInputType? keyboard,
     String? Function(String?)? validator,
   }) {
@@ -190,13 +191,13 @@ class _AddressFormSheetState extends ConsumerState<_AddressFormSheet> {
       controller: c,
       keyboardType: keyboard,
       validator: validator,
-      decoration: InputDecoration(labelText: label, prefixIcon: Icon(icon, size: 20), isDense: true),
+      decoration: InputDecoration(labelText: label, prefixIcon: StickerIcon(sticker, size: 20), isDense: true),
     );
   }
 
   /// Ô "chọn" trông giống ô nhập, mở bottom sheet danh sách khi bấm.
   Widget _selectField({
-    required IconData icon,
+    required String sticker,
     required String? value,
     required String hint,
     required VoidCallback onTap,
@@ -223,7 +224,7 @@ class _AddressFormSheetState extends ConsumerState<_AddressFormSheet> {
           ),
           child: Row(
             children: [
-              Icon(icon, size: 20, color: context.c.textSecondary),
+              StickerIcon(sticker, size: 22),
               const SizedBox(width: 12),
               Expanded(
                 child: Text(
@@ -237,7 +238,7 @@ class _AddressFormSheetState extends ConsumerState<_AddressFormSheet> {
                   ),
                 ),
               ),
-              Icon(Icons.expand_more_rounded, color: context.c.textSecondary),
+              const StickerIcon('expand', size: 20),
             ],
           ),
         ),
@@ -277,8 +278,7 @@ class _LocationPickerSheetState extends ConsumerState<_LocationPickerSheet> {
                 ),
                 IconButton(
                   onPressed: () => Navigator.pop(context),
-                  icon: const Icon(Icons.close_rounded),
-                  color: context.c.textSecondary,
+                  icon: const StickerIcon('close', size: 22),
                 ),
               ],
             ),
@@ -288,7 +288,7 @@ class _LocationPickerSheetState extends ConsumerState<_LocationPickerSheet> {
               onChanged: (v) => setState(() => _query = v.trim().toLowerCase()),
               decoration: InputDecoration(
                 hintText: s.search,
-                prefixIcon: const Icon(Icons.search_rounded, size: 20),
+                prefixIcon: const StickerIcon('search', size: 20),
                 isDense: true,
               ),
             ),
@@ -313,7 +313,7 @@ class _LocationPickerSheetState extends ConsumerState<_LocationPickerSheet> {
                     separatorBuilder: (_, _) => const Divider(height: 1),
                     itemBuilder: (_, i) => ListTile(
                       title: Text(list[i].name),
-                      trailing: const Icon(Icons.chevron_right_rounded, color: Colors.grey),
+                      trailing: const StickerIcon('chevron', size: 18),
                       onTap: () => Navigator.pop(context, list[i]),
                     ),
                   );
@@ -354,13 +354,13 @@ class _ErrorRetry extends StatelessWidget {
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          const Icon(Icons.wifi_off_rounded, size: 44, color: Colors.grey),
+          const StickerIcon('offline', size: 52),
           const SizedBox(height: 10),
           Text(message, textAlign: TextAlign.center, style: TextStyle(color: context.c.textSecondary)),
           const SizedBox(height: 12),
           OutlinedButton.icon(
             onPressed: onRetry,
-            icon: const Icon(Icons.refresh_rounded),
+            icon: const StickerIcon('refresh', size: 20),
             label: Text(retryLabel),
           ),
         ],

@@ -37,7 +37,15 @@ export function createApp() {
 
   // --- Website bán hàng (HTML/CSS/JS) phục vụ từ thư mục public ---
   // Mở http://localhost:4100/ sẽ ra trang web (index.html).
-  app.use(express.static(publicDir));
+  // KHÔNG cache tài nguyên tĩnh: tránh trình duyệt giữ bản JS/CSS cũ sau khi sửa
+  // (lỗi trước đây: app.js mới nhưng Chrome vẫn chạy bản cache cũ).
+  app.use(
+    express.static(publicDir, {
+      etag: false,
+      lastModified: false,
+      setHeaders: (res) => res.setHeader('Cache-Control', 'no-store'),
+    })
+  );
 
   // --- Route không tồn tại + xử lý lỗi (đặt cuối cùng) ---
   app.use(notFound);

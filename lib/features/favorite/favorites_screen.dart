@@ -25,7 +25,7 @@ class FavoritesScreen extends ConsumerWidget {
         onRetry: () => ref.invalidate(favoritesProvider),
         data: (products) {
           if (products.isEmpty) {
-            return EmptyView(message: s.noFavorites, icon: Icons.favorite_border);
+            return EmptyView(message: s.noFavorites, sticker: 'heart');
           }
           return GridView.builder(
             padding: const EdgeInsets.all(16),

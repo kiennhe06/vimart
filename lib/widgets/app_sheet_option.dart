@@ -2,19 +2,20 @@ import 'package:flutter/material.dart';
 
 import '../app/design.dart';
 import 'pressable.dart';
+import 'sticker_icon.dart';
 
 /// Mục chọn dùng trong bottom sheet (chọn theme, sắp xếp, phương thức…).
 /// Component dùng chung — icon + nhãn + dấu tích khi đang chọn.
 class AppSheetOption extends StatelessWidget {
   const AppSheetOption({
     super.key,
-    required this.icon,
+    required this.sticker,
     required this.label,
     required this.selected,
     required this.onTap,
   });
 
-  final IconData icon;
+  final String sticker;
   final String label;
   final bool selected;
   final VoidCallback onTap;
@@ -35,14 +36,14 @@ class AppSheetOption extends StatelessWidget {
         ),
         child: Row(
           children: [
-            Icon(icon, size: 22, color: selected ? c.brand : c.textSecondary),
+            StickerIcon(sticker, size: 24, colorFilter: selected ? null : StickerIcon.grayscale),
             const SizedBox(width: AppSpace.md),
             Expanded(
               child: Text(label,
                   style: AppType.title.copyWith(
                       color: selected ? c.brand : c.textPrimary)),
             ),
-            if (selected) Icon(Icons.check_circle_rounded, size: 22, color: c.brand),
+            if (selected) const StickerIcon('check', size: 20),
           ],
         ),
       ),

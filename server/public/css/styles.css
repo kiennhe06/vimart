@@ -400,6 +400,23 @@ svg.ic {
 .tab:hover {
   color: #fff;
 }
+/* Badge số tin chưa đọc trên tab Chat. */
+.tab__badge {
+  position: absolute;
+  top: 1px;
+  right: 6px;
+  min-width: 17px;
+  height: 17px;
+  padding: 0 4px;
+  border-radius: 9px;
+  background: #ff5a3c;
+  color: #fff;
+  font-size: 10px;
+  font-weight: 800;
+  line-height: 17px;
+  text-align: center;
+  box-shadow: 0 2px 6px rgba(255, 90, 60, 0.5);
+}
 .tab--active {
   color: #fff;
   background: var(--fill-2);
