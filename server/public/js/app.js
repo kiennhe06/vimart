@@ -268,28 +268,52 @@ function renderLogin(message) {
 }
 
 // ---------- Khung dashboard ----------
+/** 1 tab đơn (có badge nếu là Chat). */
+function navTab(key, activeKey) {
+  const badge =
+    key === 'chat' && state.chatUnread > 0
+      ? `<span class="tab__badge" id="chatTabBadge">${state.chatUnread > 99 ? '99+' : state.chatUnread}</span>`
+      : '';
+  return `<button class="tab ${key === activeKey ? 'tab--active' : ''}" data-nav="${key}">${navLabel(key)}${badge}</button>`;
+}
+
+/** Gom 10 mục thành 6 nhóm gọn trên thanh ngang (nhóm nhiều mục -> dropdown). */
+function navGroups() {
+  return [
+    { solo: 'dashboard' },
+    { label: L('Đơn hàng', 'Orders'), items: ['orders', 'returns'] },
+    { label: L('Sản phẩm', 'Products'), items: ['products', 'categories'] },
+    { label: L('Khuyến mãi', 'Promotions'), items: ['flash', 'vouchers'] },
+    { label: L('Khách hàng', 'Customers'), items: ['users', 'reviews'] },
+    { solo: 'chat' },
+  ];
+}
+
 function renderShell(activeKey) {
-  const items = NAV.map((n) => {
-    // Badge số tin chưa đọc trên mục Chat (cập nhật real-time khi có tin mới).
-    const badge =
-      n.key === 'chat' && state.chatUnread > 0
-        ? `<span class="side-badge" id="chatTabBadge">${state.chatUnread > 99 ? '99+' : state.chatUnread}</span>`
-        : '';
-    return `
-      <button class="sideitem ${n.key === activeKey ? 'sideitem--active' : ''}" data-nav="${n.key}" title="${navLabel(n.key)}">
-        <span class="sideitem__ic">${n.icon}</span>
-        <span class="sideitem__label">${navLabel(n.key)}</span>
-        ${badge}
-      </button>`;
-  }).join('');
+  const tabs = navGroups()
+    .map((g) => {
+      if (g.solo) return navTab(g.solo, activeKey);
+      const active = g.items.includes(activeKey);
+      const sub = g.items
+        .map(
+          (k) =>
+            `<button class="dropitem ${k === activeKey ? 'dropitem--on' : ''}" data-nav="${k}">${navLabel(k)}</button>`
+        )
+        .join('');
+      return `<details class="navgroup" name="navg">
+        <summary class="tab taggroup ${active ? 'tab--active' : ''}">${g.label}<span class="caret">▾</span></summary>
+        <div class="dropdown">${sub}</div>
+      </details>`;
+    })
+    .join('');
   const initial = (state.user.fullName || '?').charAt(0).toUpperCase();
 
   app.innerHTML = `
-    <div class="appwrap appwrap--side">
-      <aside class="sidebar">
-        <div class="sidebar__brand">Vi<span>Mart</span></div>
-        <nav class="sidenav">${items}</nav>
-        <div class="sidebar__foot">
+    <div class="appwrap">
+      <header class="topnav">
+        <div class="topnav__brand">Vi<span>Mart</span></div>
+        <nav class="tabs">${tabs}</nav>
+        <div class="topnav__actions">
           <div class="lang-switch" title="${L('Ngôn ngữ', 'Language')}">
             <button class="lang-pill ${lang === 'vi' ? 'lang-pill--on' : ''}" data-action="lang-vi">VI</button>
             <button class="lang-pill ${lang === 'en' ? 'lang-pill--on' : ''}" data-action="lang-en">EN</button>
@@ -297,7 +321,7 @@ function renderShell(activeKey) {
           ${themeSwitch()}
           <div class="avatar" data-action="logout" title="${L('Đăng xuất', 'Sign out')} (${escapeHtml(state.user.fullName)})">${initial}</div>
         </div>
-      </aside>
+      </header>
       <main class="content" id="content">${skeletonView()}</main>
     </div>`;
 }
@@ -1462,13 +1486,13 @@ function connectChatWS() {
 
 function updateChatBadge() {
   // Cập nhật badge ngay trên DOM (không re-render toàn trang).
-  const item = document.querySelector('[data-nav="chat"]');
+  const item = document.querySelector('.tab[data-nav="chat"]');
   if (!item) return;
   let badge = document.getElementById('chatTabBadge');
   if (state.chatUnread > 0) {
     const text = state.chatUnread > 99 ? '99+' : String(state.chatUnread);
     if (badge) badge.textContent = text;
-    else item.insertAdjacentHTML('beforeend', `<span class="side-badge" id="chatTabBadge">${text}</span>`);
+    else item.insertAdjacentHTML('beforeend', `<span class="tab__badge" id="chatTabBadge">${text}</span>`);
   } else if (badge) {
     badge.remove();
   }
