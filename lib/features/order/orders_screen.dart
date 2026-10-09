@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../app/design.dart';
+import '../../widgets/sticker_icon.dart';
 import '../../app/motion.dart';
 import '../../app/nav_provider.dart';
 import '../../app/theme.dart';
@@ -92,7 +93,7 @@ class _EmptyOrders extends ConsumerWidget {
                 Container(
                   width: 96, height: 96,
                   decoration: const BoxDecoration(color: AppColors.brandSoft, shape: BoxShape.circle),
-                  child: const Icon(Icons.receipt_long_rounded, size: 44, color: AppColors.brand),
+                  child: const StickerIcon('receipt', size: 48),
                 ),
                 const SizedBox(height: 16),
                 Text(s.noOrders, style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w700)),
@@ -135,7 +136,7 @@ class OrderCard extends ConsumerWidget {
                 Container(
                   width: 42, height: 42,
                   decoration: BoxDecoration(color: AppColors.brandSoft, borderRadius: BorderRadius.circular(12)),
-                  child: const Icon(Icons.inventory_2_rounded, color: AppColors.brand, size: 20),
+                  child: const StickerIcon('box', size: 24),
                 ),
                 const SizedBox(width: 12),
                 Expanded(
@@ -155,8 +156,7 @@ class OrderCard extends ConsumerWidget {
             const Padding(padding: EdgeInsets.symmetric(vertical: 12), child: Divider(height: 1)),
             Row(
               children: [
-                Icon(order.paymentMethod == 'cod' ? Icons.payments_outlined : Icons.account_balance_wallet_outlined,
-                    size: 16, color: context.c.textSecondary),
+                StickerIcon(order.paymentMethod == 'cod' ? 'truck' : 'wallet', size: 18),
                 const SizedBox(width: 6),
                 Text(order.paymentMethod == 'cod' ? 'COD' : 'VNPay', style: TextStyle(color: context.c.textSecondary, fontSize: 13)),
                 if (order.isPaid)

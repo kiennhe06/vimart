@@ -1,9 +1,9 @@
-import 'package:flutter/material.dart' show Icons;
 import 'package:flutter/services.dart' show TextInputAction;
 import 'package:flutter/widgets.dart';
 
 import '../../../app/design.dart';
 import '../../../app/motion.dart';
+import '../../../widgets/sticker_icon.dart';
 import '../home_ui.dart';
 
 /// Ô tìm kiếm tự dựng hoàn toàn:
@@ -101,7 +101,7 @@ class _VimartSearchBoxState extends State<VimartSearchBox> {
           ),
           child: Row(
             children: [
-              Icon(Icons.search, size: 20, color: context.c.textSecondary),
+              const StickerIcon('search', size: 22),
               const SizedBox(width: 10),
               Expanded(
                 child: Stack(
@@ -141,7 +141,7 @@ class _VimartSearchBoxState extends State<VimartSearchBox> {
                         onTap: _clear,
                         child: Padding(
                           padding: const EdgeInsets.only(left: 8),
-                          child: Icon(Icons.close, size: 18, color: context.c.textSecondary),
+                          child: const StickerIcon('close', size: 18),
                         ),
                       )
                     : const SizedBox(key: ValueKey('empty')),

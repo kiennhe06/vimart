@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../features/address/addresses_screen.dart';
+import '../widgets/sticker_icon.dart';
 import '../features/auth/auth_provider.dart';
 import '../features/auth/login_screen.dart';
 import '../features/auth/register_screen.dart';
@@ -167,7 +168,7 @@ class _SplashScreenState extends State<_SplashScreen> with SingleTickerProviderS
                 width: 96,
                 height: 96,
                 decoration: const BoxDecoration(color: AppColors.brandSoft, shape: BoxShape.circle),
-                child: const Icon(Icons.storefront_rounded, size: 48, color: AppColors.brand),
+                child: const StickerIcon('shop', size: 52),
               ),
             ),
             const SizedBox(height: 22),

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../app/design.dart';
+import '../../widgets/sticker_icon.dart';
 import '../../app/motion.dart';
 import '../../app/theme.dart';
 import '../../core/format.dart';
@@ -262,7 +263,7 @@ class _OrderDetailBodyState extends ConsumerState<_OrderDetailBody> {
                   padding: const EdgeInsets.only(top: 4),
                   child: OutlinedButton.icon(
                     onPressed: _busy ? null : _openReturnSheet,
-                    icon: const Icon(Icons.assignment_return_outlined, size: 18),
+                    icon: const StickerIcon('return', size: 20),
                     label: Text(str.requestReturn),
                     style: OutlinedButton.styleFrom(minimumSize: const Size.fromHeight(46)),
                   ),
@@ -475,7 +476,7 @@ class _ReviewDialogState extends ConsumerState<_ReviewDialog> {
                   scale: on ? 1.15 : 1.0,
                   duration: AppMotion.dur(context, AppMotion.base),
                   curve: AppMotion.pop,
-                  child: Icon(on ? Icons.star_rounded : Icons.star_border_rounded, color: AppColors.accent),
+                  child: StickerIcon('star', size: 26, colorFilter: on ? null : StickerIcon.grayscale),
                 ),
                 onPressed: () {
                   AppHaptics.light();

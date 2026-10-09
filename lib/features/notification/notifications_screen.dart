@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../app/design.dart';
+import '../../widgets/sticker_icon.dart';
 import '../../app/theme.dart';
 import '../../core/format.dart';
 import '../../core/i18n/app_strings.dart';
@@ -39,7 +40,7 @@ class NotificationsScreen extends ConsumerWidget {
         onRetry: () => ref.invalidate(notificationsProvider),
         data: (items) {
           if (items.isEmpty) {
-            return EmptyView(message: s.noNotifications, icon: Icons.notifications_none_rounded);
+            return EmptyView(message: s.noNotifications, sticker: 'bell');
           }
           return RefreshIndicator(
             onRefresh: () async {
@@ -69,7 +70,7 @@ class _NotificationTile extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final isOrder = n.type == 'order_status';
-    final icon = isOrder ? Icons.local_shipping_outlined : Icons.reviews_outlined;
+    final sticker = isOrder ? 'truck' : 'star';
     return Material(
       color: n.isRead ? context.c.surface : AppColors.accent.withValues(alpha: 0.07),
       borderRadius: BorderRadius.circular(14),
@@ -93,7 +94,7 @@ class _NotificationTile extends ConsumerWidget {
               CircleAvatar(
                 radius: 20,
                 backgroundColor: AppColors.accent.withValues(alpha: 0.14),
-                child: Icon(icon, color: AppColors.accent, size: 20),
+                child: StickerIcon(sticker, size: 24),
               ),
               const SizedBox(width: 12),
               Expanded(

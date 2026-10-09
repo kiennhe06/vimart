@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../app/design.dart';
+import '../../widgets/sticker_icon.dart';
 import '../../app/theme.dart';
 import '../../core/i18n/app_strings.dart';
 import '../../widgets/app_card.dart';
@@ -27,7 +28,7 @@ class AddressesScreen extends ConsumerWidget {
         onPressed: () => _openAdd(context, ref),
         backgroundColor: AppColors.brand,
         foregroundColor: Colors.white,
-        icon: const Icon(Icons.add_rounded),
+        icon: const StickerIcon('plus', size: 22),
         label: Text(s.addShort, style: const TextStyle(fontWeight: FontWeight.w700)),
       ),
       body: AsyncView(
@@ -36,7 +37,7 @@ class AddressesScreen extends ConsumerWidget {
         onRetry: () => ref.invalidate(addressesProvider),
         data: (addresses) {
           if (addresses.isEmpty) {
-            return EmptyView(message: s.noAddresses, icon: Icons.location_off_outlined);
+            return EmptyView(message: s.noAddresses);
           }
           return ListView.builder(
             padding: const EdgeInsets.fromLTRB(16, 12, 16, 90),
@@ -54,7 +55,7 @@ class AddressesScreen extends ConsumerWidget {
                     Container(
                       width: 42, height: 42,
                       decoration: BoxDecoration(color: AppColors.brandSoft, borderRadius: BorderRadius.circular(12)),
-                      child: const Icon(Icons.location_on_rounded, color: AppColors.brand, size: 21),
+                      child: const StickerIcon('location', size: 24),
                     ),
                     const SizedBox(width: 12),
                     Expanded(
@@ -96,7 +97,7 @@ class AddressesScreen extends ConsumerWidget {
                       child: Container(
                         width: 36, height: 36,
                         decoration: BoxDecoration(color: const Color(0xFFFDECEC), borderRadius: BorderRadius.circular(11)),
-                        child: const Icon(Icons.delete_rounded, color: AppColors.danger, size: 18),
+                        child: const StickerIcon('trash', size: 22),
                       ),
                     ),
                   ],

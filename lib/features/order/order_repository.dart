@@ -50,12 +50,14 @@ class OrderRepository {
     required String paymentMethod,
     String? note,
     String? voucherCode,
+    List<int>? variantIds,
   }) async {
     final data = await _api.post('/orders/checkout', body: {
       'addressId': addressId,
       'paymentMethod': paymentMethod,
       if (note != null && note.isNotEmpty) 'note': note,
       if (voucherCode != null && voucherCode.isNotEmpty) 'voucherCode': voucherCode,
+      if (variantIds != null && variantIds.isNotEmpty) 'variantIds': variantIds,
     });
     return CheckoutResult.fromJson(data as Map<String, dynamic>);
   }

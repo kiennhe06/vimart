@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../app/design.dart';
+import '../../widgets/sticker_icon.dart';
 import '../../app/theme.dart';
 import '../../core/format.dart';
 import '../../core/i18n/app_strings.dart';
@@ -150,7 +151,7 @@ class _ChatDetailScreenState extends ConsumerState<ChatDetailScreen> {
                               width: 18,
                               height: 18,
                               child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
-                          : const Icon(Icons.send_rounded, color: Colors.white, size: 20),
+                          : const StickerIcon('send', size: 24),
                       onPressed: _sending ? null : _send,
                     ),
                   ),

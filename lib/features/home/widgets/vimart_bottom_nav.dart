@@ -1,5 +1,5 @@
-import 'package:flutter/material.dart' show Icons;
 import 'package:flutter/widgets.dart';
+import 'package:flutter_svg/flutter_svg.dart';
 
 import '../../../app/cart_anchor.dart';
 import '../../../app/design.dart';
@@ -25,11 +25,11 @@ class VimartBottomNav extends StatelessWidget {
   /// Nhãn (đã dịch) cho từng mục — dùng làm Semantics label cho icon.
   final List<String> labels;
 
-  static const List<IconData> _icons = [
-    Icons.home_rounded,
-    Icons.shopping_cart_rounded,
-    Icons.receipt_long_rounded,
-    Icons.person_rounded,
+  static const List<String> _icons = [
+    'assets/icons/nav/home.svg',
+    'assets/icons/nav/cart.svg',
+    'assets/icons/nav/orders.svg',
+    'assets/icons/nav/profile.svg',
   ];
 
   @override
@@ -50,7 +50,7 @@ class VimartBottomNav extends StatelessWidget {
           children: [
             for (int i = 0; i < _icons.length; i++)
               _NavCircle(
-                icon: _icons[i],
+                asset: _icons[i],
                 label: i < labels.length ? labels[i] : '',
                 selected: i == currentIndex,
                 badgeCount: i == 1 ? cartCount : 0,
@@ -67,7 +67,7 @@ class VimartBottomNav extends StatelessWidget {
 
 class _NavCircle extends StatelessWidget {
   const _NavCircle({
-    required this.icon,
+    required this.asset,
     required this.label,
     required this.selected,
     required this.onTap,
@@ -75,7 +75,7 @@ class _NavCircle extends StatelessWidget {
     this.anchorKey,
   });
 
-  final IconData icon;
+  final String asset;
   final String label;
   final bool selected;
   final VoidCallback onTap;
@@ -83,6 +83,14 @@ class _NavCircle extends StatelessWidget {
 
   /// GlobalKey đánh dấu icon giỏ (đích của hiệu ứng bay vào giỏ).
   final Key? anchorKey;
+
+  /// Ma trận xám (luma) để làm mờ sticker ở tab chưa chọn.
+  static const ColorFilter _grayscale = ColorFilter.matrix(<double>[
+    0.2126, 0.7152, 0.0722, 0, 0, //
+    0.2126, 0.7152, 0.0722, 0, 0, //
+    0.2126, 0.7152, 0.0722, 0, 0, //
+    0, 0, 0, 1, 0, //
+  ]);
 
   @override
   Widget build(BuildContext context) {
@@ -115,8 +123,17 @@ class _NavCircle extends StatelessWidget {
                 scale: selected ? 1.12 : 1.0,
                 duration: AppMotion.dur(context, AppMotion.base),
                 curve: AppMotion.pop,
-                child: Icon(icon,
-                    size: 24, color: selected ? context.c.brand : context.c.textSecondary),
+                // Tab chọn: sticker màu đầy đủ. Chưa chọn: xám + hơi mờ.
+                child: AnimatedOpacity(
+                  opacity: selected ? 1 : 0.55,
+                  duration: AppMotion.dur(context, AppMotion.base),
+                  child: SvgPicture.asset(
+                    asset,
+                    width: 30,
+                    height: 30,
+                    colorFilter: selected ? null : _grayscale,
+                  ),
+                ),
               ),
             ),
             // Badge giỏ hàng: hiện/ẩn bằng scale (pop) + số nhảy khi đổi.

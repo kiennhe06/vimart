@@ -1,5 +1,5 @@
-import 'package:flutter/material.dart' show Icons;
 import 'package:flutter/widgets.dart';
+import 'package:flutter_svg/flutter_svg.dart';
 
 import '../../../app/design.dart';
 import '../../../app/motion.dart';
@@ -23,15 +23,18 @@ class CategoryCircles extends StatelessWidget {
   final ValueChanged<int?> onSelect;
   final String allLabel;
 
-  /// Icon gợi ý theo slug danh mục (không có thì dùng mặc định).
-  IconData _iconFor(String slug) {
-    if (slug.contains('dien-thoai')) return Icons.smartphone;
-    if (slug.contains('thoi-trang')) return Icons.checkroom;
-    if (slug.contains('gia-dung')) return Icons.chair_alt;
-    if (slug.contains('sach')) return Icons.menu_book;
-    if (slug.contains('lam-dep')) return Icons.spa;
-    if (slug.contains('do-an') || slug.contains('an')) return Icons.restaurant;
-    return Icons.category;
+  static const String _iconBase = 'assets/icons/categories';
+  static const String _allAsset = '$_iconBase/all.svg';
+
+  /// Đường dẫn SVG icon theo slug danh mục (không khớp thì dùng "all").
+  String _assetFor(String slug) {
+    if (slug.contains('dien-thoai')) return '$_iconBase/phone.svg';
+    if (slug.contains('thoi-trang')) return '$_iconBase/fashion.svg';
+    if (slug.contains('gia-dung')) return '$_iconBase/home.svg';
+    if (slug.contains('sach')) return '$_iconBase/books.svg';
+    if (slug.contains('lam-dep')) return '$_iconBase/beauty.svg';
+    if (slug.contains('do-an') || slug.contains('an')) return '$_iconBase/food.svg';
+    return _allAsset;
   }
 
   @override
@@ -42,24 +45,23 @@ class CategoryCircles extends StatelessWidget {
         scrollDirection: Axis.horizontal,
         padding: const EdgeInsets.symmetric(horizontal: HomeDims.pagePadding - 4),
         children: [
-          _item(context, index: 0, id: null, label: allLabel, icon: Icons.grid_view_rounded),
+          _item(context, index: 0, id: null, label: allLabel, asset: _allAsset),
           for (int i = 0; i < categories.length; i++)
             _item(
               context,
               index: i + 1,
               id: categories[i].id,
               label: categories[i].name,
-              icon: _iconFor(categories[i].slug),
+              asset: _assetFor(categories[i].slug),
             ),
         ],
       ),
     );
   }
 
-  Widget _item(BuildContext context, {required int index, required int? id, required String label, required IconData icon}) {
+  Widget _item(BuildContext context, {required int index, required int? id, required String label, required String asset}) {
     final selected = selectedId == id;
     final tint = kCategoryTints[index % kCategoryTints.length];
-    final ink = kCategoryInk[index % kCategoryInk.length];
     return Pressable(
       onTap: () => onSelect(id),
       scale: 0.9,
@@ -86,7 +88,12 @@ class CategoryCircles extends StatelessWidget {
                     ? [BoxShadow(color: context.c.brand.withValues(alpha: 0.22), blurRadius: 10, offset: const Offset(0, 3))]
                     : null,
               ),
-              child: Icon(icon, color: ink, size: 26),
+              child: SvgPicture.asset(
+                asset,
+                width: 46,
+                height: 46,
+                // Sticker đã có màu riêng nên vẽ nguyên bản, không tô đè.
+              ),
             ),
             const SizedBox(height: 7),
             AnimatedDefaultTextStyle(

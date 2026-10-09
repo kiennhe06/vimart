@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../app/design.dart';
+import '../../widgets/sticker_icon.dart';
 import '../../app/motion.dart';
 import '../../app/theme.dart';
 import '../../core/i18n/app_strings.dart';
@@ -70,7 +71,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                   child: Container(
                     width: 72, height: 72,
                     decoration: const BoxDecoration(color: AppColors.brandSoft, shape: BoxShape.circle),
-                    child: const Icon(Icons.person_add_alt_1_rounded, size: 36, color: AppColors.brand),
+                    child: const StickerIcon('person', size: 40),
                   ),
                 ),
                 const SizedBox(height: 14),
@@ -81,14 +82,14 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                 const SizedBox(height: 26),
                 TextFormField(
                   controller: _nameCtrl,
-                  decoration: InputDecoration(labelText: s.fullName, prefixIcon: const Icon(Icons.person_outline)),
+                  decoration: InputDecoration(labelText: s.fullName, prefixIcon: const StickerIcon('person', size: 22)),
                   validator: (v) => (v == null || v.trim().length < 2) ? s.enterName : null,
                 ),
                 const SizedBox(height: 14),
                 TextFormField(
                   controller: _emailCtrl,
                   keyboardType: TextInputType.emailAddress,
-                  decoration: InputDecoration(labelText: s.email, prefixIcon: const Icon(Icons.email_outlined)),
+                  decoration: InputDecoration(labelText: s.email, prefixIcon: const StickerIcon('mail', size: 22)),
                   validator: (v) => (v == null || !v.contains('@')) ? s.emailInvalid : null,
                 ),
                 const SizedBox(height: 14),
@@ -96,7 +97,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                   controller: _phoneCtrl,
                   keyboardType: TextInputType.phone,
                   decoration: InputDecoration(
-                      labelText: s.phoneOptional, prefixIcon: const Icon(Icons.phone_outlined)),
+                      labelText: s.phoneOptional, prefixIcon: const StickerIcon('call', size: 22)),
                 ),
                 const SizedBox(height: 14),
                 TextFormField(
@@ -104,14 +105,15 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                   obscureText: _obscure,
                   decoration: InputDecoration(
                     labelText: s.password,
-                    prefixIcon: const Icon(Icons.lock_outline),
+                    prefixIcon: const StickerIcon('lock', size: 22),
                     suffixIcon: IconButton(
                       icon: AnimatedSwitcher(
                         duration: AppMotion.dur(context, AppMotion.fast),
                         transitionBuilder: (c, a) => ScaleTransition(
                             scale: a, child: FadeTransition(opacity: a, child: c)),
-                        child: Icon(
-                            _obscure ? Icons.visibility_off_outlined : Icons.visibility_outlined,
+                        child: StickerIcon(
+                            _obscure ? 'eye-off' : 'eye',
+                            size: 22,
                             key: ValueKey(_obscure)),
                       ),
                       onPressed: () => setState(() => _obscure = !_obscure),

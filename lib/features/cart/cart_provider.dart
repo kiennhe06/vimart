@@ -65,3 +65,81 @@ final cartProvider = AsyncNotifierProvider<CartNotifier, Cart>(CartNotifier.new)
 final cartCountProvider = Provider<int>((ref) {
   return ref.watch(cartProvider).maybeWhen(data: (c) => c.itemCount, orElse: () => 0);
 });
+
+/// Tập `variantId` đang được chọn để thanh toán (kiểu Shopee).
+///
+/// - Món mới thêm vào giỏ mặc định được chọn.
+/// - Món bị xóa khỏi giỏ tự động loại khỏi lựa chọn.
+/// Lựa chọn được giữ khi đổi số lượng, và chia sẻ giữa màn Giỏ ↔ Thanh toán.
+class CartSelectionNotifier extends Notifier<Set<int>> {
+  Set<int> _known = {};
+  Set<int> _sel = {};
+
+  @override
+  Set<int> build() {
+    final cart = ref.watch(cartProvider).asData?.value;
+    final ids = <int>{};
+    if (cart != null) {
+      for (final shop in cart.shops) {
+        for (final item in shop.items) {
+          ids.add(item.variantId);
+        }
+      }
+    }
+    final newly = ids.difference(_known); // món mới xuất hiện -> tự chọn
+    _sel = {..._sel.where(ids.contains), ...newly};
+    _known = ids;
+    return _sel;
+  }
+
+  void toggle(int variantId) {
+    final next = {..._sel};
+    if (!next.add(variantId)) next.remove(variantId);
+    _sel = next;
+    state = next;
+  }
+
+  /// Chọn/bỏ chọn nhiều variant cùng lúc (chọn-tất-cả theo shop hoặc toàn giỏ).
+  void setMany(Iterable<int> ids, bool selected) {
+    final next = {..._sel};
+    if (selected) {
+      next.addAll(ids);
+    } else {
+      next.removeAll(ids);
+    }
+    _sel = next;
+    state = next;
+  }
+}
+
+final cartSelectionProvider =
+    NotifierProvider<CartSelectionNotifier, Set<int>>(CartSelectionNotifier.new);
+
+/// Tổng kết phần giỏ ĐANG CHỌN (tiền hàng, số lượng, số shop) để hiển thị &
+/// tính phí ship theo số shop có món được chọn.
+class SelectedCartSummary {
+  const SelectedCartSummary({required this.subtotal, required this.count, required this.shopCount});
+  final int subtotal;
+  final int count;
+  final int shopCount;
+}
+
+final selectedCartSummaryProvider = Provider<SelectedCartSummary>((ref) {
+  final cart = ref.watch(cartProvider).asData?.value;
+  final selected = ref.watch(cartSelectionProvider);
+  int subtotal = 0;
+  int count = 0;
+  final shopIds = <int>{};
+  if (cart != null) {
+    for (final shop in cart.shops) {
+      for (final item in shop.items) {
+        if (selected.contains(item.variantId)) {
+          subtotal += item.lineTotal;
+          count += item.quantity;
+          shopIds.add(shop.shopId);
+        }
+      }
+    }
+  }
+  return SelectedCartSummary(subtotal: subtotal, count: count, shopCount: shopIds.length);
+});

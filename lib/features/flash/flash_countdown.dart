@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../app/design.dart';
+import '../../widgets/sticker_icon.dart';
 import '../../core/i18n/app_strings.dart';
 
 /// Đồng hồ đếm ngược tới thời điểm kết thúc flash sale (cập nhật mỗi giây).
@@ -53,7 +54,7 @@ class _FlashCountdownState extends ConsumerState<FlashCountdown> {
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Icon(Icons.timer_outlined, size: widget.compact ? 13 : 15, color: context.c.promo),
+          StickerIcon('timer', size: widget.compact ? 15 : 17),
           const SizedBox(width: 4),
           Text(label,
               style: TextStyle(

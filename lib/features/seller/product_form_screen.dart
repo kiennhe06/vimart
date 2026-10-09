@@ -3,8 +3,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:image_picker/image_picker.dart';
 
 import '../../app/design.dart';
+import '../../widgets/sticker_icon.dart';
 import '../../app/motion.dart';
-import '../../app/theme.dart';
 import '../../core/i18n/app_strings.dart';
 import '../../widgets/app_busy.dart';
 import '../../widgets/app_feedback.dart';
@@ -215,7 +215,7 @@ class _ProductFormScreenState extends ConsumerState<ProductFormScreen> {
                             onPressed: _uploadingImage ? null : _pickAndUploadImage,
                             icon: _uploadingImage
                                 ? const SizedBox(height: 16, width: 16, child: CircularProgressIndicator(strokeWidth: 2))
-                                : const Icon(Icons.image_outlined, color: AppColors.brand),
+                                : const StickerIcon('image', size: 22),
                             label: Text(_uploadingImage ? s.uploadingImage : s.pickImage),
                           ),
                           const SizedBox(height: 8),
@@ -246,7 +246,7 @@ class _ProductFormScreenState extends ConsumerState<ProductFormScreen> {
                     const Spacer(),
                     TextButton.icon(
                       onPressed: () => setState(() => _variants.add(_VariantControllers())),
-                      icon: const Icon(Icons.add),
+                      icon: const StickerIcon('plus', size: 20),
                       label: Text(s.addShort),
                     ),
                   ],
@@ -316,7 +316,7 @@ class _ProductFormScreenState extends ConsumerState<ProductFormScreen> {
           ),
           if (_variants.length > 1)
             IconButton(
-              icon: const Icon(Icons.remove_circle_outline),
+              icon: const StickerIcon('minus', size: 24),
               onPressed: () => setState(() {
                 _variants.removeAt(index).dispose();
               }),

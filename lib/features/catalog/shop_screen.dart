@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../app/design.dart';
+import '../../widgets/sticker_icon.dart';
 import '../../app/theme.dart';
 import '../../core/i18n/app_strings.dart';
 import '../../widgets/app_refresh.dart';
@@ -31,7 +32,7 @@ class ShopScreen extends ConsumerWidget {
         onRetry: () => ref.invalidate(shopProductsProvider(shopId)),
         data: (products) {
           if (products.isEmpty) {
-            return EmptyView(message: s.shopNoProducts, icon: Icons.storefront_outlined);
+            return EmptyView(message: s.shopNoProducts);
           }
           return Column(
             children: [
@@ -42,8 +43,8 @@ class ShopScreen extends ConsumerWidget {
                 decoration: BoxDecoration(color: AppColors.brandSoft, borderRadius: BorderRadius.circular(20)),
                 child: Row(
                   children: [
-                    const CircleAvatar(radius: 26, backgroundColor: AppColors.brand,
-                        child: Icon(Icons.storefront_rounded, color: Colors.white, size: 26)),
+                    CircleAvatar(radius: 26, backgroundColor: context.c.surface,
+                        child: const StickerIcon('shop', size: 32)),
                     const SizedBox(width: 14),
                     Expanded(
                       child: Column(

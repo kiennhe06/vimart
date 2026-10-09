@@ -29,7 +29,7 @@ class ConversationsScreen extends ConsumerWidget {
         onRetry: () => ref.invalidate(conversationsProvider),
         data: (items) {
           if (items.isEmpty) {
-            return EmptyView(message: s.noConversations, icon: Icons.chat_bubble_outline_rounded);
+            return EmptyView(message: s.noConversations);
           }
           return RefreshIndicator(
             onRefresh: () async {
