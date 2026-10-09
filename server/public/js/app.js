@@ -269,23 +269,27 @@ function renderLogin(message) {
 
 // ---------- Khung dashboard ----------
 function renderShell(activeKey) {
-  const tabs = NAV.map((n) => {
-    // Badge số tin chưa đọc trên tab Chat (cập nhật real-time khi có tin mới).
+  const items = NAV.map((n) => {
+    // Badge số tin chưa đọc trên mục Chat (cập nhật real-time khi có tin mới).
     const badge =
       n.key === 'chat' && state.chatUnread > 0
-        ? `<span class="tab__badge" id="chatTabBadge">${state.chatUnread > 99 ? '99+' : state.chatUnread}</span>`
+        ? `<span class="side-badge" id="chatTabBadge">${state.chatUnread > 99 ? '99+' : state.chatUnread}</span>`
         : '';
     return `
-    <div class="tab ${n.key === activeKey ? 'tab--active' : ''}" data-nav="${n.key}">${navLabel(n.key)}${badge}</div>`;
+      <button class="sideitem ${n.key === activeKey ? 'sideitem--active' : ''}" data-nav="${n.key}" title="${navLabel(n.key)}">
+        <span class="sideitem__ic">${n.icon}</span>
+        <span class="sideitem__label">${navLabel(n.key)}</span>
+        ${badge}
+      </button>`;
   }).join('');
   const initial = (state.user.fullName || '?').charAt(0).toUpperCase();
 
   app.innerHTML = `
-    <div class="appwrap">
-      <header class="topnav">
-        <div class="topnav__brand">Vi<span>Mart</span></div>
-        <nav class="tabs">${tabs}</nav>
-        <div class="topnav__actions">
+    <div class="appwrap appwrap--side">
+      <aside class="sidebar">
+        <div class="sidebar__brand">Vi<span>Mart</span></div>
+        <nav class="sidenav">${items}</nav>
+        <div class="sidebar__foot">
           <div class="lang-switch" title="${L('Ngôn ngữ', 'Language')}">
             <button class="lang-pill ${lang === 'vi' ? 'lang-pill--on' : ''}" data-action="lang-vi">VI</button>
             <button class="lang-pill ${lang === 'en' ? 'lang-pill--on' : ''}" data-action="lang-en">EN</button>
@@ -293,7 +297,7 @@ function renderShell(activeKey) {
           ${themeSwitch()}
           <div class="avatar" data-action="logout" title="${L('Đăng xuất', 'Sign out')} (${escapeHtml(state.user.fullName)})">${initial}</div>
         </div>
-      </header>
+      </aside>
       <main class="content" id="content">${skeletonView()}</main>
     </div>`;
 }
@@ -1458,13 +1462,13 @@ function connectChatWS() {
 
 function updateChatBadge() {
   // Cập nhật badge ngay trên DOM (không re-render toàn trang).
-  const tab = document.querySelector('.tab[data-nav="chat"]');
-  if (!tab) return;
+  const item = document.querySelector('[data-nav="chat"]');
+  if (!item) return;
   let badge = document.getElementById('chatTabBadge');
   if (state.chatUnread > 0) {
     const text = state.chatUnread > 99 ? '99+' : String(state.chatUnread);
     if (badge) badge.textContent = text;
-    else tab.insertAdjacentHTML('beforeend', `<span class="tab__badge" id="chatTabBadge">${text}</span>`);
+    else item.insertAdjacentHTML('beforeend', `<span class="side-badge" id="chatTabBadge">${text}</span>`);
   } else if (badge) {
     badge.remove();
   }
